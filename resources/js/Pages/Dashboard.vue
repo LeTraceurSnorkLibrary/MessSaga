@@ -56,6 +56,23 @@ const handleConversationSelect = async (conversation) => {
     await loadMessages(conversation.id);
 };
 
+const handleConversationDelete = async () => {
+    if (!currentConversation.value) return;
+
+    if (!window.confirm('Удалить этот чат вместе со всеми сообщениями?')) {
+        return;
+    }
+
+    await window.axios.delete(
+        `/api/conversations/${currentConversation.value.id}`,
+    );
+
+    // Обновляем список переписок и очищаем текущую
+    currentConversation.value = null;
+    messages.value = [];
+    await loadConversations();
+};
+
 // начальная загрузка
 loadConversations();
 </script>
@@ -95,6 +112,7 @@ loadConversations();
                                 :conversation-title="currentConversation?.title"
                                 :messages="messages"
                                 :loading="loadingMessages"
+                                @delete="handleConversationDelete"
                             />
                         </div>
                     </div>

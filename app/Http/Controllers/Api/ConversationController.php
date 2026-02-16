@@ -54,4 +54,13 @@ class ConversationController extends Controller
 
         return response()->json($messages);
     }
+
+    public function destroy(Request $request, Conversation $conversation)
+    {
+        abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
+
+        $conversation->delete(); // каскадно удалит сообщения за счёт foreign key
+
+        return response()->noContent();
+    }
 }

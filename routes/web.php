@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
         ->name('api.conversations.index');
     Route::get('/api/conversations/{conversation}/messages', [ConversationController::class, 'messages'])
         ->name('api.conversations.messages');
+    Route::delete('/api/conversations/{conversation}', [ConversationController::class, 'destroy'])
+        ->name('api.conversations.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
