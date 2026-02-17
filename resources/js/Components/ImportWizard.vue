@@ -1,11 +1,32 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-const selectedMessenger = ref('telegram');
+const props = defineProps({
+    conversations: {
+        type: Array,
+        default: () => [],
+    },
+    selectedMessenger: {
+        type: String,
+        default: 'telegram',
+    },
+});
+
+const emit = defineEmits(['imported']);
+
+const selectedConversationId = ref(null);
 const file = ref(null);
 const loading = ref(false);
 const message = ref('');
+
+// Сбрасываем выбор переписки при смене мессенджера
+watch(
+    () => props.selectedMessenger,
+    () => {
+        selectedConversationId.value = null;
+    },
+);
 
 const submit = async () => {
     if (!file.value) {
@@ -18,19 +39,32 @@ const submit = async () => {
 
     try {
         const formData = new FormData();
-        formData.append('messenger_type', selectedMessenger.value);
+        formData.append('messenger_type', props.selectedMessenger);
         formData.append('file', file.value);
+
+        if (selectedConversationId.value) {
+            formData.append('conversation_id', selectedConversationId.value);
+        }
 
         await window.axios.post('/api/import/chats', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        message.value =
-            'Импорт поставлен в очередь. Через некоторое время переписка появится в списке.';
+        if (selectedConversationId.value) {
+            message.value =
+                'Догрузка поставлена в очередь. Сообщения будут добавлены в существующую переписку.';
+        } else {
+            message.value =
+                'Импорт поставлен в очередь. Через некоторое время переписка появится в списке.';
+        }
+
         file.value = null;
+        selectedConversationId.value = null;
         if (fileInputRef.value) {
             fileInputRef.value.value = '';
         }
+
+        emit('imported');
     } catch (error) {
         message.value =
             'Не удалось запустить импорт. Проверьте файл и попробуйте ещё раз.';
@@ -57,12 +91,29 @@ const onFileChange = (event) => {
             <div class="flex flex-wrap items-center gap-3 text-sm">
                 <label class="text-slate-600">Мессенджер:</label>
                 <select
-                    v-model="selectedMessenger"
-                    class="rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    :value="selectedMessenger"
+                    disabled
+                    class="rounded-md border-slate-300 text-sm shadow-sm bg-slate-100"
                 >
                     <option value="telegram">Telegram (.json экспорт)</option>
                     <option value="whatsapp" disabled>WhatsApp (скоро)</option>
                     <option value="viber" disabled>Viber (скоро)</option>
+                </select>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+                <label class="text-slate-600">Догрузить в существующую переписку:</label>
+                <select
+                    v-model="selectedConversationId"
+                    class="rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                    <option :value="null">Создать новую переписку</option>
+                    <option
+                        v-for="conv in conversations"
+                        :key="conv.id"
+                        :value="conv.id"
+                    >
+                        {{ conv.title || 'Без названия' }}
+                    </option>
                 </select>
             </div>
             <div class="flex flex-wrap items-center gap-3 text-sm">
@@ -80,7 +131,13 @@ const onFileChange = (event) => {
                     :disabled="loading"
                     @click="submit"
                 >
-                    {{ loading ? 'Импортируем...' : 'Запустить импорт' }}
+                    {{
+                        loading
+                            ? 'Импортируем...'
+                            : selectedConversationId
+                              ? 'Догрузить в переписку'
+                              : 'Запустить импорт'
+                    }}
                 </PrimaryButton>
                 <span v-if="message" class="text-xs text-slate-600">
                     {{ message }}
