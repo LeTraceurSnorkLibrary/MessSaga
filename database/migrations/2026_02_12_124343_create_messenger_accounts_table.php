@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('messenger_accounts')) {
+            return;
+        }
+
         Schema::create('messenger_accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')
