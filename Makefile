@@ -2,7 +2,7 @@
 # Makefile readme (ru): <http://linux.yaroslavl.ru/docs/prog/gnu_make_3-79_russian_manual.html>
 # Makefile readme (en): <https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents>
 
-.PHONY: serve queue dev build install setup db-create migrate fresh test tinker logs clear help
+.PHONY: serve queue dev build install setup db-mysql-init db-sqlite-create db-mysql-up db-mysql-down migrate fresh test tinker logs clear help
 
 # Порт сервера (можно задать: make serve PORT=8080)
 PORT ?= 8000
@@ -14,7 +14,7 @@ setup: ## Полная установка с нуля: .env, APP_KEY, БД, за
 	@test -f .env || cp .env.example .env
 	@echo "→ Генерируем APP_KEY..."
 	@php artisan key:generate
-	@$(MAKE) db-create
+	@$(MAKE) db-sqlite-create
 	@echo "→ Устанавливаем PHP-зависимости..."
 	@composer install
 	@echo "→ Устанавливаем Node-зависимости..."
@@ -26,11 +26,21 @@ setup: ## Полная установка с нуля: .env, APP_KEY, БД, за
 	@echo ""
 	@echo "Готово. Запуск: make run  (или make serve + make queue + make dev в отдельных терминалах)"
 
-db-create: ## Создать файл БД для SQLite (если используется sqlite)
+db-mysql-init: ## Инициализировать БД (выполнить миграции). Для MySQL перед этим: make db-mysql-up
+	php artisan migrate
+
+db-sqlite-create: ## [SQLite] Создать файл database/database.sqlite (если в .env DB_CONNECTION=sqlite)
 	@if grep -q '^DB_CONNECTION=sqlite' .env 2>/dev/null || true; then \
 		touch database/database.sqlite 2>/dev/null || true; \
 		echo "→ Файл БД SQLite: database/database.sqlite"; \
 	fi
+
+db-mysql-up: ## [MySQL] Поднять MySQL в Docker (docker compose up -d)
+	docker compose up -d
+	@echo "MySQL: порт 3306, база messsaga, пользователь root, пароль пустой. Далее: sleep 5 && make db-mysql-init"
+
+db-mysql-down: ## [MySQL] Остановить контейнер MySQL
+	docker compose down
 
 # --- Ежедневная разработка ---
 
@@ -55,7 +65,7 @@ install: ## Только зависимости и сборка (без .env/м�
 	npm install --legacy-peer-deps
 	$(MAKE) build
 
-migrate: ## Выполнить миграции
+migrate: ## Выполнить миграции (алиас для db-mysql-init)
 	php artisan migrate
 
 fresh: ## Сброс БД и повторный прогон миграций
@@ -87,10 +97,15 @@ help: ## Список целей
 	@echo "    make build   — сборка фронтенда для production"
 	@echo "    make run     — всё в одном терминале"
 	@echo ""
-	@echo "  БД и прочее:"
-	@echo "    make db-create — создать database/database.sqlite для SQLite"
-	@echo "    make migrate   — выполнить миграции"
-	@echo "    make fresh     — сброс БД и миграции заново"
+	@echo "  БД:"
+	@echo "    make db-mysql-init         — инициализировать БД (миграции)"
+	@echo "    make db-sqlite-create — [SQLite] создать database/database.sqlite"
+	@echo "    make db-mysql-up     — [MySQL] поднять MySQL в Docker"
+	@echo "    make db-mysql-down   — [MySQL] остановить MySQL"
+	@echo "    make migrate         — выполнить миграции (= db-mysql-init)"
+	@echo "    make fresh           — сброс БД и миграции заново"
+	@echo ""
+	@echo "  Прочее:"
 	@echo "    make test      — запуск тестов"
 	@echo "    make tinker    — интерактивная консоль Laravel"
 	@echo "    make logs      — хвост лога (tail -f)"
