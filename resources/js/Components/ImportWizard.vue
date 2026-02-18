@@ -3,10 +3,6 @@ import { ref, watch } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 const props = defineProps({
-    conversations: {
-        type: Array,
-        default: () => [],
-    },
     selectedMessenger: {
         type: String,
         default: 'telegram',
@@ -15,18 +11,9 @@ const props = defineProps({
 
 const emit = defineEmits(['imported']);
 
-const selectedConversationId = ref(null);
 const file = ref(null);
 const loading = ref(false);
 const message = ref('');
-
-// Сбрасываем выбор переписки при смене мессенджера
-watch(
-    () => props.selectedMessenger,
-    () => {
-        selectedConversationId.value = null;
-    },
-);
 
 const submit = async () => {
     if (!file.value) {
@@ -42,24 +29,14 @@ const submit = async () => {
         formData.append('messenger_type', props.selectedMessenger);
         formData.append('file', file.value);
 
-        if (selectedConversationId.value) {
-            formData.append('conversation_id', selectedConversationId.value);
-        }
-
         await window.axios.post('/api/import/chats', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        if (selectedConversationId.value) {
-            message.value =
-                'Догрузка поставлена в очередь. Сообщения будут добавлены в существующую переписку.';
-        } else {
-            message.value =
-                'Импорт поставлен в очередь. Через некоторое время переписка появится в списке.';
-        }
+        message.value =
+            'Импорт поставлен в очередь. Переписка будет автоматически определена по ID из файла.';
 
         file.value = null;
-        selectedConversationId.value = null;
         if (fileInputRef.value) {
             fileInputRef.value.value = '';
         }
@@ -101,22 +78,6 @@ const onFileChange = (event) => {
                 </select>
             </div>
             <div class="flex flex-wrap items-center gap-3 text-sm">
-                <label class="text-slate-600">Догрузить в существующую переписку:</label>
-                <select
-                    v-model="selectedConversationId"
-                    class="rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                >
-                    <option :value="null">Создать новую переписку</option>
-                    <option
-                        v-for="conv in conversations"
-                        :key="conv.id"
-                        :value="conv.id"
-                    >
-                        {{ conv.title || 'Без названия' }}
-                    </option>
-                </select>
-            </div>
-            <div class="flex flex-wrap items-center gap-3 text-sm">
                 <label class="text-slate-600">Файл экспорта:</label>
                 <input
                     ref="fileInputRef"
@@ -131,13 +92,7 @@ const onFileChange = (event) => {
                     :disabled="loading"
                     @click="submit"
                 >
-                    {{
-                        loading
-                            ? 'Импортируем...'
-                            : selectedConversationId
-                              ? 'Догрузить в переписку'
-                              : 'Запустить импорт'
-                    }}
+                    {{ loading ? 'Импортируем...' : 'Запустить импорт' }}
                 </PrimaryButton>
                 <span v-if="message" class="text-xs text-slate-600">
                     {{ message }}

@@ -11,24 +11,15 @@ class ChatImportController extends Controller
 {
     /**
      * Handle chat import upload.
+     * Переписка определяется автоматически по external_id из файла экспорта.
+     * Если переписка не существует - создаётся новая, если существует - догружаются сообщения.
      */
     public function store(Request $request)
     {
         $data = $request->validate([
             'messenger_type' => 'required|string|in:telegram,whatsapp,viber',
             'file' => 'required|file',
-            'conversation_id' => 'nullable|integer|exists:conversations,id',
         ]);
-
-        // Проверяем, что conversation_id принадлежит текущему пользователю
-        if ($data['conversation_id'] ?? null) {
-            $conversation = Conversation::findOrFail($data['conversation_id']);
-            abort_unless(
-                $conversation->messengerAccount->user_id === $request->user()->id,
-                403,
-                'Conversation does not belong to you'
-            );
-        }
 
         $path = $request->file('file')->store('chat_imports');
 
@@ -36,7 +27,6 @@ class ChatImportController extends Controller
             userId: $request->user()->id,
             messengerType: $data['messenger_type'],
             path: $path,
-            conversationId: $data['conversation_id'] ?? null,
         );
 
         return response()->json([

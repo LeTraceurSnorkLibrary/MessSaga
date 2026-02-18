@@ -17,7 +17,7 @@ class ImportService
     ) {
     }
 
-    public function import(int $userId, string $messengerType, string $path, ?int $conversationId = null): void
+    public function import(int $userId, string $messengerType, string $path): void
     {
         $absolutePath = Storage::path($path);
 
@@ -30,7 +30,7 @@ class ImportService
             return;
         }
 
-        DB::transaction(function () use ($userId, $messengerType, $conversationData, $messagesData, $conversationId) {
+        DB::transaction(function () use ($userId, $messengerType, $conversationData, $messagesData) {
             $account = MessengerAccount::firstOrCreate(
                 [
                     'user_id' => $userId,
@@ -42,30 +42,30 @@ class ImportService
                 ],
             );
 
-            // Если передан conversationId, используем существующую переписку
-            if ($conversationId) {
-                $conversation = Conversation::where('id', $conversationId)
-                    ->where('messenger_account_id', $account->id)
-                    ->firstOrFail();
-            } else {
-                // Иначе создаём/находим переписку как раньше
-                $conversation = Conversation::updateOrCreate(
-                    [
-                        'messenger_account_id' => $account->id,
-                        'external_id'          => $conversationData['external_id'] ?? null,
-                    ],
-                    [
-                        'title'        => $conversationData['title'] ?? 'Unknown chat',
-                        'participants' => $conversationData['participants'] ?? [],
-                    ],
-                );
-            }
+            /**
+             * Автоматически находим или создаём переписку по external_id из экспорта.
+             * Переписка ищется только среди переписок текущего пользователя (через messenger_account_id).
+             */
+            $conversation = Conversation::updateOrCreate(
+                [
+                    'messenger_account_id' => $account->id,
+                    'external_id'          => $conversationData['external_id'] ?? null,
+                ],
+                [
+                    'title'        => $conversationData['title'] ?? 'Unknown chat',
+                    'participants' => $conversationData['participants'] ?? [],
+                ],
+            );
 
-            // Загружаем все существующие сообщения из БД
+            /**
+             * Загружаем все существующие сообщения из БД
+             */
             $existingMessages = $conversation->messages()
                 ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
                 ->keyBy(function ($msg) {
-                    // Ключ для дедупликации: external_id или комбинация sent_at + text + sender
+                    /**
+                     * Ключ для дедупликации: external_id или комбинация sent_at + text + sender
+                     */
                     return $msg->external_id ?? md5(
                         ($msg->sent_at?->toIso8601String() ?? '') .
                         ($msg->text ?? '') .
@@ -74,7 +74,9 @@ class ImportService
                     );
                 });
 
-            // Подготавливаем новые сообщения с ключами для дедупликации
+            /**
+             * Подготавливаем новые сообщения с ключами для дедупликации
+             */
             $newMessagesToInsert = [];
             foreach ($messagesData as $message) {
                 $key = $message['external_id'] ?? md5(
@@ -84,7 +86,9 @@ class ImportService
                     ($message['sender_external_id'] ?? '')
                 );
 
-                // Пропускаем, если такое сообщение уже есть
+                /**
+                 * Пропускаем, если такое сообщение уже есть
+                 */
                 if ($existingMessages->has($key)) {
                     continue;
                 }
@@ -110,7 +114,9 @@ class ImportService
                 ];
             }
 
-            // Вставляем только новые сообщения
+            /**
+             * Вставляем только новые сообщения
+             */
             if ($newMessagesToInsert) {
                 Message::insert($newMessagesToInsert);
             }

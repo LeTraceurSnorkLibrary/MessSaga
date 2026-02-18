@@ -18,7 +18,6 @@ class ProcessChatImport implements ShouldQueue
         public int $userId,
         public string $messengerType,
         public string $path,
-        public ?int $conversationId = null,
     ) {
     }
 
@@ -34,7 +33,6 @@ class ProcessChatImport implements ShouldQueue
                 userId: $this->userId,
                 messengerType: $this->messengerType,
                 path: $this->path,
-                conversationId: $this->conversationId,
             );
         } finally {
             /**
