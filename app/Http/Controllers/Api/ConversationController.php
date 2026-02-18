@@ -21,18 +21,22 @@ class ConversationController extends Controller
                     $q->where('type', $messengerType);
                 }
             })
-            ->with(['messages' => fn ($q) => $q->latest('sent_at')->limit(1)]);
+            ->with('messengerAccount');
 
         $conversations = $query
             ->orderByDesc('id')
             ->get()
             ->map(function (Conversation $conversation) {
-                $last = $conversation->messages->first();
+                // Получаем последнее сообщение в зависимости от типа мессенджера
+                // Используем messagesQuery() для получения query builder
+                $lastMessage = $conversation->messagesQuery()
+                    ->latest('sent_at')
+                    ->first();
 
                 return [
                     'id' => $conversation->id,
                     'title' => $conversation->title,
-                    'preview' => $last?->text,
+                    'preview' => $lastMessage?->text,
                 ];
             });
 
@@ -43,14 +47,10 @@ class ConversationController extends Controller
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
 
-        $messages = $conversation->messages()
+        // Получаем сообщения используя универсальный метод messagesQuery()
+        $messages = $conversation->messagesQuery()
             ->orderBy('sent_at')
-            ->get([
-                'id',
-                'sender_name',
-                'sent_at',
-                'text',
-            ]);
+            ->get(['id', 'sender_name', 'sent_at', 'text', 'message_type']);
 
         return response()->json($messages);
     }
