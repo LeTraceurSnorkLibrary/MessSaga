@@ -1,4 +1,6 @@
 <script setup>
+import {useDate} from '@/composables/useDate';
+
 const props = defineProps({
     messages: {
         type: Array,
@@ -15,6 +17,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['delete']);
+
+const { formatDate } = useDate();
 </script>
 
 <template>
@@ -25,8 +29,8 @@ const emit = defineEmits(['delete']);
             </span>
             <button
                 v-if="conversationTitle"
-                type="button"
                 class="text-xs text-red-600 hover:text-red-700 hover:underline"
+                type="button"
                 @click="emit('delete')"
             >
                 Удалить чат
@@ -46,9 +50,9 @@ const emit = defineEmits(['delete']);
                     <span class="font-medium text-slate-700">
                         {{ message.sender_name || 'Неизвестный' }}
                     </span>
-                    <span>
-                        {{ message.sent_at }}
-                    </span>
+                    <time :datetime="message.sent_at">
+                        {{ formatDate(message.sent_at) }}
+                    </time>
                 </div>
                 <div class="mt-1 text-sm text-slate-900 whitespace-pre-wrap">
                     {{ message.text }}
