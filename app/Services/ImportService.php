@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Models\Conversation;
-use App\Models\MessengerAccount;
 use App\Models\Message;
+use App\Models\MessengerAccount;
 use App\Services\Parsers\TelegramParser;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -88,13 +89,18 @@ class ImportService
                     continue;
                 }
 
+                $text          = $message['text'] ?? null;
+                $encryptedText = $text
+                    ? Crypt::encryptString($text)
+                    : null;
+
                 $newMessagesToInsert[] = [
                     'conversation_id'    => $conversation->id,
                     'external_id'        => $message['external_id'] ?? null,
                     'sender_name'        => $message['sender_name'] ?? null,
                     'sender_external_id' => $message['sender_external_id'] ?? null,
                     'sent_at'            => $message['sent_at'] ?? null,
-                    'text'               => $message['text'] ?? null,
+                    'text'               => $encryptedText,
                     // insert() обходит касты модели, поэтому массив нужно сериализовать вручную
                     'raw'                => isset($message['raw'])
                         ? json_encode($message['raw'])

@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEncryptedAttributes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Message extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEncryptedAttributes;
 
+    /**
+     * @inheritdoc
+     */
     protected $fillable = [
         'conversation_id',
         'external_id',
@@ -20,13 +24,24 @@ class Message extends Model
         'raw',
     ];
 
+    /**
+     * @inheritdoc
+     */
     protected $casts = [
-        'raw' => 'array',
+        'raw'     => 'array',
         'sent_at' => 'datetime',
     ];
 
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getEncryptedAttributes(): array
+    {
+        return ['text'];
     }
 }
