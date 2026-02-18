@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import MessengerTabs from '@/Components/MessengerTabs.vue';
@@ -13,6 +13,10 @@ const messages = ref([]);
 const loadingConversations = ref(false);
 const loadingMessages = ref(false);
 const currentConversation = ref(null);
+const pollingInterval = ref(null);
+const pollingStartTime = ref(null);
+const POLLING_INTERVAL_MS = 2000; // Проверяем каждые 2 секунды
+const POLLING_TIMEOUT_MS = 60000; // Максимум 60 секунд
 
 const loadConversations = async () => {
     loadingConversations.value = true;
@@ -20,15 +24,71 @@ const loadConversations = async () => {
         const response = await window.axios.get('/api/conversations', {
             params: { messenger: selectedMessenger.value },
         });
+        const previousCount = conversations.value.length;
         conversations.value = response.data;
 
         // если ещё нет выбранной переписки, выберем первую
         if (!currentConversation.value && conversations.value.length > 0) {
             handleConversationSelect(conversations.value[0]);
         }
+
+        // Если количество переписок изменилось и мы в режиме polling - остановим его
+        if (pollingInterval.value && conversations.value.length !== previousCount) {
+            stopPolling();
+        }
     } finally {
         loadingConversations.value = false;
     }
+};
+
+const startPolling = () => {
+    // Останавливаем предыдущий polling, если он был
+    stopPolling();
+
+    pollingStartTime.value = Date.now();
+
+    pollingInterval.value = setInterval(async () => {
+        // Проверяем таймаут
+        if (Date.now() - pollingStartTime.value > POLLING_TIMEOUT_MS) {
+            stopPolling();
+            return;
+        }
+
+        // Обновляем список переписок без показа индикатора загрузки
+        try {
+            const response = await window.axios.get('/api/conversations', {
+                params: { messenger: selectedMessenger.value },
+            });
+            const previousCount = conversations.value.length;
+            conversations.value = response.data;
+
+            // Если появилась новая переписка - останавливаем polling
+            if (conversations.value.length > previousCount) {
+                stopPolling();
+                // Если нет выбранной переписки, выберем первую новую
+                if (!currentConversation.value && conversations.value.length > 0) {
+                    handleConversationSelect(conversations.value[0]);
+                }
+            }
+        } catch (error) {
+            // При ошибке останавливаем polling
+            console.error('Ошибка при polling:', error);
+            stopPolling();
+        }
+    }, POLLING_INTERVAL_MS);
+};
+
+const stopPolling = () => {
+    if (pollingInterval.value) {
+        clearInterval(pollingInterval.value);
+        pollingInterval.value = null;
+    }
+    pollingStartTime.value = null;
+};
+
+const handleImportStarted = () => {
+    // Запускаем polling после начала импорта
+    startPolling();
 };
 
 const loadMessages = async (conversationId) => {
@@ -73,6 +133,11 @@ const handleConversationDelete = async () => {
     await loadConversations();
 };
 
+// Очищаем polling при размонтировании компонента
+onUnmounted(() => {
+    stopPolling();
+});
+
 // начальная загрузка
 loadConversations();
 </script>
@@ -93,7 +158,7 @@ loadConversations();
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
                 <ImportWizard
                     :selected-messenger="selectedMessenger"
-                    @imported="loadConversations"
+                    @imported="handleImportStarted"
                 />
 
                 <div class="bg-transparent">
