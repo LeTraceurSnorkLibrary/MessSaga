@@ -1,10 +1,10 @@
 <script setup>
-import GuestLayout from '@/Layouts/GuestLayout.vue';
+import PrimaryButton from '@/Components/Buttons/PrimaryButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import GuestLayout from '@/Layouts/GuestLayout.vue';
+import {Head, useForm} from '@inertiajs/vue3';
 
 const props = defineProps({
     email: {
@@ -41,15 +41,15 @@ const submit = () => {
 
                 <TextInput
                     id="email"
-                    type="email"
-                    class="mt-1 block w-full"
                     v-model="form.email"
-                    required
-                    autofocus
                     autocomplete="username"
+                    autofocus
+                    class="mt-1 block w-full"
+                    required
+                    type="email"
                 />
 
-                <InputError class="mt-2" :message="form.errors.email" />
+                <InputError :message="form.errors.email" class="mt-2" />
             </div>
 
             <div class="mt-4">
@@ -57,14 +57,14 @@ const submit = () => {
 
                 <TextInput
                     id="password"
-                    type="password"
-                    class="mt-1 block w-full"
                     v-model="form.password"
-                    required
                     autocomplete="new-password"
+                    class="mt-1 block w-full"
+                    required
+                    type="password"
                 />
 
-                <InputError class="mt-2" :message="form.errors.password" />
+                <InputError :message="form.errors.password" class="mt-2" />
             </div>
 
             <div class="mt-4">
@@ -75,16 +75,16 @@ const submit = () => {
 
                 <TextInput
                     id="password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
                     v-model="form.password_confirmation"
-                    required
                     autocomplete="new-password"
+                    class="mt-1 block w-full"
+                    required
+                    type="password"
                 />
 
                 <InputError
-                    class="mt-2"
                     :message="form.errors.password_confirmation"
+                    class="mt-2"
                 />
             </div>
 

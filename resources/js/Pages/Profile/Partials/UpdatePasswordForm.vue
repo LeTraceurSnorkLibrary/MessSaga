@@ -1,10 +1,10 @@
 <script setup>
+import PrimaryButton from '@/Components/Buttons/PrimaryButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import {useForm} from '@inertiajs/vue3';
+import {ref} from 'vue';
 
 const passwordInput = ref(null);
 const currentPasswordInput = ref(null);
@@ -46,7 +46,7 @@ const updatePassword = () => {
             </p>
         </header>
 
-        <form @submit.prevent="updatePassword" class="mt-6 space-y-6">
+        <form class="mt-6 space-y-6" @submit.prevent="updatePassword">
             <div>
                 <InputLabel for="current_password" value="Current Password" />
 
@@ -54,9 +54,9 @@ const updatePassword = () => {
                     id="current_password"
                     ref="currentPasswordInput"
                     v-model="form.current_password"
-                    type="password"
-                    class="mt-1 block w-full"
                     autocomplete="current-password"
+                    class="mt-1 block w-full"
+                    type="password"
                 />
 
                 <InputError
@@ -72,9 +72,9 @@ const updatePassword = () => {
                     id="password"
                     ref="passwordInput"
                     v-model="form.password"
-                    type="password"
-                    class="mt-1 block w-full"
                     autocomplete="new-password"
+                    class="mt-1 block w-full"
+                    type="password"
                 />
 
                 <InputError :message="form.errors.password" class="mt-2" />
@@ -89,9 +89,9 @@ const updatePassword = () => {
                 <TextInput
                     id="password_confirmation"
                     v-model="form.password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
                     autocomplete="new-password"
+                    class="mt-1 block w-full"
+                    type="password"
                 />
 
                 <InputError

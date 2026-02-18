@@ -1,12 +1,12 @@
 <script setup>
-import DangerButton from '@/Components/DangerButton.vue';
+import DangerButton from '@/Components/Buttons/DangerButton.vue';
+import SecondaryButton from '@/Components/Buttons/SecondaryButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import Modal from '@/Components/Modal.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useForm } from '@inertiajs/vue3';
-import { nextTick, ref } from 'vue';
+import {useForm} from '@inertiajs/vue3';
+import {nextTick, ref} from 'vue';
 
 const confirmingUserDeletion = ref(false);
 const passwordInput = ref(null);
@@ -70,18 +70,18 @@ const closeModal = () => {
 
                 <div class="mt-6">
                     <InputLabel
+                        class="sr-only"
                         for="password"
                         value="Password"
-                        class="sr-only"
                     />
 
                     <TextInput
                         id="password"
                         ref="passwordInput"
                         v-model="form.password"
-                        type="password"
                         class="mt-1 block w-3/4"
                         placeholder="Password"
+                        type="password"
                         @keyup.enter="deleteUser"
                     />
 
@@ -94,9 +94,9 @@ const closeModal = () => {
                     </SecondaryButton>
 
                     <DangerButton
-                        class="ms-3"
                         :class="{ 'opacity-25': form.processing }"
                         :disabled="form.processing"
+                        class="ms-3"
                         @click="deleteUser"
                     >
                         Delete Account

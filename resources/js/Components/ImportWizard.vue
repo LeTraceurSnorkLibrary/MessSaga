@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import PrimaryButton from "@/Components/Buttons/PrimaryButton.vue";
+import {ref} from 'vue';
 
 const props = defineProps({
     selectedMessenger: {
@@ -69,27 +69,27 @@ const onFileChange = (event) => {
                 <label class="text-slate-600">Мессенджер:</label>
                 <select
                     :value="selectedMessenger"
-                    disabled
                     class="rounded-md border-slate-300 text-sm shadow-sm bg-slate-100"
+                    disabled
                 >
                     <option value="telegram">Telegram (.json экспорт)</option>
-                    <option value="whatsapp" disabled>WhatsApp (скоро)</option>
-                    <option value="viber" disabled>Viber (скоро)</option>
+                    <option disabled value="whatsapp">WhatsApp (скоро)</option>
+                    <option disabled value="viber">Viber (скоро)</option>
                 </select>
             </div>
             <div class="flex flex-wrap items-center gap-3 text-sm">
                 <label class="text-slate-600">Файл экспорта:</label>
                 <input
                     ref="fileInputRef"
-                    type="file"
                     class="text-sm"
+                    type="file"
                     @change="onFileChange"
                 />
             </div>
             <div class="flex items-center gap-3">
                 <PrimaryButton
-                    type="button"
                     :disabled="loading"
+                    type="button"
                     @click="submit"
                 >
                     {{ loading ? 'Импортируем...' : 'Запустить импорт' }}
