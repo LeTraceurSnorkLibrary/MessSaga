@@ -5,6 +5,7 @@ import {Head, Link} from '@inertiajs/vue3';
 defineProps({
     canLogin: Boolean,
     canRegister: Boolean,
+    copyrightYear: String,
 });
 </script>
 
@@ -495,7 +496,7 @@ defineProps({
                     </div>
 
                     <div class="text-sm text-center md:text-left">
-                        © 2026 MessSaga. Ваш личный архив воспоминаний.
+                        © {{copyrightYear}} MessSaga. Ваш личный архив воспоминаний.
                     </div>
                 </div>
             </div>
