@@ -1,59 +1,170 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MessSaga
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Веб-приложение для импорта и просмотра переписок из мессенджеров (Telegram, WhatsApp, Viber). Laravel + Inertia + Vue.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Требования
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **PHP** 8.2+
+- **Composer**
+- **Node.js** 18+ и **npm**
+- **MySQL** 8+ (или MariaDB) — сервер должен быть запущен, база создана до `make setup` / `make migrate`
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Запуск с нуля (только что склонировали репозиторий)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 1. Одна команда — полная установка
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+make setup
+```
 
-## Laravel Sponsors
+Эта команда по очереди:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1. Копирует `.env.example` в `.env`, если файла `.env` ещё нет.
+2. Генерирует **APP_KEY** в `.env`.
+3. Для SQLite создаёт файл `database/database.sqlite` (для MySQL базу нужно создать вручную заранее).
+4. Ставит PHP-зависимости (`composer install`).
+5. Ставит Node-зависимости (`npm install --legacy-peer-deps`).
+6. Запускает миграции (`php artisan migrate`).
+7. Собирает фронтенд (`npm run build`).
 
-### Premium Partners
+После этого проект готов к запуску.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 2. Запуск приложения
 
-## Contributing
+**Вариант А — всё в одном терминале (удобно для разработки):**
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+make run
+```
 
-## Code of Conduct
+Поднимаются: Laravel-сервер, воркер очередей, лог и Vite. Откройте в браузере адрес, который выведет скрипт (обычно `http://127.0.0.1:8000`).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+**Вариант Б — в разных терминалах:**
 
-## Security Vulnerabilities
+```bash
+# Терминал 1 — сервер
+make serve
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Терминал 2 — очередь (обработка импорта чатов)
+make queue
 
-## License
+# Терминал 3 — фронтенд с hot reload
+make dev
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Сервер по умолчанию на порту **8000**. Другой порт: `PORT=8080 make serve`.
+
+---
+
+## Почему появляется ошибка про APP_KEY?
+
+В репозитории нет файла `.env` (он в `.gitignore`). В нём хранятся секреты и настройки окружения.
+
+В `.env.example` лежит шаблон, где **APP_KEY** пустой. Laravel требует непустой APP_KEY для шифрования сессий, cookies и т.п. Если ключа нет, приложение выдаёт ошибку вроде:
+
+```
+No application encryption key has been specified.
+```
+
+**Что сделать:** один раз сгенерировать ключ:
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Либо просто выполнить `make setup` — он сам создаёт `.env` и запускает `key:generate`.
+
+---
+
+## База данных
+
+### По умолчанию — MySQL
+
+В `.env` заданы параметры MySQL:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=messsaga
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Перед первым запуском:
+
+1. Запустите сервер MySQL (или MariaDB).
+2. Создайте базу (один раз):
+
+   ```sql
+   CREATE DATABASE messsaga CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+
+3. В `.env` укажите правильные `DB_USERNAME` и `DB_PASSWORD`, если отличаются от `root` и пустого пароля.
+4. Выполните `make setup` или `make migrate`.
+
+### SQLite (опционально)
+
+Чтобы использовать SQLite вместо MySQL:
+
+1. В `.env` задайте:
+
+   ```env
+   DB_CONNECTION=sqlite
+   # DB_HOST=127.0.0.1
+   # DB_PORT=3306
+   # DB_DATABASE=messsaga
+   # DB_USERNAME=root
+   # DB_PASSWORD=
+   ```
+
+2. Создайте файл БД и выполните миграции:
+
+   ```bash
+   make db-create
+   make migrate
+   ```
+
+---
+
+## Полезные команды (Makefile)
+
+| Команда          | Описание                                                                 |
+|------------------|--------------------------------------------------------------------------|
+| `make setup`     | Полная установка с нуля (.env, ключ, БД, зависимости, миграции, сборка). |
+| `make run`       | Запуск всего: сервер + очередь + Vite + логи.                            |
+| `make serve`     | Только Laravel-сервер.                                                   |
+| `make queue`     | Воркер очередей (импорт чатов).                                          |
+| `make dev`       | Vite в режиме разработки (hot reload).                                   |
+| `make build`     | Сборка фронтенда для production.                                         |
+| `make db-create` | Создать `database/database.sqlite` при использовании SQLite.             |
+| `make migrate`   | Выполнить миграции.                                                      |
+| `make fresh`     | Сбросить БД и заново выполнить миграции.                                 |
+| `make test`      | Запуск тестов.                                                           |
+| `make logs`      | Просмотр логов в реальном времени.                                       |
+| `make clear`     | Очистка кэша приложения.                                                 |
+| `make help`      | Список всех целей.                                                       |
+
+---
+
+## Если что-то пошло не так
+
+- **«No application encryption key»** — выполните `php artisan key:generate` или заново `make setup`.
+- **Ошибки при миграции / «could not find driver»** — для MySQL нужен PHP-модуль `pdo_mysql`. Для SQLite — `pdo_sqlite`.
+- **«SQLSTATE[HY000] [1049] Unknown database»** — создайте базу MySQL: `CREATE DATABASE messsaga CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+- **Очередь не обрабатывает импорт** — должен быть запущен воркер: `make queue` или `make run`.
+- **После pull не работают стили/скрипты** — пересоберите фронтенд: `npm install --legacy-peer-deps && make build`.
+
+---
+
+## Стек
+
+- **Backend:** Laravel 12, PHP 8.2+
+- **Frontend:** Vue 3, Inertia.js, Vite, Tailwind CSS
+- **БД по умолчанию:** MySQL (опционально SQLite)
+- **Очереди:** database driver (таблица `jobs`)

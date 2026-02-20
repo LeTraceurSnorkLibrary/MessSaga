@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -21,7 +23,22 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'encryption_salt',
     ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (User $user): void {
+            if (empty($user->encryption_salt)) {
+                $user->encryption_salt = base64_encode(random_bytes(32));
+            }
+        });
+    }
 
     /**
      * The attributes that should be hidden for serialization.
