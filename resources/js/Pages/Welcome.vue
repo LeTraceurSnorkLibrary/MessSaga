@@ -48,28 +48,10 @@ defineProps({
                     <AdvantageCard
                         description="Все сообщения шифруются перед сохранением. Только вы имеете доступ к своим данным."
                         title="Полная безопасность"
-                        variant="orange"
+                        variant="purple"
                     >
                         <template #icon>
                             <LockIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="Найдите любое сообщение за секунды. Поиск по тексту, дате, контактам и мессенджерам."
-                        title="Умный поиск"
-                        variant="rose"
-                    >
-                        <template #icon>
-                            <MagnifyingGlassIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
-                        title="С медиафайлами"
-                        variant="amber"
-                    >
-                        <template #icon>
-                            <ImgIcon/>
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
@@ -82,21 +64,41 @@ defineProps({
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
-                        description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
-                        title="Навсегда"
-                        variant="purple"
-                    >
-                        <template #icon>
-                            <ClockIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
                         description="MessSaga абсолютно бесплатен. Без рекламы, без платных подписок."
                         title="Бесплатно"
                         variant="green"
                     >
                         <template #icon>
                             <DollarIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
+                        description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
+                        title="Навсегда"
+                        variant="rose"
+                    >
+                        <template #icon>
+                            <ClockIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
+                        description="Найдите любое сообщение за секунды. Поиск по тексту, дате, контактам и мессенджерам."
+                        in-progress
+                        title="Умный поиск"
+                        variant="rose"
+                    >
+                        <template #icon>
+                            <MagnifyingGlassIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
+                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
+                        in-progress
+                        title="С медиафайлами"
+                        variant="amber"
+                    >
+                        <template #icon>
+                            <ImgIcon/>
                         </template>
                     </AdvantageCard>
                 </div>
