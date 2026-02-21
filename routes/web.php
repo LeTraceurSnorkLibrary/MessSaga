@@ -11,7 +11,7 @@ Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'copyrightYear' => CopyrightHelper::getCopyrightString(config('app.start_year'))
+        'copyrightYear' => CopyrightHelper::getCopyrightString(config('messaga.start_year'))
     ]);
 });
 

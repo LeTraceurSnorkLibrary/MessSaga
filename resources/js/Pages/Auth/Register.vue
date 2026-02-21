@@ -1,5 +1,5 @@
 <script setup>
-import PrimaryButton from '@/Components/Buttons/PrimaryButton.vue';
+import UIButton from '@/Components/UIButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -100,13 +100,12 @@ const submit = () => {
                     Already registered?
                 </Link>
 
-                <PrimaryButton
+                <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
-                    class="ms-4"
                 >
                     Register
-                </PrimaryButton>
+                </UIButton>
             </div>
         </form>
     </GuestLayout>

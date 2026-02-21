@@ -27,12 +27,12 @@ defineProps({
 .trust-indicator__icon {
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--welcome-green-500);
+  color: var(--green-500);
   flex-shrink: 0;
 }
 
 .trust-indicator__text {
   font-size: 0.875rem;
-  color: var(--welcome-gray-600);
+  color: var(--gray-600);
 }
 </style>

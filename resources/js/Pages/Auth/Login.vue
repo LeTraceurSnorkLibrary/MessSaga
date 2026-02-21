@@ -1,5 +1,5 @@
 <script setup>
-import PrimaryButton from '@/Components/Buttons/PrimaryButton.vue';
+import UIButton from '@/Components/UIButton.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -87,13 +87,14 @@ const submit = () => {
                     Forgot your password?
                 </Link>
 
-                <PrimaryButton
+                <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
+                    variant="primary"
                     class="ms-4"
                 >
                     Log in
-                </PrimaryButton>
+                </UIButton>
             </div>
         </form>
     </GuestLayout>

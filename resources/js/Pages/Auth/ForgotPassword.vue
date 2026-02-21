@@ -1,5 +1,5 @@
 <script setup>
-import PrimaryButton from '@/Components/Buttons/PrimaryButton.vue';
+import UIButton from '@/Components/UIButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -56,12 +56,12 @@ const submit = () => {
             </div>
 
             <div class="mt-4 flex items-center justify-end">
-                <PrimaryButton
+                <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
                     Email Password Reset Link
-                </PrimaryButton>
+                </UIButton>
             </div>
         </form>
     </GuestLayout>
