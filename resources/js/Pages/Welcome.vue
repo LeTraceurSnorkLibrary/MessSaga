@@ -16,6 +16,9 @@ import ImgIcon from "@/Components/particles/icons/ImgIcon.vue";
 import UploadIcon from "@/Components/particles/icons/UploadIcon.vue";
 import ClockIcon from "@/Components/particles/icons/ClockIcon.vue";
 import DollarIcon from "@/Components/particles/icons/DollarIcon.vue";
+import AddUserIcon from "@/Components/particles/icons/AddUserIcon.vue";
+import CloudUploadIcon from "@/Components/particles/icons/CloudUploadIcon.vue";
+import LikeIcon from "@/Components/particles/icons/LikeIcon.vue";
 
 defineProps({
     canLogin: Boolean,
@@ -102,7 +105,6 @@ defineProps({
             </div>
         </section>
 
-        <!-- Как это работает? -->
         <section id="how-it-works" class="welcome-page__section">
             <div class="welcome-page__container">
                 <SectionTitle
@@ -118,11 +120,7 @@ defineProps({
                         variant="orange"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <AddUserIcon/>
                         </template>
                     </HowItWorksStep>
                     <HowItWorksStep
@@ -132,11 +130,7 @@ defineProps({
                         variant="rose"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <CloudUploadIcon/>
                         </template>
                     </HowItWorksStep>
                     <HowItWorksStep
@@ -146,11 +140,7 @@ defineProps({
                         variant="amber"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <LikeIcon/>
                         </template>
                     </HowItWorksStep>
                 </div>
