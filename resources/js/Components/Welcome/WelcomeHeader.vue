@@ -1,7 +1,7 @@
 <script setup>
 import {Link} from '@inertiajs/vue3';
 import WelcomeLogo from './WelcomeLogo.vue';
-import UIButton from "@/Components/UIButton.vue";
+import LoginIcon from "@/Components/particles/icons/LoginIcon.vue";
 
 defineProps({
     canLogin: {type: Boolean, default: false},
@@ -11,27 +11,22 @@ defineProps({
 <template>
     <header class="welcome-header">
         <nav class="welcome-header__nav">
-            <div class="welcome-header__inner">
-                <WelcomeLogo to="/"/>
-                <div v-if="canLogin" class="welcome-header__links">
-                    <Link v-if="canLogin" :href="route('login')" class="welcome-header__link">
-                        Войти
-                    </Link>
-                    <div class="welcome-header__cta">
-                        <UIButton
-                            tag="a"
-                            v-if="canRegister"
-                            :href="route('register')"
-                        >
-                            Начать бесплатно
-                        </UIButton>
-                    </div>
-                </div>
+            <WelcomeLogo to="/"/>
+            <div v-if="canLogin" class="welcome-header__links">
+                <Link
+                    v-if="canLogin"
+                    :href="route('login')"
+                    aria-label="Войти"
+                    class="welcome-header__link"
+                >
+                    <LoginIcon class="welcome-header__icon welcome-header__icon--mobile"/>
+                    <span class="welcome-header__text">Войти</span>
+                </Link>
             </div>
         </nav>
     </header>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .welcome-header {
     position: fixed;
     top: 0;
@@ -44,15 +39,12 @@ defineProps({
 }
 
 .welcome-header__nav {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 1rem 1.5rem;
-}
-
-.welcome-header__inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
 }
 
 .welcome-header__links {
@@ -62,13 +54,34 @@ defineProps({
 }
 
 .welcome-header__link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     color: var(--gray-700);
     font-weight: 500;
     text-decoration: none;
     transition: color var(--transition-fast);
+    padding: 0.5rem;
+
+    &:hover {
+        color: var(--orange-600);
+    }
+
+    @media (min-width: 768px) {
+        padding: 0;
+    }
 }
 
-.welcome-header__link:hover {
-    color: var(--orange-600);
+.welcome-header__icon {
+    width: 24px;
+    height: 24px;
+}
+
+.welcome-header__text {
+    display: none;
+
+    @media (min-width: 768px) {
+        display: inline;
+    }
 }
 </style>
