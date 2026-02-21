@@ -5,11 +5,17 @@ import WelcomeHeader from '@/Components/Welcome/WelcomeHeader.vue';
 import WelcomeHero from '@/Components/Welcome/WelcomeHero.vue';
 import WelcomeHeroMockup from '@/Components/Welcome/WelcomeHeroMockup.vue';
 import SectionTitle from '@/Components/Welcome/SectionTitle.vue';
-import WhyMessSagaCard from '@/Components/Welcome/WhyMessSagaCard.vue';
+import AdvantageCard from '@/Components/base/AdvantageCard.vue';
 import HowItWorksStep from '@/Components/Welcome/HowItWorksStep.vue';
 import SupportedMessengers from '@/Components/Welcome/SupportedMessengers.vue';
 import WelcomeCtaSection from '@/Components/Welcome/WelcomeCtaSection.vue';
 import WelcomeFooter from '@/Components/Welcome/WelcomeFooter.vue';
+import LockIcon from '@/Components/particles/icons/LockIcon.vue';
+import MagnifyingGlassIcon from "@/Components/particles/icons/MagnifyingGlassIcon.vue";
+import ImgIcon from "@/Components/particles/icons/ImgIcon.vue";
+import UploadIcon from "@/Components/particles/icons/UploadIcon.vue";
+import ClockIcon from "@/Components/particles/icons/ClockIcon.vue";
+import DollarIcon from "@/Components/particles/icons/DollarIcon.vue";
 
 defineProps({
     canLogin: Boolean,
@@ -30,7 +36,6 @@ defineProps({
             </template>
         </WelcomeHero>
 
-        <!-- Почему MessSaga? -->
         <section class="welcome-page__section welcome-page__section--light">
             <div class="welcome-page__container">
                 <SectionTitle
@@ -39,82 +44,60 @@ defineProps({
                     subtitle="Сохраните важные моменты вашей цифровой жизни в безопасном месте"
                 />
                 <div class="welcome-page__why-grid">
-                    <WhyMessSagaCard
+                    <AdvantageCard
                         title="Полная безопасность"
                         description="Все сообщения шифруются перед сохранением. Только вы имеете доступ к своим данным."
                         variant="orange"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <LockIcon />
                         </template>
-                    </WhyMessSagaCard>
-                    <WhyMessSagaCard
+                    </AdvantageCard>
+                    <AdvantageCard
                         title="Умный поиск"
                         description="Найдите любое сообщение за секунды. Поиск по тексту, дате, контактам и мессенджерам."
                         variant="rose"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round"
-                                      stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <MagnifyingGlassIcon/>
                         </template>
-                    </WhyMessSagaCard>
-                    <WhyMessSagaCard
+                    </AdvantageCard>
+                    <AdvantageCard
                         title="С медиафайлами"
                         description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
                         variant="amber"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <ImgIcon/>
                         </template>
-                    </WhyMessSagaCard>
-                    <WhyMessSagaCard
+                    </AdvantageCard>
+                    <AdvantageCard
                         title="Простой импорт"
                         description="Экспортируйте чат из мессенджера и загрузите в MessSaga. Всё автоматически!"
                         variant="blue"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <UploadIcon/>
                         </template>
-                    </WhyMessSagaCard>
-                    <WhyMessSagaCard
+                    </AdvantageCard>
+                    <AdvantageCard
                         title="Навсегда"
                         description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
                         variant="purple"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"
-                                      stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <ClockIcon/>
                         </template>
-                    </WhyMessSagaCard>
-                    <WhyMessSagaCard
+                    </AdvantageCard>
+                    <AdvantageCard
                         title="Бесплатно"
                         description="MessSaga абсолютно бесплатен. Без рекламы, без платных подписок."
                         variant="green"
                     >
                         <template #icon>
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-                            </svg>
+                            <DollarIcon/>
                         </template>
-                    </WhyMessSagaCard>
+                    </AdvantageCard>
                 </div>
             </div>
         </section>
