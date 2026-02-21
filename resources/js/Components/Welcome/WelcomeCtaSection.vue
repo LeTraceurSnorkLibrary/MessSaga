@@ -70,10 +70,8 @@ defineProps({
     align-items: center;
     justify-content: center;
     gap: 1rem;
-}
 
-@media (min-width: 640px) {
-    .cta-section__actions {
+    @media (min-width: 640px) {
         flex-direction: row;
     }
 }
