@@ -1,5 +1,5 @@
 <script setup>
-import MessengerCard from './MessengerCard.vue';
+import MessengerCard from '../base/MessengerCard.vue';
 import TelegramIcon from "@/Components/particles/icons/Messengers/TelegramIcon.vue";
 import WhatsAppIcon from "@/Components/particles/icons/Messengers/WhatsAppIcon.vue";
 import VkIcon from "@/Components/particles/icons/Messengers/VkIcon.vue";
