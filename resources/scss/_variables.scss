@@ -3,78 +3,78 @@
  * Только переменные — без классов и стилей элементов.
  */
 :root {
-  /* Шрифты */
-  --font-sans: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    /* Шрифты */
+    --font-sans: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
-  /* Цвета бренда (Welcome и общие) */
-  --welcome-orange-50: #fff7ed;
-  --welcome-orange-100: #ffedd5;
-  --welcome-orange-200: #fed7aa;
-  --welcome-orange-300: #fdba74;
-  --welcome-orange-400: #fb923c;
-  --welcome-orange-500: #f97316;
-  --welcome-orange-600: #ea580c;
-  --welcome-rose-50: #fff1f2;
-  --welcome-rose-100: #ffe4e6;
-  --welcome-rose-200: #fecdd3;
-  --welcome-rose-400: #fb7185;
-  --welcome-rose-500: #f43f5e;
-  --welcome-rose-600: #e11d48;
-  --welcome-amber-50: #fffbeb;
-  --welcome-amber-100: #fef3c7;
-  --welcome-amber-200: #fde68a;
-  --welcome-amber-400: #fbbf24;
-  --welcome-amber-500: #f59e0b;
-  --welcome-amber-600: #d97706;
-  --welcome-pink-50: #fdf2f8;
-  --welcome-pink-100: #fce7f3;
-  --welcome-pink-400: #f472b6;
-  --welcome-yellow-50: #fefce8;
-  --welcome-yellow-100: #fef9c3;
-  --welcome-yellow-400: #facc15;
-  --welcome-blue-50: #eff6ff;
-  --welcome-blue-100: #dbeafe;
-  --welcome-blue-400: #60a5fa;
-  --welcome-blue-500: #3b82f6;
-  --welcome-indigo-100: #e0e7ff;
-  --welcome-indigo-400: #818cf8;
-  --welcome-indigo-500: #6366f1;
-  --welcome-purple-50: #faf5ff;
-  --welcome-purple-100: #f3e8ff;
-  --welcome-purple-300: #d8b4fe;
-  --welcome-purple-400: #c084fc;
-  --welcome-violet-400: #a78bfa;
-  --welcome-green-50: #f0fdf4;
-  --welcome-green-100: #dcfce7;
-  --welcome-green-400: #4ade80;
-  --welcome-green-500: #22c55e;
-  --welcome-emerald-400: #34d399;
-  --welcome-red-400: #f87171;
-  --welcome-gray-400: #9ca3af;
-  --welcome-gray-600: #4b5563;
-  --welcome-gray-700: #374151;
-  --welcome-gray-800: #1f2937;
-  --welcome-gray-900: #111827;
-  --welcome-white: #ffffff;
-  --welcome-black: #000000;
+    /* Цвета бренда (Welcome и общие) */
+    --welcome-orange-50: #fff7ed;
+    --welcome-orange-100: #ffedd5;
+    --welcome-orange-200: #fed7aa;
+    --welcome-orange-300: #fdba74;
+    --welcome-orange-400: #fb923c;
+    --welcome-orange-500: #f97316;
+    --welcome-orange-600: #ea580c;
+    --welcome-rose-50: #fff1f2;
+    --welcome-rose-100: #ffe4e6;
+    --welcome-rose-200: #fecdd3;
+    --welcome-rose-400: #fb7185;
+    --welcome-rose-500: #f43f5e;
+    --welcome-rose-600: #e11d48;
+    --welcome-amber-50: #fffbeb;
+    --welcome-amber-100: #fef3c7;
+    --welcome-amber-200: #fde68a;
+    --welcome-amber-400: #fbbf24;
+    --welcome-amber-500: #f59e0b;
+    --welcome-amber-600: #d97706;
+    --welcome-pink-50: #fdf2f8;
+    --welcome-pink-100: #fce7f3;
+    --welcome-pink-400: #f472b6;
+    --welcome-yellow-50: #fefce8;
+    --welcome-yellow-100: #fef9c3;
+    --welcome-yellow-400: #facc15;
+    --welcome-blue-50: #eff6ff;
+    --welcome-blue-100: #dbeafe;
+    --welcome-blue-400: #60a5fa;
+    --welcome-blue-500: #3b82f6;
+    --welcome-indigo-100: #e0e7ff;
+    --welcome-indigo-400: #818cf8;
+    --welcome-indigo-500: #6366f1;
+    --welcome-purple-50: #faf5ff;
+    --welcome-purple-100: #f3e8ff;
+    --welcome-purple-300: #d8b4fe;
+    --welcome-purple-400: #c084fc;
+    --welcome-violet-400: #a78bfa;
+    --welcome-green-50: #f0fdf4;
+    --welcome-green-100: #dcfce7;
+    --welcome-green-400: #4ade80;
+    --welcome-green-500: #22c55e;
+    --welcome-emerald-400: #34d399;
+    --welcome-red-400: #f87171;
+    --welcome-gray-400: #9ca3af;
+    --welcome-gray-600: #4b5563;
+    --welcome-gray-700: #374151;
+    --welcome-gray-800: #1f2937;
+    --welcome-gray-900: #111827;
+    --welcome-white: #ffffff;
+    --welcome-black: #000000;
 
-  /* Радиусы */
-  --welcome-radius-lg: 0.75rem;
-  --welcome-radius-xl: 1rem;
-  --welcome-radius-2xl: 1.5rem;
-  --welcome-radius-full: 9999px;
+    /* Радиусы */
+    --welcome-radius-lg: 0.75rem;
+    --welcome-radius-xl: 1rem;
+    --welcome-radius-2xl: 1.5rem;
+    --welcome-radius-full: 9999px;
 
-  /* Тени */
-  --welcome-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --welcome-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --welcome-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --welcome-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --welcome-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    /* Тени */
+    --welcome-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --welcome-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --welcome-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --welcome-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --welcome-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 
-  /* Переходы */
-  --welcome-transition-fast: 150ms ease;
-  --welcome-transition-normal: 200ms ease;
-  --welcome-transition-slow: 300ms ease;
+    /* Переходы */
+    --welcome-transition-fast: 150ms ease;
+    --welcome-transition-normal: 200ms ease;
+    --welcome-transition-slow: 300ms ease;
 }
