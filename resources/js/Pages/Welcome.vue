@@ -1,4 +1,3 @@
-<!-- resources/js/Pages/Welcome.vue -->
 <script setup>
 import {Head} from '@inertiajs/vue3';
 import WelcomeHeader from '@/Components/Welcome/WelcomeHeader.vue';
@@ -26,7 +25,6 @@ defineProps({
     copyrightYear: String,
 });
 </script>
-
 <template>
     <Head title="MessSaga — Ваш личный архив воспоминаний"/>
 
@@ -42,23 +40,23 @@ defineProps({
         <section class="welcome-page__section welcome-page__section--light">
             <div class="welcome-page__container">
                 <SectionTitle
-                    title="Почему "
                     accent="MessSaga?"
                     subtitle="Сохраните важные моменты вашей цифровой жизни в безопасном месте"
+                    title="Почему "
                 />
                 <div class="welcome-page__why-grid">
                     <AdvantageCard
-                        title="Полная безопасность"
                         description="Все сообщения шифруются перед сохранением. Только вы имеете доступ к своим данным."
+                        title="Полная безопасность"
                         variant="orange"
                     >
                         <template #icon>
-                            <LockIcon />
+                            <LockIcon/>
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
-                        title="Умный поиск"
                         description="Найдите любое сообщение за секунды. Поиск по тексту, дате, контактам и мессенджерам."
+                        title="Умный поиск"
                         variant="rose"
                     >
                         <template #icon>
@@ -66,8 +64,8 @@ defineProps({
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
-                        title="С медиафайлами"
                         description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
+                        title="С медиафайлами"
                         variant="amber"
                     >
                         <template #icon>
@@ -75,8 +73,8 @@ defineProps({
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
-                        title="Простой импорт"
                         description="Экспортируйте чат из мессенджера и загрузите в MessSaga. Всё автоматически!"
+                        title="Простой импорт"
                         variant="blue"
                     >
                         <template #icon>
@@ -84,8 +82,8 @@ defineProps({
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
-                        title="Навсегда"
                         description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
+                        title="Навсегда"
                         variant="purple"
                     >
                         <template #icon>
@@ -93,8 +91,8 @@ defineProps({
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
-                        title="Бесплатно"
                         description="MessSaga абсолютно бесплатен. Без рекламы, без платных подписок."
+                        title="Бесплатно"
                         variant="green"
                     >
                         <template #icon>
@@ -108,15 +106,15 @@ defineProps({
         <section id="how-it-works" class="welcome-page__section">
             <div class="welcome-page__container">
                 <SectionTitle
-                    title="Как это работает?"
                     subtitle="Три простых шага до сохранения ваших воспоминаний"
+                    title="Как это работает?"
                 />
                 <div class="welcome-page__steps">
-                    <div class="welcome-page__steps-connector" aria-hidden="true"/>
+                    <div aria-hidden="true" class="welcome-page__steps-connector"/>
                     <HowItWorksStep
                         :step="1"
-                        title="Зарегистрируйтесь"
                         description="Создайте бесплатный аккаунт за 30 секунд. Только email и пароль."
+                        title="Зарегистрируйтесь"
                         variant="orange"
                     >
                         <template #icon>
@@ -125,8 +123,8 @@ defineProps({
                     </HowItWorksStep>
                     <HowItWorksStep
                         :step="2"
-                        title="Загрузите чаты"
                         description="Экспортируйте переписки из мессенджера и загрузите файл в MessSaga."
+                        title="Загрузите чаты"
                         variant="rose"
                     >
                         <template #icon>
@@ -135,8 +133,8 @@ defineProps({
                     </HowItWorksStep>
                     <HowItWorksStep
                         :step="3"
-                        title="Наслаждайтесь!"
                         description="Ищите, читайте, вспоминайте. Ваши данные в безопасности навсегда."
+                        title="Наслаждайтесь!"
                         variant="amber"
                     >
                         <template #icon>
@@ -154,7 +152,6 @@ defineProps({
         <WelcomeFooter :copyright-year="copyrightYear"/>
     </div>
 </template>
-
 <style scoped>
 .welcome-page {
     min-height: 100vh;

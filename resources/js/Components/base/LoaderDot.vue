@@ -1,14 +1,15 @@
-<template>
-    <div class="loader">
-        <div class="loader-dash" />
-    </div>
-</template>
 <script lang="ts">
-import { defineComponent } from 'vue';
+import {defineComponent} from 'vue';
+
 export default defineComponent({
     name: 'LoaderDot',
 });
 </script>
+<template>
+    <div class="loader">
+        <div class="loader-dash"/>
+    </div>
+</template>
 <style lang="scss" scoped>
 .loader {
     height: 100%;
