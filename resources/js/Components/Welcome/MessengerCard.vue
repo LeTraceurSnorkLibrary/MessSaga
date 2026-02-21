@@ -27,12 +27,12 @@ defineProps({
 
 <style scoped>
 .messenger-card {
-  background: var(--welcome-white);
-  border-radius: var(--welcome-radius-xl);
+  background: var(--gray-0);
+  border-radius: var(--radius-xl);
   padding: 1rem;
-  box-shadow: var(--welcome-shadow-md);
-  border: 1px solid var(--welcome-blue-100);
-  transition: transform var(--welcome-transition-normal);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--blue-100);
+  transition: transform var(--transition-normal);
 }
 
 .messenger-card:hover {
@@ -42,7 +42,7 @@ defineProps({
 .messenger-card__icon {
   width: 3rem;
   height: 3rem;
-  border-radius: var(--welcome-radius-xl);
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,46 +52,46 @@ defineProps({
 .messenger-card__icon :deep(svg) {
   width: 1.75rem;
   height: 1.75rem;
-  color: var(--welcome-white);
+  color: var(--gray-0);
 }
 
-.messenger-card--blue .messenger-card__icon { background: var(--welcome-blue-500); }
-.messenger-card--green .messenger-card__icon { background: var(--welcome-green-500); }
-.messenger-card--indigo .messenger-card__icon { background: var(--welcome-indigo-500); }
-.messenger-card--purple .messenger-card__icon { background: var(--welcome-purple-300); }
+.messenger-card--blue .messenger-card__icon { background: var(--blue-500); }
+.messenger-card--green .messenger-card__icon { background: var(--green-500); }
+.messenger-card--indigo .messenger-card__icon { background: var(--indigo-500); }
+.messenger-card--purple .messenger-card__icon { background: var(--purple-300); }
 
-.messenger-card--green { border-color: var(--welcome-green-100); }
-.messenger-card--indigo { border-color: var(--welcome-indigo-100); }
-.messenger-card--purple { border-color: var(--welcome-purple-100); }
+.messenger-card--green { border-color: var(--green-100); }
+.messenger-card--indigo { border-color: var(--indigo-100); }
+.messenger-card--purple { border-color: var(--purple-100); }
 
 .messenger-card__name {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--welcome-gray-700);
+  color: var(--gray-700);
 }
 
 .messenger-card__subtitle {
   font-size: 0.75rem;
-  color: var(--welcome-gray-500);
+  color: var(--gray-500);
   margin-top: 0.25rem;
 }
 
 .messenger-card--placeholder {
   opacity: 0.6;
-  border-color: var(--welcome-purple-100);
+  border-color: var(--purple-100);
 }
 
 .messenger-card--placeholder .messenger-card__icon {
-  background: var(--welcome-purple-300);
+  background: var(--purple-300);
 }
 
 .messenger-card--placeholder .messenger-card__name {
-  color: var(--welcome-gray-600);
+  color: var(--gray-600);
 }
 
 .messenger-card__placeholder-icon {
   font-size: 1.5rem;
-  color: var(--welcome-white);
+  color: var(--gray-0);
   line-height: 1;
 }
 </style>

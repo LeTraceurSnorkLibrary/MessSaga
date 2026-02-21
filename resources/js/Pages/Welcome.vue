@@ -185,7 +185,7 @@ defineProps({
 <style scoped>
 .welcome-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--welcome-amber-50), var(--welcome-orange-50), var(--welcome-rose-50));
+    background: linear-gradient(135deg, var(--amber-50), var(--orange-50), var(--rose-50));
 }
 
 .welcome-page__section {
@@ -231,7 +231,7 @@ defineProps({
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--welcome-orange-200), var(--welcome-rose-200), var(--welcome-amber-200));
+    background: linear-gradient(90deg, var(--orange-200), var(--rose-200), var(--amber-200));
     pointer-events: none;
 }
 

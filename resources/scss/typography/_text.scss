@@ -1,0 +1,20 @@
+@use 'variables' as variables;
+
+@mixin text($font-size, $line-height, $font-weight: variables.$font-weight--normal) {
+    font-family: var(--font-family-text);
+    font-size: $font-size;
+    line-height: $line-height;
+    font-weight: $font-weight;
+}
+
+@mixin text--120($font-size, $font-weight: variables.$font-weight--normal) {
+    @include text($font-size, variables.$line-height--120, $font-weight);
+}
+
+@mixin text--140($font-size, $font-weight: variables.$font-weight--normal) {
+    @include text($font-size, variables.$line-height--140, $font-weight);
+}
+
+@mixin text--150($font-size, $font-weight: variables.$font-weight--normal) {
+    @include text($font-size, variables.$line-height--150, $font-weight);
+}

@@ -58,15 +58,15 @@ import MessengerCard from './MessengerCard.vue';
 
 .mockup__window {
   position: relative;
-  background: var(--welcome-white);
+  background: var(--gray-0);
   border-radius: 1.5rem;
-  box-shadow: var(--welcome-shadow-2xl);
-  border: 1px solid var(--welcome-orange-100);
+  box-shadow: var(--shadow-2xl);
+  border: 1px solid var(--orange-100);
   overflow: hidden;
 }
 
 .mockup__titlebar {
-  background: linear-gradient(90deg, var(--welcome-orange-500), var(--welcome-rose-500));
+  background: linear-gradient(90deg, var(--orange-500), var(--rose-500));
   padding: 0.75rem;
   display: flex;
   align-items: center;
@@ -84,14 +84,14 @@ import MessengerCard from './MessengerCard.vue';
   border-radius: 50%;
 }
 
-.mockup__dot--red { background: var(--welcome-red-400); }
-.mockup__dot--yellow { background: var(--welcome-yellow-400); }
-.mockup__dot--green { background: var(--welcome-green-400); }
+.mockup__dot--red { background: var(--red-400); }
+.mockup__dot--yellow { background: var(--yellow-400); }
+.mockup__dot--green { background: var(--green-400); }
 
 .mockup__title {
   flex: 1;
   text-align: center;
-  color: var(--welcome-white);
+  color: var(--gray-0);
   font-size: 0.875rem;
   font-weight: 500;
 }

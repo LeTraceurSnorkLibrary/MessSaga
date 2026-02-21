@@ -28,12 +28,12 @@ defineProps({
 .section-title__heading {
   font-size: clamp(2.25rem, 4vw, 3rem);
   font-weight: 700;
-  color: var(--welcome-gray-800);
+  color: var(--gray-800);
   margin: 0 0 1rem;
 }
 
 .section-title__accent {
-  background: linear-gradient(90deg, var(--welcome-orange-600), var(--welcome-rose-600));
+  background: linear-gradient(90deg, var(--orange-600), var(--rose-600));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -41,7 +41,7 @@ defineProps({
 
 .section-title__subtitle {
   font-size: 1.25rem;
-  color: var(--welcome-gray-600);
+  color: var(--gray-600);
   max-width: 42rem;
   margin: 0 auto;
   line-height: 1.5;

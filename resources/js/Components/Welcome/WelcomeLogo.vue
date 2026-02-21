@@ -40,24 +40,24 @@ defineProps({
 .welcome-logo__icon {
   width: 2.5rem;
   height: 2.5rem;
-  background: linear-gradient(135deg, var(--welcome-orange-400), var(--welcome-rose-400));
-  border-radius: var(--welcome-radius-xl);
+  background: linear-gradient(135deg, var(--orange-400), var(--rose-400));
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--welcome-shadow-lg);
+  box-shadow: var(--shadow-lg);
 }
 
 .welcome-logo__icon svg {
   width: 1.5rem;
   height: 1.5rem;
-  color: var(--welcome-white);
+  color: var(--gray-0);
 }
 
 .welcome-logo__text {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(90deg, var(--welcome-orange-600), var(--welcome-rose-600));
+  background: linear-gradient(90deg, var(--orange-600), var(--rose-600));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

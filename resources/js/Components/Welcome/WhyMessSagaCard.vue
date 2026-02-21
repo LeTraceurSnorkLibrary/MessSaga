@@ -18,29 +18,29 @@ defineProps({
 
 <style scoped>
 .why-card {
-  border-radius: var(--welcome-radius-2xl);
+  border-radius: var(--radius-2xl);
   padding: 2rem;
-  border: 1px solid var(--welcome-orange-100);
-  background: linear-gradient(135deg, var(--welcome-orange-50), var(--welcome-amber-50));
-  transition: box-shadow var(--welcome-transition-slow), transform var(--welcome-transition-slow);
+  border: 1px solid var(--orange-100);
+  background: linear-gradient(135deg, var(--orange-50), var(--amber-50));
+  transition: box-shadow var(--transition-slow), transform var(--transition-slow);
 }
 
 .why-card:hover {
-  box-shadow: var(--welcome-shadow-xl);
+  box-shadow: var(--shadow-xl);
   transform: scale(1.05);
 }
 
 .why-card__icon-wrap {
   width: 4rem;
   height: 4rem;
-  border-radius: var(--welcome-radius-2xl);
+  border-radius: var(--radius-2xl);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
-  box-shadow: var(--welcome-shadow-lg);
-  transition: transform var(--welcome-transition-normal);
-  background: linear-gradient(135deg, var(--welcome-orange-400), var(--welcome-rose-400));
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-normal);
+  background: linear-gradient(135deg, var(--orange-400), var(--rose-400));
 }
 
 .why-card:hover .why-card__icon-wrap {
@@ -50,64 +50,64 @@ defineProps({
 .why-card__icon-wrap :deep(svg) {
   width: 2rem;
   height: 2rem;
-  color: var(--welcome-white);
+  color: var(--gray-0);
 }
 
 .why-card__title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--welcome-gray-800);
+  color: var(--gray-800);
   margin: 0 0 1rem;
 }
 
 .why-card__description {
-  color: var(--welcome-gray-600);
+  color: var(--gray-600);
   line-height: 1.6;
   margin: 0;
 }
 
 .why-card--rose {
-  background: linear-gradient(135deg, var(--welcome-rose-50), var(--welcome-pink-50));
-  border-color: var(--welcome-rose-100);
+  background: linear-gradient(135deg, var(--rose-50), var(--pink-50));
+  border-color: var(--rose-100);
 }
 
 .why-card--rose .why-card__icon-wrap {
-  background: linear-gradient(135deg, var(--welcome-rose-400), var(--welcome-pink-400));
+  background: linear-gradient(135deg, var(--rose-400), var(--pink-400));
 }
 
 .why-card--amber {
-  background: linear-gradient(135deg, var(--welcome-amber-50), var(--welcome-yellow-50));
-  border-color: var(--welcome-amber-100);
+  background: linear-gradient(135deg, var(--amber-50), var(--yellow-50));
+  border-color: var(--amber-100);
 }
 
 .why-card--amber .why-card__icon-wrap {
-  background: linear-gradient(135deg, var(--welcome-amber-400), var(--welcome-yellow-400));
+  background: linear-gradient(135deg, var(--amber-400), var(--yellow-400));
 }
 
 .why-card--blue {
-  background: linear-gradient(135deg, var(--welcome-blue-50), var(--welcome-indigo-100));
-  border-color: var(--welcome-blue-100);
+  background: linear-gradient(135deg, var(--blue-50), var(--indigo-100));
+  border-color: var(--blue-100);
 }
 
 .why-card--blue .why-card__icon-wrap {
-  background: linear-gradient(135deg, var(--welcome-blue-400), var(--welcome-indigo-400));
+  background: linear-gradient(135deg, var(--blue-400), var(--indigo-400));
 }
 
 .why-card--purple {
-  background: linear-gradient(135deg, var(--welcome-purple-50), var(--welcome-purple-100));
-  border-color: var(--welcome-purple-100);
+  background: linear-gradient(135deg, var(--purple-50), var(--purple-100));
+  border-color: var(--purple-100);
 }
 
 .why-card--purple .why-card__icon-wrap {
-  background: linear-gradient(135deg, var(--welcome-purple-400), var(--welcome-violet-400));
+  background: linear-gradient(135deg, var(--purple-400), var(--violet-400));
 }
 
 .why-card--green {
-  background: linear-gradient(135deg, var(--welcome-green-50), var(--welcome-green-100));
-  border-color: var(--welcome-green-100);
+  background: linear-gradient(135deg, var(--green-50), var(--green-100));
+  border-color: var(--green-100);
 }
 
 .why-card--green .why-card__icon-wrap {
-  background: linear-gradient(135deg, var(--welcome-green-400), var(--welcome-emerald-400));
+  background: linear-gradient(135deg, var(--green-400), var(--emerald-400));
 }
 </style>

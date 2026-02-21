@@ -41,7 +41,7 @@ import SectionTitle from './SectionTitle.vue';
 <style scoped>
 .supported {
   padding: 5rem 1.5rem;
-  background: linear-gradient(135deg, var(--welcome-orange-50), var(--welcome-amber-50));
+  background: linear-gradient(135deg, var(--orange-50), var(--amber-50));
 }
 
 .supported__container {

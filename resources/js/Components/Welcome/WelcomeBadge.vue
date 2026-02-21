@@ -19,15 +19,15 @@ defineProps({
   padding: 0.5rem 1rem;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(4px);
-  border-radius: var(--welcome-radius-full);
-  border: 1px solid var(--welcome-orange-200);
-  box-shadow: var(--welcome-shadow-sm);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--orange-200);
+  box-shadow: var(--shadow-sm);
 }
 
 .welcome-badge__dot {
   width: 0.5rem;
   height: 0.5rem;
-  background: var(--welcome-green-500);
+  background: var(--green-500);
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -35,7 +35,7 @@ defineProps({
 .welcome-badge__text {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--welcome-gray-700);
+  color: var(--gray-700);
 }
 
 @keyframes pulse {

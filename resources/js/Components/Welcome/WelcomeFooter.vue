@@ -21,8 +21,8 @@ defineProps({
 
 <style scoped>
 .welcome-footer {
-  background: var(--welcome-gray-900);
-  color: var(--welcome-gray-400);
+  background: var(--gray-900);
+  color: var(--gray-400);
   padding: 3rem 1.5rem;
 }
 
@@ -46,7 +46,7 @@ defineProps({
 }
 
 .welcome-footer :deep(.welcome-logo__text) {
-  color: var(--welcome-white);
+  color: var(--gray-0);
   background: none;
 }
 

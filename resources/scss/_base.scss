@@ -18,7 +18,7 @@ html,
     -webkit-text-size-adjust: 100%;
     -moz-tab-size: 4;
     tab-size: 4;
-    font-family: var(--font-sans);
+    font-family: var(--font-family-text);
     font-feature-settings: normal;
     font-variation-settings: normal;
     -webkit-tap-highlight-color: transparent;
@@ -30,7 +30,7 @@ body {
 }
 
 .app-body {
-    font-family: var(--font-sans);
+    font-family: var(--font-family-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
