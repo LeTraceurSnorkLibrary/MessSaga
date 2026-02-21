@@ -1,42 +1,91 @@
 <script setup>
-const props = defineProps({
-    conversations: {
-        type: Array,
-        default: () => [],
-    },
-    loading: {
-        type: Boolean,
-        default: false,
-    },
+defineProps({
+  conversations: { type: Array, default: () => [] },
+  loading: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['select']);
 </script>
 
 <template>
-    <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
-        <div class="border-b border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
-            Переписки
-        </div>
-        <div v-if="loading" class="p-4 text-sm text-slate-500">Загрузка...</div>
-        <ul v-else class="divide-y divide-slate-100 max-h-[24rem] overflow-y-auto">
-            <li
-                v-for="conversation in conversations"
-                :key="conversation.id"
-                class="px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors"
-                @click="emit('select', conversation)"
-            >
-                <div class="text-sm font-medium text-slate-900">
-                    {{ conversation.title || 'Без названия' }}
-                </div>
-                <div class="mt-1 text-xs text-slate-500">
-                    {{ conversation.preview || '' }}
-                </div>
-            </li>
-            <li v-if="!conversations.length" class="px-4 py-3 text-sm text-slate-500">
-                Пока нет переписок.
-            </li>
-        </ul>
-    </div>
+  <div class="conv-list">
+    <div class="conv-list__head">Переписки</div>
+    <div v-if="loading" class="conv-list__loading">Загрузка...</div>
+    <ul v-else class="conv-list__items">
+      <li
+        v-for="conversation in conversations"
+        :key="conversation.id"
+        class="conv-list__item"
+        @click="emit('select', conversation)"
+      >
+        <div class="conv-list__title">{{ conversation.title || 'Без названия' }}</div>
+        <div class="conv-list__preview">{{ conversation.preview || '' }}</div>
+      </li>
+      <li v-if="!conversations.length" class="conv-list__empty">Пока нет переписок.</li>
+    </ul>
+  </div>
 </template>
 
+<style scoped>
+.conv-list {
+  border: 1px solid var(--welcome-gray-200);
+  border-radius: var(--welcome-radius-lg);
+  overflow: hidden;
+  background: var(--welcome-white);
+}
+
+.conv-list__head {
+  border-bottom: 1px solid var(--welcome-gray-200);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--welcome-gray-600);
+}
+
+.conv-list__loading {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: var(--welcome-gray-500);
+}
+
+.conv-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.conv-list__item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--welcome-gray-100);
+  transition: background 150ms ease;
+}
+
+.conv-list__item:last-child {
+  border-bottom: none;
+}
+
+.conv-list__item:hover {
+  background: var(--welcome-gray-50);
+}
+
+.conv-list__title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--welcome-gray-800);
+}
+
+.conv-list__preview {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--welcome-gray-500);
+}
+
+.conv-list__empty {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--welcome-gray-500);
+}
+</style>

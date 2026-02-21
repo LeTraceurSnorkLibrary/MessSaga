@@ -3,24 +3,44 @@ import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
-    href: {
-        type: String,
-        required: true,
-    },
-    active: {
-        type: Boolean,
-    },
+  href: { type: String, required: true },
+  active: { type: Boolean },
 });
 
-const classes = computed(() =>
-    props.active
-        ? 'inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out'
-        : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out',
+const linkClass = computed(() =>
+  props.active ? 'nav-link nav-link--active' : 'nav-link'
 );
 </script>
 
 <template>
-    <Link :href="href" :class="classes">
-        <slot />
-    </Link>
+  <Link :href="href" :class="linkClass">
+    <slot />
+  </Link>
 </template>
+
+<style scoped>
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.25rem 0.25rem 0;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 2px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--welcome-gray-500);
+  text-decoration: none;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.nav-link:hover {
+  color: var(--welcome-gray-700);
+  border-color: var(--welcome-gray-300);
+}
+
+.nav-link--active {
+  border-color: var(--welcome-orange-500);
+  color: var(--welcome-gray-800);
+}
+</style>
