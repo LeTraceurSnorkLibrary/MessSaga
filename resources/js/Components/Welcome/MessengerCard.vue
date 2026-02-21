@@ -58,10 +58,12 @@ defineProps({
 .messenger-card--blue .messenger-card__icon { background: var(--welcome-blue-500); }
 .messenger-card--green .messenger-card__icon { background: var(--welcome-green-500); }
 .messenger-card--indigo .messenger-card__icon { background: var(--welcome-indigo-500); }
+.messenger-card--vk .messenger-card__icon { background: var(--welcome-vk-bg); }
 .messenger-card--purple .messenger-card__icon { background: var(--welcome-purple-300); }
 
 .messenger-card--green { border-color: var(--welcome-green-100); }
 .messenger-card--indigo { border-color: var(--welcome-indigo-100); }
+.messenger-card--vk { border-color: var(--welcome-vk-border); }
 .messenger-card--purple { border-color: var(--welcome-purple-100); }
 
 .messenger-card__name {

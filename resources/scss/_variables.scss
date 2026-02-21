@@ -8,64 +8,78 @@
   --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
-  /* Цвета бренда (Welcome и общие) */
-  --welcome-orange-50: #fff7ed;
-  --welcome-orange-100: #ffedd5;
-  --welcome-orange-200: #fed7aa;
-  --welcome-orange-300: #fdba74;
-  --welcome-orange-400: #fb923c;
-  --welcome-orange-500: #f97316;
-  --welcome-orange-600: #ea580c;
-  --welcome-rose-50: #fff1f2;
-  --welcome-rose-100: #ffe4e6;
-  --welcome-rose-200: #fecdd3;
-  --welcome-rose-400: #fb7185;
-  --welcome-rose-500: #f43f5e;
-  --welcome-rose-600: #e11d48;
-  --welcome-amber-50: #fffbeb;
-  --welcome-amber-100: #fef3c7;
-  --welcome-amber-200: #fde68a;
-  --welcome-amber-400: #fbbf24;
-  --welcome-amber-500: #f59e0b;
-  --welcome-amber-600: #d97706;
-  --welcome-pink-50: #fdf2f8;
-  --welcome-pink-100: #fce7f3;
-  --welcome-pink-400: #f472b6;
-  --welcome-yellow-50: #fefce8;
-  --welcome-yellow-100: #fef9c3;
-  --welcome-yellow-400: #facc15;
-  --welcome-blue-50: #eff6ff;
-  --welcome-blue-100: #dbeafe;
-  --welcome-blue-400: #60a5fa;
-  --welcome-blue-500: #3b82f6;
-  --welcome-indigo-100: #e0e7ff;
-  --welcome-indigo-400: #818cf8;
-  --welcome-indigo-500: #6366f1;
-  --welcome-purple-50: #faf5ff;
-  --welcome-purple-100: #f3e8ff;
-  --welcome-purple-300: #d8b4fe;
-  --welcome-purple-400: #c084fc;
-  --welcome-violet-400: #a78bfa;
-  --welcome-green-50: #f0fdf4;
-  --welcome-green-100: #dcfce7;
-  --welcome-green-400: #4ade80;
-  --welcome-green-500: #22c55e;
-  --welcome-emerald-400: #34d399;
-  --welcome-red-400: #f87171;
-  --welcome-red-600: #dc2626;
-  --welcome-red-700: #b91c1c;
-  --welcome-gray-50: #f9fafb;
-  --welcome-gray-100: #f3f4f6;
-  --welcome-gray-200: #e5e7eb;
-  --welcome-gray-300: #d1d5db;
-  --welcome-gray-400: #9ca3af;
-  --welcome-gray-500: #6b7280;
-  --welcome-gray-600: #4b5563;
-  --welcome-gray-700: #374151;
-  --welcome-gray-800: #1f2937;
-  --welcome-gray-900: #111827;
+  /* Цвета бренда: тёплые нейтрали + один акцент */
+  /* Акцент (кнопки, ссылки, актив) — тёплый коричневый */
+  --welcome-orange-50: #fdf9f6;
+  --welcome-orange-100: #f5ebe3;
+  --welcome-orange-200: #e8d9ca;
+  --welcome-orange-300: #d4b89a;
+  --welcome-orange-400: #b08d5c;
+  --welcome-orange-500: #946b3d;
+  --welcome-orange-600: #7a5732;
+  /* Основная кнопка: #7a5732 светлее на 30% */
+  --welcome-button-primary: #a2896f;
+  --welcome-button-primary-hover: #8f7557;
+  /* Доп. тёплый тон для градиентов и карточек */
+  --welcome-rose-50: #fcf8f6;
+  --welcome-rose-100: #f5ebe5;
+  --welcome-rose-200: #e8d5ca;
+  --welcome-rose-400: #c4907a;
+  --welcome-rose-500: #a86d54;
+  --welcome-rose-600: #8b573e;
+  /* Camel / песок — фоны */
+  --welcome-amber-50: #faf7f3;
+  --welcome-amber-100: #f0e9e0;
+  --welcome-amber-200: #e2d6c8;
+  --welcome-amber-400: #c4a67a;
+  --welcome-amber-500: #a88452;
+  --welcome-amber-600: #8b6b3a;
+  /* Градиент: крем → мягкий песок */
+  --welcome-gradient-from: #fefdfb;
+  --welcome-gradient-to: #f0e9df;
+  --welcome-pink-50: #faf6f4;
+  --welcome-pink-100: #f0e8e4;
+  --welcome-pink-400: #c4a094;
+  --welcome-yellow-50: #faf8f4;
+  --welcome-yellow-100: #f0eae0;
+  --welcome-yellow-400: #d4b896;
+  /* Синие (Telegram и т.п.) */
+  --welcome-blue-50: #eff6fa;
+  --welcome-blue-100: #d9ebf4;
+  --welcome-blue-400: #3b9dd4;
+  --welcome-blue-500: #2d8bc4;
+  --welcome-indigo-100: #e8ebf8;
+  --welcome-indigo-400: #7183c4;
+  --welcome-indigo-500: #5a6bb8;
+  --welcome-vk-bg: #6366f1;
+  --welcome-vk-border: #e0e7ff;
+  --welcome-purple-50: #f5f3f5;
+  --welcome-purple-100: #e8e2ea;
+  --welcome-purple-300: #b8a8c4;
+  --welcome-purple-400: #9a84a8;
+  --welcome-violet-400: #9a84a8;
+  /* Зелёные (WhatsApp и т.п.) */
+  --welcome-green-50: #f0f6ef;
+  --welcome-green-100: #dcebd8;
+  --welcome-green-400: #4caf6e;
+  --welcome-green-500: #3d9b5c;
+  --welcome-emerald-400: #4caf7a;
+  --welcome-red-400: #d47262;
+  --welcome-red-600: #c04a3a;
+  --welcome-red-700: #a03a2c;
+  /* Нейтральные — читаемый текст, без грязи */
+  --welcome-gray-50: #f8f7f5;
+  --welcome-gray-100: #eeebe8;
+  --welcome-gray-200: #ddd8d2;
+  --welcome-gray-300: #b8b0a6;
+  --welcome-gray-400: #8a8378;
+  --welcome-gray-500: #6b645a;
+  --welcome-gray-600: #4f4a42;
+  --welcome-gray-700: #3c3832;
+  --welcome-gray-800: #2a2724;
+  --welcome-gray-900: #1c1a18;
   --welcome-white: #ffffff;
-  --welcome-black: #000000;
+  --welcome-black: #1c1a18;
 
   /* Радиусы */
   --welcome-radius-lg: 0.75rem;

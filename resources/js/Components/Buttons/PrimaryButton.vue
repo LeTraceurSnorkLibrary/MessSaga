@@ -27,7 +27,7 @@ defineProps({
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--welcome-white);
-  background: var(--welcome-gray-800);
+  background: var(--welcome-button-primary);
   border: 1px solid transparent;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -35,7 +35,7 @@ defineProps({
 }
 
 .primary-btn:hover:not(:disabled) {
-  background: var(--welcome-gray-700);
+  background: var(--welcome-button-primary-hover);
 }
 
 .primary-btn:focus {

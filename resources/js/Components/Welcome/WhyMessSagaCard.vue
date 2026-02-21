@@ -21,7 +21,7 @@ defineProps({
   border-radius: var(--welcome-radius-2xl);
   padding: 2rem;
   border: 1px solid var(--welcome-orange-100);
-  background: linear-gradient(135deg, var(--welcome-orange-50), var(--welcome-amber-50));
+  background: linear-gradient(135deg, var(--welcome-gradient-from), var(--welcome-gradient-to));
   transition: box-shadow var(--welcome-transition-slow), transform var(--welcome-transition-slow);
 }
 

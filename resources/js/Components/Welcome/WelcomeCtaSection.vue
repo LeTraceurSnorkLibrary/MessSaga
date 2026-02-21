@@ -37,7 +37,7 @@ defineProps({
 <style scoped>
 .cta-section {
   padding: 6rem 1.5rem;
-  background: linear-gradient(90deg, var(--welcome-orange-500), var(--welcome-rose-500), var(--welcome-amber-500));
+  background: linear-gradient(90deg, var(--welcome-orange-400), var(--welcome-amber-400));
 }
 
 .cta-section__container {
@@ -85,7 +85,7 @@ defineProps({
 
 .cta-section__btn--primary {
   background: var(--welcome-white);
-  color: var(--welcome-orange-600);
+  color: var(--welcome-gray-800);
 }
 
 .cta-section__btn--primary:hover {
