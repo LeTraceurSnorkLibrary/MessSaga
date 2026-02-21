@@ -6,7 +6,7 @@ import WelcomeHeroMockup from '@/Components/Welcome/WelcomeHeroMockup.vue';
 import SectionTitle from '@/Components/Welcome/SectionTitle.vue';
 import AdvantageCard from '@/Components/base/AdvantageCard.vue';
 import HowItWorksStep from '@/Components/Welcome/HowItWorksStep.vue';
-import SupportedMessengers from '@/Components/Welcome/SupportedMessengers.vue';
+import SupportedMessengers from '@/Components/widget/SupportedMessengers.vue';
 import WelcomeCtaSection from '@/Components/Welcome/WelcomeCtaSection.vue';
 import WelcomeFooter from '@/Components/Welcome/WelcomeFooter.vue';
 import LockIcon from '@/Components/particles/icons/LockIcon.vue';
