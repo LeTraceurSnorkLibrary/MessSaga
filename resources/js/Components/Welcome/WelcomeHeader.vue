@@ -12,7 +12,7 @@ defineProps({
     <header class="welcome-header">
         <nav class="welcome-header__nav">
             <WelcomeLogo to="/"/>
-            <div v-if="canLogin" class="welcome-header__links">
+            <div class="welcome-header__links">
                 <Link
                     v-if="canLogin"
                     :href="route('login')"
