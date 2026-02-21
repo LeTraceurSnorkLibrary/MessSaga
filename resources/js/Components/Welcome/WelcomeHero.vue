@@ -2,7 +2,7 @@
 import WelcomeBadge from './WelcomeBadge.vue';
 import TrustIndicator from './TrustIndicator.vue';
 import UIButton from "@/Components/UIButton.vue";
-import ArrowLeftToRight from "@/Components/base/ArrowLeftToRight.vue";
+import ArrowLeftToRightIcon from "@/Components/particles/icons/ArrowLeftToRightIcon.vue";
 
 defineProps({
     canLogin: {type: Boolean, default: false},
@@ -31,7 +31,7 @@ defineProps({
                             :href="route('register')"
                         >
                             <span>Начать прямо сейчас</span>
-                            <ArrowLeftToRight/>
+                            <ArrowLeftToRightIcon/>
                         </UIButton>
                     </div>
                     <UIButton tag="a"
