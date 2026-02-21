@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "63b7965f38f2aa1b9ba15a70de1ce267",
+    "content-hash": "210822e34ac05d4dde6de5ce91fc3b64",
     "packages": [
         {
             "name": "brick/math",
@@ -2085,6 +2085,49 @@
                 }
             ],
             "time": "2026-01-15T06:54:53+00:00"
+        },
+        {
+            "name": "letraceursnork/copyright-year-range",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/LeTraceurSnork/copyright-year-range.git",
+                "reference": "eafba97c565c2ddb99f536c95773b8077279ad22"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/LeTraceurSnork/copyright-year-range/zipball/eafba97c565c2ddb99f536c95773b8077279ad22",
+                "reference": "eafba97c565c2ddb99f536c95773b8077279ad22",
+                "shasum": ""
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.75",
+                "php-coveralls/php-coveralls": "^2.8.0",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "LeTraceurSnork\\CopyrightYearRange\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "LeTraceurSnork",
+                    "email": "le_traceur_snork@mail.ru"
+                }
+            ],
+            "description": "Lightweight PHP library to generate dynamic copyright year ranges",
+            "support": {
+                "issues": "https://github.com/LeTraceurSnork/copyright-year-range/issues",
+                "source": "https://github.com/LeTraceurSnork/copyright-year-range/tree/v1.0.0"
+            },
+            "time": "2025-05-27T15:48:09+00:00"
         },
         {
             "name": "monolog/monolog",
