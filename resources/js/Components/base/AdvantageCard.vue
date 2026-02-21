@@ -18,7 +18,7 @@ defineProps({
 .advantage-card {
     --advantage-card-bg-image: linear-gradient(135deg, var(--orange-50), var(--amber-50));
     --advantage-card-border-color: var(--orange-100);
-    --icon-bg-gradient: linear-gradient(135deg, var(--orange-400), var(--rose-400));
+    --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--orange-400), var(--rose-400));
 
     border-radius: var(--radius-2xl);
     padding: 2rem;
@@ -34,45 +34,45 @@ defineProps({
     &--rose {
         --advantage-card-bg-image: linear-gradient(135deg, var(--rose-50), var(--pink-50));
         --advantage-card-border-color: var(--rose-100);
-        --icon-bg-gradient: linear-gradient(135deg, var(--rose-400), var(--pink-400));
+        --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--rose-400), var(--pink-400));
     }
 
     &--amber {
         --advantage-card-bg-image: linear-gradient(135deg, var(--amber-50), var(--yellow-50));
         --advantage-card-border-color: var(--amber-100);
-        --icon-bg-gradient: linear-gradient(135deg, var(--amber-400), var(--yellow-400));
+        --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--amber-400), var(--yellow-400));
     }
 
     &--blue {
         --advantage-card-bg-image: linear-gradient(135deg, var(--blue-50), var(--indigo-100));
         --advantage-card-border-color: var(--blue-100);
-        --icon-bg-gradient: linear-gradient(135deg, var(--blue-400), var(--indigo-400));
+        --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--blue-400), var(--indigo-400));
     }
 
     &--purple {
         --advantage-card-bg-image: linear-gradient(135deg, var(--purple-50), var(--purple-100));
         --advantage-card-border-color: var(--purple-100);
-        --icon-bg-gradient: linear-gradient(135deg, var(--purple-400), var(--violet-400));
+        --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--purple-400), var(--violet-400));
     }
 
     &--green {
         --advantage-card-bg-image: linear-gradient(135deg, var(--green-50), var(--green-100));
         --advantage-card-border-color: var(--green-100);
-        --icon-bg-gradient: linear-gradient(135deg, var(--green-400), var(--emerald-400));
+        --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--green-400), var(--emerald-400));
     }
 }
 
 .advantage-card__icon-wrap {
-    width: 4rem;
-    height: 4rem;
-    border-radius: var(--radius-2xl);
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 4rem;
+    height: 4rem;
     margin-bottom: 1.5rem;
+    border-radius: var(--radius-2xl);
+    background: var(--advantage-card-icon-bg-gradient);
     box-shadow: var(--shadow-lg);
     transition: transform var(--transition-normal);
-    background: var(--icon-bg-gradient);
 }
 
 .advantage-card:hover .advantage-card__icon-wrap {
