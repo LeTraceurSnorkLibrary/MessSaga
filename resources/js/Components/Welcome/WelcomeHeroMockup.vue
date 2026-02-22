@@ -18,30 +18,36 @@ import VkIcon from '@/Components/particles/icons/Messengers/VkIcon.vue';
             </div>
             <div class="mockup__body">
                 <div class="mockup__grid">
-                    <MessengerCard name="Telegram"
-                                   subtitle="543 сообщения"
-                                   variant="telegram"
-                    >
-                        <template #icon>
-                            <TelegramIcon/>
-                        </template>
-                    </MessengerCard>
-                    <MessengerCard name="WhatsApp"
-                                   subtitle="129 сообщений"
-                                   variant="whatsapp"
-                    >
-                        <template #icon>
-                            <WhatsAppIcon/>
-                        </template>
-                    </MessengerCard>
-                    <MessengerCard name="ВКонтакте"
-                                   subtitle="87 сообщений"
-                                   variant="vk"
-                    >
-                        <template #icon>
-                            <VkIcon/>
-                        </template>
-                    </MessengerCard>
+                    <div class="mockup__grid-item">
+                        <MessengerCard name="Telegram"
+                                       subtitle="543 сообщения"
+                                       variant="telegram"
+                        >
+                            <template #icon>
+                                <TelegramIcon/>
+                            </template>
+                        </MessengerCard>
+                    </div>
+                    <div class="mockup__grid-item">
+                        <MessengerCard name="WhatsApp"
+                                       subtitle="129 сообщений"
+                                       variant="whatsapp"
+                        >
+                            <template #icon>
+                                <WhatsAppIcon/>
+                            </template>
+                        </MessengerCard>
+                    </div>
+                    <div class="mockup__grid-item">
+                        <MessengerCard name="ВКонтакте"
+                                       subtitle="87 сообщений"
+                                       variant="vk"
+                        >
+                            <template #icon>
+                                <VkIcon/>
+                            </template>
+                        </MessengerCard>
+                    </div>
                 </div>
             </div>
         </div>
@@ -117,5 +123,17 @@ import VkIcon from '@/Components/particles/icons/Messengers/VkIcon.vue';
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+    padding: 2rem;
+    margin: -2rem;
+    overflow: auto;
+}
+
+.mockup__grid-item {
+    min-width: 175px;
+    width: min-content;
+
+    @media (min-width: 768px) {
+        width: initial;
+    }
 }
 </style>
