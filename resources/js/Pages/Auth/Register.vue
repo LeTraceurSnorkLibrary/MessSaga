@@ -27,10 +27,9 @@ const submit = () => {
                 id="name"
                 v-model="form.name"
                 :error="form.errors.name"
+                label="Name"
                 autocomplete="name"
                 autofocus
-                class="mt-1"
-                label="Name"
                 required
                 type="text"
             />
@@ -39,9 +38,8 @@ const submit = () => {
                 id="email"
                 v-model="form.email"
                 :error="form.errors.email"
-                autocomplete="username"
-                class="mt-4"
                 label="Email"
+                autocomplete="username"
                 required
                 type="email"
             />
@@ -50,9 +48,8 @@ const submit = () => {
                 id="password"
                 v-model="form.password"
                 :error="form.errors.password"
-                autocomplete="new-password"
-                class="mt-4"
                 label="Password"
+                autocomplete="new-password"
                 required
                 type="password"
             />
@@ -61,14 +58,13 @@ const submit = () => {
                 id="password_confirmation"
                 v-model="form.password_confirmation"
                 :error="form.errors.password_confirmation"
-                autocomplete="new-password"
-                class="mt-4"
                 label="Confirm Password"
+                autocomplete="new-password"
                 required
                 type="password"
             />
 
-            <div class="mt-4 flex flex-wrap items-center justify-end gap-3">
+            <div class="form-actions">
                 <Link
                     :href="route('login')"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"

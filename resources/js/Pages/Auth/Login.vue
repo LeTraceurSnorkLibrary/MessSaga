@@ -31,19 +31,18 @@ const submit = () => {
     <GuestLayout>
         <Head title="Log in"/>
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        <p v-if="status" class="auth-status">
             {{ status }}
-        </div>
+        </p>
 
         <form @submit.prevent="submit">
             <UIInput
                 id="email"
                 v-model="form.email"
                 :error="form.errors.email"
+                label="Email"
                 autocomplete="username"
                 autofocus
-                class="mt-1"
-                label="Email"
                 required
                 type="email"
             />
@@ -52,23 +51,20 @@ const submit = () => {
                 id="password"
                 v-model="form.password"
                 :error="form.errors.password"
-                autocomplete="current-password"
-                class="mt-4"
                 label="Password"
+                autocomplete="current-password"
                 required
                 type="password"
             />
 
-            <div class="mt-4 block">
-                <label class="flex items-center">
+            <div class="form-remember">
+                <label class="form-remember__label">
                     <Checkbox v-model:checked="form.remember" name="remember"/>
-                    <span class="ms-2 text-sm text-gray-600"
-                    >Remember me</span
-                    >
+                    <span class="form-remember__text">Remember me</span>
                 </label>
             </div>
 
-            <div class="mt-4 flex flex-wrap items-center justify-end gap-3">
+            <div class="form-actions">
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"

@@ -38,10 +38,9 @@ const submit = () => {
                 id="email"
                 v-model="form.email"
                 :error="form.errors.email"
+                label="Email"
                 autocomplete="username"
                 autofocus
-                class="mt-1"
-                label="Email"
                 required
                 type="email"
             />
@@ -50,9 +49,8 @@ const submit = () => {
                 id="password"
                 v-model="form.password"
                 :error="form.errors.password"
-                autocomplete="new-password"
-                class="mt-4"
                 label="Password"
+                autocomplete="new-password"
                 required
                 type="password"
             />
@@ -61,14 +59,13 @@ const submit = () => {
                 id="password_confirmation"
                 v-model="form.password_confirmation"
                 :error="form.errors.password_confirmation"
-                autocomplete="new-password"
-                class="mt-4"
                 label="Confirm Password"
+                autocomplete="new-password"
                 required
                 type="password"
             />
 
-            <div class="mt-4 flex items-center justify-end">
+            <div class="form-actions">
                 <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"

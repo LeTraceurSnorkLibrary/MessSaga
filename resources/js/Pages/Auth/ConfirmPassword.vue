@@ -19,25 +19,24 @@ const submit = () => {
     <GuestLayout>
         <Head title="Confirm Password"/>
 
-        <div class="mb-4 text-sm text-gray-600">
+        <p class="auth-intro">
             This is a secure area of the application. Please confirm your
             password before continuing.
-        </div>
+        </p>
 
         <form @submit.prevent="submit">
             <UIInput
                 id="password"
                 v-model="form.password"
                 :error="form.errors.password"
+                label="Password"
                 autocomplete="current-password"
                 autofocus
-                class="mt-1"
-                label="Password"
                 required
                 type="password"
             />
 
-            <div class="mt-4 flex justify-end">
+            <div class="form-actions">
                 <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
