@@ -4,7 +4,6 @@ defineProps({
     description: {type: String, required: true},
     variant: {type: String, default: 'orange'},
     inProgress: {type: Boolean, default: false},
-    ribbonText: {type: String, default: 'В разработке'},
 });
 </script>
 <template>
@@ -15,7 +14,7 @@ defineProps({
          class="advantage-card"
     >
         <div v-if="inProgress" class="advantage-card__ribbon">
-            <span class="advantage-card__ribbon-text">{{ ribbonText }}</span>
+            <span class="advantage-card__ribbon-text">В разработке</span>
         </div>
         <div class="advantage-card__icon-wrap">
             <slot name="icon"/>
