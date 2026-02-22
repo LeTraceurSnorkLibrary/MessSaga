@@ -9,8 +9,8 @@ import SupportedMessengerCard from '@/Components/base/SupportedMessengerCard.vue
     <section class="supported">
         <div class="supported__container">
             <SectionTitle
-                    subtitle="Мы постоянно добавляем новые платформы"
-                    title="Поддерживаемые мессенджеры"
+                subtitle="Мы постоянно добавляем новые платформы"
+                title="Поддерживаемые мессенджеры"
             />
             <div class="supported__grid">
                 <SupportedMessengerCard name="Telegram"
@@ -41,7 +41,7 @@ import SupportedMessengerCard from '@/Components/base/SupportedMessengerCard.vue
         </div>
     </section>
 </template>
-<style scoped>
+<style lang="scss" scoped>
 .supported {
     padding: 5rem 1.5rem;
     background: linear-gradient(135deg, var(--orange-50), var(--amber-50));
@@ -55,12 +55,14 @@ import SupportedMessengerCard from '@/Components/base/SupportedMessengerCard.vue
 
 .supported__grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     gap: 1.5rem;
-}
 
-@media (min-width: 768px) {
-    .supported__grid {
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1024px) {
         grid-template-columns: repeat(4, 1fr);
     }
 }
