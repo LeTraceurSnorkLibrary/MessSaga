@@ -24,18 +24,22 @@ defineProps({
     </div>
 </template>
 <style lang="scss" scoped>
+@use '../../../scss/typography' as typography;
+
 .advantage-card {
+    --advantage-card-title-color: var(--gray-800);
     --advantage-card-bg-image: linear-gradient(135deg, var(--orange-50), var(--amber-50));
     --advantage-card-border-color: var(--orange-100);
     --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--orange-400), var(--rose-400));
     --advantage-card-ribbon-bg: linear-gradient(135deg, var(--orange-500), var(--rose-500));
+    --advantage-card-icon-opacity: 1;
+    --advantage-card-icon-wrap-transform: none;
+    --advantage-card-description-color: var(--gray-600);
 
     // Для состояния "в разработке" (более тусклые цвета)
     --advantage-card-bg-image-wip: linear-gradient(135deg, var(--gray-100), var(--gray-150));
     --advantage-card-border-color-wip: var(--gray-200);
     --advantage-card-icon-bg-gradient-wip: linear-gradient(135deg, var(--gray-300), var(--gray-400));
-
-    --advantage-card-icon-wrap-transform: none;
 
     position: relative;
     overflow: hidden;
@@ -53,23 +57,15 @@ defineProps({
     }
 
     &--in-progress {
-        background-image: var(--advantage-card-bg-image-wip);
-        border-color: var(--advantage-card-border-color-wip);
+        --advantage-card-title-color: var(--gray-500);
+        --advantage-card-bg-image: var(--advantage-card-bg-image-wip);
+        --advantage-card-border-color: var(--advantage-card-border-color-wip);
+        --advantage-card-icon-bg-gradient: var(--advantage-card-icon-bg-gradient-wip);
+        --advantage-card-icon-opacity: 0.6;
+        --advantage-card-description-color: var(--gray-400);
+
+        cursor: progress;
         opacity: 0.75;
-        cursor: not-allowed;
-
-        .advantage-card__icon-wrap {
-            background: var(--advantage-card-icon-bg-gradient-wip);
-            opacity: 0.6;
-        }
-
-        .advantage-card__title {
-            color: var(--gray-500);
-        }
-
-        .advantage-card__description {
-            color: var(--gray-400);
-        }
     }
 
     &--rose {
@@ -130,24 +126,23 @@ defineProps({
 
 .advantage-card__ribbon {
     position: absolute;
-    top: 1.5rem;
-    right: -2.5rem;
-    z-index: 10;
-    width: 10rem;
+    top: 30px;
+    right: -50px;
+    width: 200px;
     padding: 0.375rem 0;
-    background: var(--advantage-card-ribbon-bg);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    transform: rotate(45deg);
     text-align: center;
+    background: var(--advantage-card-ribbon-bg);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: rotate(45deg);
+    z-index: 10;
 }
 
 .advantage-card__ribbon-text {
+    @include typography.text--150(0.75rem, typography.$font-weight--bold);
+
     display: block;
-    font-size: 0.75rem;
-    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0.025rem;
     color: var(--gray-0);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -164,6 +159,7 @@ defineProps({
     box-shadow: var(--shadow-lg);
     transition: transform var(--transition-normal), opacity var(--transition-normal);
     transform: var(--advantage-card-icon-wrap-transform);
+    opacity: var(--advantage-card-icon-opacity);
 }
 
 .advantage-card__icon-wrap :deep(svg) {
@@ -173,16 +169,17 @@ defineProps({
 }
 
 .advantage-card__title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--gray-800);
+    @include typography.text--150(1.5rem, typography.$font-weight--bold);
+
+    color: var(--advantage-card-title-color);
     margin: 0 0 1rem;
     transition: color var(--transition-normal);
 }
 
 .advantage-card__description {
-    color: var(--gray-600);
-    line-height: 1.6;
+    @include typography.text--150(1rem);
+
+    color: var(--advantage-card-description-color);
     margin: 0;
     transition: color var(--transition-normal);
 }
