@@ -39,6 +39,7 @@ const verificationLinkSent = computed(
         <form @submit.prevent="submit">
             <div class="form-actions form-actions--between">
                 <UIButton
+                    type="submit"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >

@@ -67,6 +67,7 @@ const submit = () => {
 
             <div class="form-actions">
                 <UIButton
+                    type="submit"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
