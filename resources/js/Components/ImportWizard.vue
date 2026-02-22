@@ -81,6 +81,7 @@ const onFileChange = (event) => {
             <div class="import-wizard__actions">
                 <UIButton
                     :disabled="loading"
+                    size="s"
                     type="button"
                     @click="submit"
                 >
