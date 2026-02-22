@@ -29,17 +29,17 @@ defineProps({
 
 .step__card {
   position: relative;
-  background: var(--welcome-white);
-  border-radius: var(--welcome-radius-2xl);
+  background: var(--gray-0);
+  border-radius: var(--radius-2xl);
   padding: 2rem;
   padding-top: 2.5rem;
-  border: 2px solid var(--welcome-orange-200);
-  box-shadow: var(--welcome-shadow-lg);
-  transition: box-shadow var(--welcome-transition-normal);
+  border: 2px solid var(--orange-200);
+  box-shadow: var(--shadow-lg);
+  transition: box-shadow var(--transition-normal);
 }
 
 .step__card:hover {
-  box-shadow: var(--welcome-shadow-xl);
+  box-shadow: var(--shadow-xl);
 }
 
 .step__badge {
@@ -53,28 +53,28 @@ defineProps({
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--welcome-white);
+  color: var(--gray-0);
   font-weight: 700;
   font-size: 1.25rem;
-  box-shadow: var(--welcome-shadow-lg);
+  box-shadow: var(--shadow-lg);
 }
 
 .step__badge--orange {
-  background: linear-gradient(135deg, var(--welcome-orange-500), var(--welcome-rose-500));
+  background: linear-gradient(135deg, var(--orange-500), var(--rose-500));
 }
 
 .step__badge--rose {
-  background: linear-gradient(135deg, var(--welcome-rose-500), var(--welcome-pink-400));
+  background: linear-gradient(135deg, var(--rose-500), var(--pink-400));
 }
 
 .step__badge--amber {
-  background: linear-gradient(135deg, var(--welcome-amber-500), var(--welcome-yellow-400));
+  background: linear-gradient(135deg, var(--amber-500), var(--yellow-400));
 }
 
 .step__icon-wrap {
   width: 4rem;
   height: 4rem;
-  border-radius: var(--welcome-radius-2xl);
+  border-radius: var(--radius-2xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,40 +87,40 @@ defineProps({
 }
 
 .step__icon-wrap--orange {
-  background: linear-gradient(135deg, var(--welcome-orange-100), var(--welcome-rose-100));
+  background: linear-gradient(135deg, var(--orange-100), var(--rose-100));
 }
 
 .step__icon-wrap--orange :deep(svg) {
-  color: var(--welcome-orange-600);
+  color: var(--orange-600);
 }
 
 .step__icon-wrap--rose {
-  background: linear-gradient(135deg, var(--welcome-rose-100), var(--welcome-pink-100));
+  background: linear-gradient(135deg, var(--rose-100), var(--pink-100));
 }
 
 .step__icon-wrap--rose :deep(svg) {
-  color: var(--welcome-rose-600);
+  color: var(--rose-600);
 }
 
 .step__icon-wrap--amber {
-  background: linear-gradient(135deg, var(--welcome-amber-100), var(--welcome-yellow-100));
+  background: linear-gradient(135deg, var(--amber-100), var(--yellow-100));
 }
 
 .step__icon-wrap--amber :deep(svg) {
-  color: var(--welcome-amber-600);
+  color: var(--amber-600);
 }
 
 .step__title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--welcome-gray-800);
+  color: var(--gray-800);
   margin: 0 0 0.75rem;
   text-align: center;
 }
 
 .step__description {
   font-size: 1rem;
-  color: var(--welcome-gray-600);
+  color: var(--gray-600);
   text-align: center;
   margin: 0;
   line-height: 1.5;

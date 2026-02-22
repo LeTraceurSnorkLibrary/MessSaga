@@ -5,17 +5,15 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\ChatImportController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use LeTraceurSnork\CopyrightYearRange\CopyrightHelper;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'copyrightYear' => LeTraceurSnork\CopyrightYearRange\CopyrightHelper::getCopyrightString(
-            config('messaga.start_year')
-        )
+        'copyrightYear' => CopyrightHelper::getCopyrightString(config('messaga.start_year'))
     ]);
 });
 

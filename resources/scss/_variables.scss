@@ -3,99 +3,186 @@
  * Только переменные — без классов и стилей элементов.
  */
 :root {
-  /* Шрифты */
-  --font-sans: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    /* Шрифты */
+    --font-family-text: ui-sans-serif, system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
-  /* Цвета бренда: тёплые нейтрали + один акцент */
-  /* Акцент (кнопки, ссылки, актив) — тёплый коричневый */
-  --welcome-orange-50: #fdf9f6;
-  --welcome-orange-100: #f5ebe3;
-  --welcome-orange-200: #e8d9ca;
-  --welcome-orange-300: #d4b89a;
-  --welcome-orange-400: #b08d5c;
-  --welcome-orange-500: #946b3d;
-  --welcome-orange-600: #7a5732;
-  /* Основная кнопка: #7a5732 светлее на 30% */
-  --welcome-button-primary: #a2896f;
-  --welcome-button-primary-hover: #8f7557;
-  /* Доп. тёплый тон для градиентов и карточек */
-  --welcome-rose-50: #fcf8f6;
-  --welcome-rose-100: #f5ebe5;
-  --welcome-rose-200: #e8d5ca;
-  --welcome-rose-400: #c4907a;
-  --welcome-rose-500: #a86d54;
-  --welcome-rose-600: #8b573e;
-  /* Camel / песок — фоны */
-  --welcome-amber-50: #faf7f3;
-  --welcome-amber-100: #f0e9e0;
-  --welcome-amber-200: #e2d6c8;
-  --welcome-amber-400: #c4a67a;
-  --welcome-amber-500: #a88452;
-  --welcome-amber-600: #8b6b3a;
-  /* Градиент: крем → мягкий песок */
-  --welcome-gradient-from: #fefdfb;
-  --welcome-gradient-to: #f0e9df;
-  --welcome-pink-50: #faf6f4;
-  --welcome-pink-100: #f0e8e4;
-  --welcome-pink-400: #c4a094;
-  --welcome-yellow-50: #faf8f4;
-  --welcome-yellow-100: #f0eae0;
-  --welcome-yellow-400: #d4b896;
-  /* Синие (Telegram и т.п.) */
-  --welcome-blue-50: #eff6fa;
-  --welcome-blue-100: #d9ebf4;
-  --welcome-blue-400: #3b9dd4;
-  --welcome-blue-500: #2d8bc4;
-  --welcome-indigo-100: #e8ebf8;
-  --welcome-indigo-400: #7183c4;
-  --welcome-indigo-500: #5a6bb8;
-  --welcome-vk-bg: #6366f1;
-  --welcome-vk-border: #e0e7ff;
-  --welcome-purple-50: #f5f3f5;
-  --welcome-purple-100: #e8e2ea;
-  --welcome-purple-300: #b8a8c4;
-  --welcome-purple-400: #9a84a8;
-  --welcome-violet-400: #9a84a8;
-  /* Зелёные (WhatsApp и т.п.) */
-  --welcome-green-50: #f0f6ef;
-  --welcome-green-100: #dcebd8;
-  --welcome-green-400: #4caf6e;
-  --welcome-green-500: #3d9b5c;
-  --welcome-emerald-400: #4caf7a;
-  --welcome-red-400: #d47262;
-  --welcome-red-600: #c04a3a;
-  --welcome-red-700: #a03a2c;
-  /* Нейтральные — читаемый текст, без грязи */
-  --welcome-gray-50: #f8f7f5;
-  --welcome-gray-100: #eeebe8;
-  --welcome-gray-200: #ddd8d2;
-  --welcome-gray-300: #b8b0a6;
-  --welcome-gray-400: #8a8378;
-  --welcome-gray-500: #6b645a;
-  --welcome-gray-600: #4f4a42;
-  --welcome-gray-700: #3c3832;
-  --welcome-gray-800: #2a2724;
-  --welcome-gray-900: #1c1a18;
-  --welcome-white: #ffffff;
-  --welcome-black: #1c1a18;
+    /* Цвета бренда (Welcome и общие) - РАСШИРЕННАЯ ПАЛИТРА */
 
-  /* Радиусы */
-  --welcome-radius-lg: 0.75rem;
-  --welcome-radius-xl: 1rem;
-  --welcome-radius-2xl: 1.5rem;
-  --welcome-radius-full: 9999px;
+    /* Orange */
+    --orange-50: #fff7ed;
+    --orange-100: #ffedd5;
+    --orange-200: #fed7aa;
+    --orange-300: #fdba74;
+    --orange-400: #fb923c;
+    --orange-500: #f97316;
+    --orange-600: #ea580c;
+    --orange-700: #c2410c;
+    --orange-800: #9a3412;
+    --orange-900: #7c2d12;
 
-  /* Тени */
-  --welcome-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --welcome-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --welcome-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --welcome-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --welcome-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    /* Rose */
+    --rose-0: #ffffff;
+    --rose-50: #fff1f2;
+    --rose-100: #ffe4e6;
+    --rose-200: #fecdd3;
+    --rose-300: #fda4af;
+    --rose-400: #fb7185;
+    --rose-500: #f43f5e;
+    --rose-600: #e11d48;
+    --rose-700: #be123c;
+    --rose-800: #9f1239;
+    --rose-900: #881337;
 
-  /* Переходы */
-  --welcome-transition-fast: 150ms ease;
-  --welcome-transition-normal: 200ms ease;
-  --welcome-transition-slow: 300ms ease;
+    /* Amber */
+    --amber-50: #fffbeb;
+    --amber-100: #fef3c7;
+    --amber-200: #fde68a;
+    --amber-300: #fcd34d;
+    --amber-400: #fbbf24;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --amber-700: #b45309;
+    --amber-800: #92400e;
+    --amber-900: #78350f;
+
+    /* Pink */
+    --pink-50: #fdf2f8;
+    --pink-100: #fce7f3;
+    --pink-200: #fbcfe8;
+    --pink-300: #f9a8d4;
+    --pink-400: #f472b6;
+    --pink-500: #ec4899;
+    --pink-600: #db2777;
+    --pink-700: #be185d;
+    --pink-800: #9d174d;
+    --pink-900: #831843;
+
+    /* Yellow */
+    --yellow-50: #fefce8;
+    --yellow-100: #fef9c3;
+    --yellow-200: #fef08a;
+    --yellow-300: #fde047;
+    --yellow-400: #facc15;
+    --yellow-500: #eab308;
+    --yellow-600: #ca8a04;
+    --yellow-700: #a16207;
+    --yellow-800: #854d0e;
+    --yellow-900: #713f12;
+
+    /* Blue */
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-200: #bfdbfe;
+    --blue-300: #93c5fd;
+    --blue-400: #60a5fa;
+    --blue-500: #3b82f6;
+    --blue-600: #2563eb;
+    --blue-700: #1d4ed8;
+    --blue-800: #1e40af;
+    --blue-900: #1e3a8a;
+
+    /* Indigo */
+    --indigo-50: #eef2ff;
+    --indigo-100: #e0e7ff;
+    --indigo-200: #c7d2fe;
+    --indigo-300: #a5b4fc;
+    --indigo-400: #818cf8;
+    --indigo-500: #6366f1;
+    --indigo-600: #4f46e5;
+    --indigo-700: #4338ca;
+    --indigo-800: #3730a3;
+    --indigo-900: #312e81;
+
+    /* Purple */
+    --purple-50: #faf5ff;
+    --purple-100: #f3e8ff;
+    --purple-200: #e9d5ff;
+    --purple-300: #d8b4fe;
+    --purple-400: #c084fc;
+    --purple-500: #a855f7;
+    --purple-600: #9333ea;
+    --purple-700: #7e22ce;
+    --purple-800: #6b21a8;
+    --purple-900: #581c87;
+
+    /* Violet */
+    --violet-50: #f5f3ff;
+    --violet-100: #ede9fe;
+    --violet-200: #ddd6fe;
+    --violet-300: #c4b5fd;
+    --violet-400: #a78bfa;
+    --violet-500: #8b5cf6;
+    --violet-600: #7c3aed;
+    --violet-700: #6d28d9;
+    --violet-800: #5b21b6;
+    --violet-900: #4c1d95;
+
+    /* Green */
+    --green-50: #f0fdf4;
+    --green-100: #dcfce7;
+    --green-200: #bbf7d0;
+    --green-300: #86efac;
+    --green-400: #4ade80;
+    --green-500: #22c55e;
+    --green-600: #16a34a;
+    --green-700: #15803d;
+    --green-800: #166534;
+    --green-900: #14532d;
+
+    /* Emerald */
+    --emerald-50: #ecfdf5;
+    --emerald-100: #d1fae5;
+    --emerald-200: #a7f3d0;
+    --emerald-300: #6ee7b7;
+    --emerald-400: #34d399;
+    --emerald-500: #10b981;
+    --emerald-600: #059669;
+    --emerald-700: #047857;
+    --emerald-800: #065f46;
+    --emerald-900: #064e3b;
+
+    /* Red */
+    --red-50: #fef2f2;
+    --red-100: #fee2e2;
+    --red-200: #fecaca;
+    --red-300: #fca5a5;
+    --red-400: #f87171;
+    --red-500: #ef4444;
+    --red-600: #dc2626;
+    --red-700: #b91c1c;
+    --red-800: #991b1b;
+    --red-900: #7f1d1d;
+
+    /* Gray */
+    --gray-0: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --gray-1000: #000000;
+
+    /* Радиусы */
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+    --radius-full: 9999px;
+
+    /* Тени */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+    /* Переходы */
+    --transition-fast: 150ms ease;
+    --transition-normal: 200ms ease;
+    --transition-slow: 300ms ease;
 }

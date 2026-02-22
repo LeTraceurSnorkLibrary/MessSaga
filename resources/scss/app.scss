@@ -1,6 +1,4 @@
-/**
- * Точка входа стилей приложения.
- * Tailwind удалён; используются только собственные SCSS и переменные.
- */
-@use 'variables';
+@use 'typography';
+
 @use 'base';
+@use 'variables';
