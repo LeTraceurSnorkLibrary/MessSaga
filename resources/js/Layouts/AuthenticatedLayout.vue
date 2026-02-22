@@ -1,11 +1,10 @@
 <script setup>
 import {onMounted, onUnmounted, ref} from 'vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import {Link} from '@inertiajs/vue3';
+import HomeIcon from "@/Components/particles/icons/HomeIcon.vue";
 
 const showingNavigationDropdown = ref(false);
 
@@ -16,7 +15,6 @@ const closeOnEscape = (e) => {
 onMounted(() => document.addEventListener('keydown', closeOnEscape));
 onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 </script>
-
 <template>
     <div class="auth-layout">
         <div class="auth-layout__screen">
@@ -24,38 +22,30 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
                 <div class="auth-layout__nav-inner">
                     <div class="auth-layout__nav-left">
                         <div class="auth-layout__logo">
-                            <Link :href="route('dashboard')">
-                                <ApplicationLogo class="auth-layout__logo-svg"/>
+                            <Link href="/">
+                                <HomeIcon class="auth-layout__logo-svg"/>
                             </Link>
-                        </div>
-                        <div class="auth-layout__links">
-                            <NavLink
-                                :active="route().current('dashboard')"
-                                :href="route('dashboard')"
-                            >
-                                Dashboard
-                            </NavLink>
                         </div>
                     </div>
 
                     <div class="auth-layout__user">
                         <Dropdown align="right" width="48">
                             <template #trigger>
-                <span class="auth-layout__trigger-wrap">
-                  <button class="auth-layout__trigger" type="button">
-                    {{ $page.props.auth.user.name }}
-                    <svg class="auth-layout__trigger-icon" fill="currentColor" viewBox="0 0 20 20"
-                         xmlns="http://www.w3.org/2000/svg">
-                      <path clip-rule="evenodd"
-                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                            fill-rule="evenodd"/>
-                    </svg>
-                  </button>
-                </span>
+                                <span class="auth-layout__trigger-wrap">
+                                  <button class="auth-layout__trigger" type="button">
+                                    {{ $page.props.auth.user.name }}
+                                    <svg class="auth-layout__trigger-icon" fill="currentColor" viewBox="0 0 20 20"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                      <path clip-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                            fill-rule="evenodd"/>
+                                    </svg>
+                                  </button>
+                                </span>
                             </template>
                             <template #content>
-                                <DropdownLink :href="route('profile.edit')">Profile</DropdownLink>
-                                <DropdownLink :href="route('logout')" as="button" method="post">Log Out</DropdownLink>
+                                <DropdownLink :href="route('profile.edit')">Мой профиль</DropdownLink>
+                                <DropdownLink :href="route('logout')" as="button" method="post">Выход</DropdownLink>
                             </template>
                         </Dropdown>
                     </div>
@@ -114,7 +104,6 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
         </div>
     </div>
 </template>
-
 <style scoped>
 .auth-layout {
     min-height: 100vh;
@@ -171,32 +160,14 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 }
 
 .auth-layout__logo-svg {
-    display: block;
     height: 2.25rem;
     width: auto;
-    fill: var(--gray-800);
-}
-
-.auth-layout__links {
-    display: none;
-}
-
-@media (min-width: 640px) {
-    .auth-layout__links {
-        display: flex;
-        margin-left: 2.5rem;
-        margin-top: -2px;
-        margin-bottom: -2px;
-        gap: 0;
-    }
 }
 
 .auth-layout__user {
     display: none;
-}
 
-@media (min-width: 640px) {
-    .auth-layout__user {
+    @media (min-width: 640px) {
         display: flex;
         align-items: center;
         margin-left: 1.5rem;
@@ -221,10 +192,10 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
     border-radius: 0.375rem;
     cursor: pointer;
     transition: color 150ms ease, border-color 150ms ease;
-}
 
-.auth-layout__trigger:hover {
-    color: var(--gray-700);
+    &:hover {
+        color: var(--gray-700);
+    }
 }
 
 .auth-layout__trigger-icon {
@@ -238,10 +209,8 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
     display: flex;
     align-items: center;
     margin-right: -0.5rem;
-}
 
-@media (min-width: 640px) {
-    .auth-layout__hamburger {
+    @media (min-width: 640px) {
         display: none;
     }
 }
@@ -273,10 +242,8 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
     display: block;
     padding-bottom: 0.75rem;
     padding-top: 0.5rem;
-}
 
-@media (min-width: 640px) {
-    .auth-layout__mobile {
+    @media (min-width: 640px) {
         display: none;
     }
 }
@@ -325,17 +292,13 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
     max-width: 80rem;
     margin: 0 auto;
     padding: 1.5rem 1rem;
-}
 
-@media (min-width: 640px) {
-    .auth-layout__page-header-inner {
+    @media (min-width: 640px) {
         padding-left: 1.5rem;
         padding-right: 1.5rem;
     }
-}
 
-@media (min-width: 1024px) {
-    .auth-layout__page-header-inner {
+    @media (min-width: 1024px) {
         padding-left: 2rem;
         padding-right: 2rem;
     }
