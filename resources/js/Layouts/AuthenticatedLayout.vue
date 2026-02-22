@@ -5,6 +5,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import {Link} from '@inertiajs/vue3';
 import HomeIcon from "@/Components/particles/icons/HomeIcon.vue";
+import NavMenu from "@/Components/base/NavMenu.vue";
 
 const showingNavigationDropdown = ref(false);
 
@@ -20,12 +21,16 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
         <div class="auth-layout__screen">
             <nav class="auth-layout__nav">
                 <div class="auth-layout__nav-inner">
-                    <div class="auth-layout__nav-left">
-                        <div class="auth-layout__logo">
-                            <Link href="/">
-                                <HomeIcon class="auth-layout__logo-svg"/>
-                            </Link>
-                        </div>
+                    <div class="auth-layout__logo">
+                        <Link href="/">
+                            <HomeIcon class="auth-layout__logo-svg"/>
+                        </Link>
+                    </div>
+
+                    <div class="auth-layout__menu">
+                        <NavMenu :items="[
+                            {label: 'Переписки', href: route('dashboard')}
+                        ]"></NavMenu>
                     </div>
 
                     <div class="auth-layout__user">
@@ -123,17 +128,13 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
     max-width: 80rem;
     margin: 0 auto;
     padding: 0 1rem;
-}
 
-@media (min-width: 640px) {
-    .auth-layout__nav-inner {
+    @media (min-width: 640px) {
         padding-left: 1.5rem;
         padding-right: 1.5rem;
     }
-}
 
-@media (min-width: 1024px) {
-    .auth-layout__nav-inner {
+    @media (min-width: 1024px) {
         padding-left: 2rem;
         padding-right: 2rem;
     }
@@ -141,14 +142,9 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 
 .auth-layout__nav-inner {
     display: flex;
+    align-items: center;
+    column-gap: 2rem;
     height: 4rem;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.auth-layout__nav-left {
-    display: flex;
-    align-items: center;
 }
 
 .auth-layout__logo {
@@ -166,11 +162,11 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 
 .auth-layout__user {
     display: none;
+    margin-left: auto;
 
     @media (min-width: 640px) {
         display: flex;
         align-items: center;
-        margin-left: 1.5rem;
     }
 }
 
