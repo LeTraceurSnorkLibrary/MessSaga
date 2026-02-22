@@ -1,8 +1,6 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import UIInput from '@/Components/base/UIInput.vue';
 import {useForm} from '@inertiajs/vue3';
 import {ref} from 'vue';
 
@@ -47,58 +45,34 @@ const updatePassword = () => {
         </header>
 
         <form class="mt-6 space-y-6" @submit.prevent="updatePassword">
-            <div>
-                <InputLabel for="current_password" value="Current Password" />
+            <UIInput
+                id="current_password"
+                ref="currentPasswordInput"
+                v-model="form.current_password"
+                :error="form.errors.current_password"
+                autocomplete="current-password"
+                label="Current Password"
+                type="password"
+            />
 
-                <TextInput
-                    id="current_password"
-                    ref="currentPasswordInput"
-                    v-model="form.current_password"
-                    autocomplete="current-password"
-                    class="mt-1 block w-full"
-                    type="password"
-                />
+            <UIInput
+                id="password"
+                ref="passwordInput"
+                v-model="form.password"
+                :error="form.errors.password"
+                autocomplete="new-password"
+                label="New Password"
+                type="password"
+            />
 
-                <InputError
-                    :message="form.errors.current_password"
-                    class="mt-2"
-                />
-            </div>
-
-            <div>
-                <InputLabel for="password" value="New Password" />
-
-                <TextInput
-                    id="password"
-                    ref="passwordInput"
-                    v-model="form.password"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    type="password"
-                />
-
-                <InputError :message="form.errors.password" class="mt-2" />
-            </div>
-
-            <div>
-                <InputLabel
-                    for="password_confirmation"
-                    value="Confirm Password"
-                />
-
-                <TextInput
-                    id="password_confirmation"
-                    v-model="form.password_confirmation"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    type="password"
-                />
-
-                <InputError
-                    :message="form.errors.password_confirmation"
-                    class="mt-2"
-                />
-            </div>
+            <UIInput
+                id="password_confirmation"
+                v-model="form.password_confirmation"
+                :error="form.errors.password_confirmation"
+                autocomplete="new-password"
+                label="Confirm Password"
+                type="password"
+            />
 
             <div class="flex items-center gap-4">
                 <UIButton :disabled="form.processing">Save</UIButton>

@@ -1,8 +1,6 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import UIInput from '@/Components/base/UIInput.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import {Head, useForm} from '@inertiajs/vue3';
 
@@ -19,7 +17,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Confirm Password" />
+        <Head title="Confirm Password"/>
 
         <div class="mb-4 text-sm text-gray-600">
             This is a secure area of the application. Please confirm your
@@ -27,19 +25,17 @@ const submit = () => {
         </div>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="password" value="Password" />
-                <TextInput
-                    id="password"
-                    v-model="form.password"
-                    autocomplete="current-password"
-                    autofocus
-                    class="mt-1 block w-full"
-                    required
-                    type="password"
-                />
-                <InputError :message="form.errors.password" class="mt-2" />
-            </div>
+            <UIInput
+                id="password"
+                v-model="form.password"
+                :error="form.errors.password"
+                autocomplete="current-password"
+                autofocus
+                class="mt-1"
+                label="Password"
+                required
+                type="password"
+            />
 
             <div class="mt-4 flex justify-end">
                 <UIButton

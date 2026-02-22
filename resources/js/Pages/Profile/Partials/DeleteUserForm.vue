@@ -1,9 +1,7 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
+import UIInput from '@/Components/base/UIInput.vue';
 import Modal from '@/Components/Modal.vue';
-import TextInput from '@/Components/TextInput.vue';
 import {useForm} from '@inertiajs/vue3';
 import {nextTick, ref} from 'vue';
 
@@ -52,7 +50,7 @@ const closeModal = () => {
         </header>
 
         <UIButton variant="danger"
-                @click="confirmUserDeletion"
+                  @click="confirmUserDeletion"
         >Delete Account
         </UIButton>
 
@@ -71,23 +69,17 @@ const closeModal = () => {
                 </p>
 
                 <div class="mt-6">
-                    <InputLabel
-                        class="sr-only"
-                        for="password"
-                        value="Password"
-                    />
-
-                    <TextInput
+                    <UIInput
                         id="password"
                         ref="passwordInput"
                         v-model="form.password"
-                        class="mt-1 block w-3/4"
+                        :error="form.errors.password"
+                        label="Password"
+                        label-sr-only
                         placeholder="Password"
                         type="password"
                         @keyup.enter="deleteUser"
                     />
-
-                    <InputError :message="form.errors.password" class="mt-2" />
                 </div>
 
                 <div class="mt-6 flex justify-end">
@@ -96,10 +88,10 @@ const closeModal = () => {
                     </UIButton>
 
                     <UIButton
-                        variant="danger"
                         :class="{ 'opacity-25': form.processing }"
                         :disabled="form.processing"
                         class="ms-3"
+                        variant="danger"
                         @click="deleteUser"
                     >
                         Delete Account

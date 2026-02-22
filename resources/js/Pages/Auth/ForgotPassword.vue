@@ -1,10 +1,8 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import UIInput from '@/Components/base/UIInput.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import {Head, useForm} from '@inertiajs/vue3';
+import {Head, Link, useForm} from '@inertiajs/vue3';
 
 defineProps({
     status: {
@@ -23,7 +21,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Forgot Password" />
+        <Head title="Forgot Password"/>
 
         <div class="mb-4 text-sm text-gray-600">
             Forgot your password? No problem. Just let us know your email
@@ -39,23 +37,31 @@ const submit = () => {
         </div>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+            <UIInput
+                id="email"
+                v-model="form.email"
+                :error="form.errors.email"
+                autocomplete="username"
+                autofocus
+                class="mt-1"
+                label="Email"
+                required
+                type="email"
+            />
 
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    autocomplete="username"
-                    autofocus
-                    class="mt-1 block w-full"
-                    required
-                    type="email"
-                />
-
-                <InputError :message="form.errors.email" class="mt-2" />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
+            <div class="mt-4 flex flex-wrap items-center justify-end gap-3">
+                <Link
+                    :href="route('login')"
+                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    Back to Log in
+                </Link>
+                <Link
+                    :href="route('register')"
+                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    Register
+                </Link>
                 <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"

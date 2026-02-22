@@ -1,8 +1,6 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import UIInput from '@/Components/base/UIInput.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import {Head, Link, useForm} from '@inertiajs/vue3';
 
@@ -22,84 +20,61 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Register" />
+        <Head title="Register"/>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="name" value="Name" />
+            <UIInput
+                id="name"
+                v-model="form.name"
+                :error="form.errors.name"
+                autocomplete="name"
+                autofocus
+                class="mt-1"
+                label="Name"
+                required
+                type="text"
+            />
 
-                <TextInput
-                    id="name"
-                    v-model="form.name"
-                    autocomplete="name"
-                    autofocus
-                    class="mt-1 block w-full"
-                    required
-                    type="text"
-                />
+            <UIInput
+                id="email"
+                v-model="form.email"
+                :error="form.errors.email"
+                autocomplete="username"
+                class="mt-4"
+                label="Email"
+                required
+                type="email"
+            />
 
-                <InputError :message="form.errors.name" class="mt-2" />
-            </div>
+            <UIInput
+                id="password"
+                v-model="form.password"
+                :error="form.errors.password"
+                autocomplete="new-password"
+                class="mt-4"
+                label="Password"
+                required
+                type="password"
+            />
 
-            <div class="mt-4">
-                <InputLabel for="email" value="Email" />
+            <UIInput
+                id="password_confirmation"
+                v-model="form.password_confirmation"
+                :error="form.errors.password_confirmation"
+                autocomplete="new-password"
+                class="mt-4"
+                label="Confirm Password"
+                required
+                type="password"
+            />
 
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    autocomplete="username"
-                    class="mt-1 block w-full"
-                    required
-                    type="email"
-                />
-
-                <InputError :message="form.errors.email" class="mt-2" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    v-model="form.password"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    required
-                    type="password"
-                />
-
-                <InputError :message="form.errors.password" class="mt-2" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel
-                    for="password_confirmation"
-                    value="Confirm Password"
-                />
-
-                <TextInput
-                    id="password_confirmation"
-                    v-model="form.password_confirmation"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    required
-                    type="password"
-                />
-
-                <InputError
-                    :message="form.errors.password_confirmation"
-                    class="mt-2"
-                />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
+            <div class="mt-4 flex flex-wrap items-center justify-end gap-3">
                 <Link
                     :href="route('login')"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
                     Already registered?
                 </Link>
-
                 <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"

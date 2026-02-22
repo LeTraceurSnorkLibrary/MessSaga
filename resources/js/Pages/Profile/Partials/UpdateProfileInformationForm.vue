@@ -1,8 +1,6 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import UIInput from '@/Components/base/UIInput.vue';
 import {Link, useForm, usePage} from '@inertiajs/vue3';
 
 defineProps({
@@ -38,36 +36,26 @@ const form = useForm({
             class="mt-6 space-y-6"
             @submit.prevent="form.patch(route('profile.update'))"
         >
-            <div>
-                <InputLabel for="name" value="Name" />
+            <UIInput
+                id="name"
+                v-model="form.name"
+                :error="form.errors.name"
+                autocomplete="name"
+                autofocus
+                label="Name"
+                required
+                type="text"
+            />
 
-                <TextInput
-                    id="name"
-                    v-model="form.name"
-                    autocomplete="name"
-                    autofocus
-                    class="mt-1 block w-full"
-                    required
-                    type="text"
-                />
-
-                <InputError :message="form.errors.name" class="mt-2" />
-            </div>
-
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    autocomplete="username"
-                    class="mt-1 block w-full"
-                    required
-                    type="email"
-                />
-
-                <InputError :message="form.errors.email" class="mt-2" />
-            </div>
+            <UIInput
+                id="email"
+                v-model="form.email"
+                :error="form.errors.email"
+                autocomplete="username"
+                label="Email"
+                required
+                type="email"
+            />
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null">
                 <p class="mt-2 text-sm text-gray-800">
