@@ -41,7 +41,8 @@ make setup
 make run
 ```
 
-Поднимаются: Laravel-сервер, воркер очередей, лог и Vite. Откройте в браузере адрес, который выведет скрипт (обычно `http://127.0.0.1:8000`).
+Поднимаются: Laravel-сервер, воркер очередей, лог и Vite. Откройте в браузере адрес, который выведет скрипт (обычно
+`http://127.0.0.1:8000`).
 
 **Вариант Б — в разных терминалах:**
 
@@ -64,7 +65,8 @@ make dev
 
 В репозитории нет файла `.env` (он в `.gitignore`). В нём хранятся секреты и настройки окружения.
 
-В `.env.example` лежит шаблон, где **APP_KEY** пустой. Laravel требует непустой APP_KEY для шифрования сессий, cookies и т.п. Если ключа нет, приложение выдаёт ошибку вроде:
+В `.env.example` лежит шаблон, где **APP_KEY** пустой. Laravel требует непустой APP_KEY для шифрования сессий, cookies и
+т.п. Если ключа нет, приложение выдаёт ошибку вроде:
 
 ```
 No application encryption key has been specified.
@@ -156,7 +158,8 @@ DB_PASSWORD=
 
 - **«No application encryption key»** — выполните `php artisan key:generate` или заново `make setup`.
 - **Ошибки при миграции / «could not find driver»** — для MySQL нужен PHP-модуль `pdo_mysql`. Для SQLite — `pdo_sqlite`.
-- **«SQLSTATE[HY000] [1049] Unknown database»** — создайте базу MySQL: `CREATE DATABASE messsaga CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+- **«SQLSTATE[HY000] [1049] Unknown database»** — создайте базу MySQL:
+  `CREATE DATABASE messsaga CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
 - **Очередь не обрабатывает импорт** — должен быть запущен воркер: `make queue` или `make run`.
 - **После pull не работают стили/скрипты** — пересоберите фронтенд: `npm install --legacy-peer-deps && make build`.
 
@@ -165,6 +168,6 @@ DB_PASSWORD=
 ## Стек
 
 - **Backend:** Laravel 12, PHP 8.2+
-- **Frontend:** Vue 3, Inertia.js, Vite, Tailwind CSS
+- **Frontend:** Vue 3, Inertia.js, Vite
 - **БД по умолчанию:** MySQL (опционально SQLite)
 - **Очереди:** database driver (таблица `jobs`)
