@@ -29,7 +29,7 @@ defineProps({
     --advantage-card-bg-image: linear-gradient(135deg, var(--orange-50), var(--amber-50));
     --advantage-card-border-color: var(--orange-100);
     --advantage-card-icon-bg-gradient: linear-gradient(135deg, var(--orange-400), var(--rose-400));
-    --advantage-card-ribbon-bg: linear-gradient(135deg, var(--orange-500), var(--rose-500)); // ← Новое
+    --advantage-card-ribbon-bg: linear-gradient(135deg, var(--orange-500), var(--rose-500));
 
     // Для состояния "в разработке" (более тусклые цвета)
     --advantage-card-bg-image-wip: linear-gradient(135deg, var(--gray-100), var(--gray-150));
