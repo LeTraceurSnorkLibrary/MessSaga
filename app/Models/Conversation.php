@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection as SupportCollection;
 
 class Conversation extends Model
 {
     use HasFactory;
 
+    /**
+     * @var string[]
+     */
     protected $fillable = [
         'messenger_account_id',
         'external_id',
@@ -20,10 +25,16 @@ class Conversation extends Model
         'participants',
     ];
 
+    /**
+     * @var string[]
+     */
     protected $casts = [
         'participants' => 'array',
     ];
 
+    /**
+     * @return BelongsTo
+     */
     public function messengerAccount(): BelongsTo
     {
         return $this->belongsTo(MessengerAccount::class);
@@ -31,6 +42,8 @@ class Conversation extends Model
 
     /**
      * Получить сообщения Telegram.
+     *
+     * @return HasMany
      */
     public function telegramMessages(): HasMany
     {
@@ -39,6 +52,8 @@ class Conversation extends Model
 
     /**
      * Получить сообщения WhatsApp.
+     *
+     * @return HasMany
      */
     public function whatsappMessages(): HasMany
     {
@@ -47,6 +62,8 @@ class Conversation extends Model
 
     /**
      * Получить сообщения Viber.
+     *
+     * @return HasMany
      */
     public function viberMessages(): HasMany
     {
@@ -56,8 +73,10 @@ class Conversation extends Model
     /**
      * Получить сообщения в зависимости от типа мессенджера.
      * Используется для универсального доступа к сообщениям.
+     *
+     * @return EloquentCollection|SupportCollection
      */
-    public function messages()
+    public function messages(): EloquentCollection|SupportCollection
     {
         // Загружаем messengerAccount если еще не загружен
         if (!$this->relationLoaded('messengerAccount')) {
@@ -73,16 +92,18 @@ class Conversation extends Model
         return match ($messengerType) {
             'telegram' => $this->telegramMessages()->get(),
             'whatsapp' => $this->whatsappMessages()->get(),
-            'viber' => $this->viberMessages()->get(),
-            default => collect(),
+            'viber'    => $this->viberMessages()->get(),
+            default    => collect(),
         };
     }
 
     /**
      * Получить query builder для сообщений в зависимости от типа мессенджера.
      * Используется для построения запросов (with, where и т.д.).
+     *
+     * @return HasMany
      */
-    public function messagesQuery()
+    public function messagesQuery(): HasMany
     {
         // Загружаем messengerAccount если еще не загружен
         if (!$this->relationLoaded('messengerAccount')) {
@@ -99,8 +120,8 @@ class Conversation extends Model
         return match ($messengerType) {
             'telegram' => $this->telegramMessages(),
             'whatsapp' => $this->whatsappMessages(),
-            'viber' => $this->viberMessages(),
-            default => TelegramMessage::whereRaw('1 = 0'),
+            'viber'    => $this->viberMessages(),
+            default    => TelegramMessage::whereRaw('1 = 0'),
         };
     }
 }

@@ -30,6 +30,8 @@ trait HasEncryptedAttributes
 
     /**
      * Boot trait - регистрируем события модели.
+     *
+     * @return void
      */
     protected static function bootHasEncryptedAttributes(): void
     {

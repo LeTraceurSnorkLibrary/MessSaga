@@ -16,6 +16,11 @@ class ProcessChatImport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * @param int    $userId
+     * @param string $messengerType
+     * @param string $path
+     */
     public function __construct(
         public int $userId,
         public string $messengerType,
@@ -23,6 +28,9 @@ class ProcessChatImport implements ShouldQueue
     ) {
     }
 
+    /**
+     * @return void
+     */
     public function handle(): void
     {
         try {
@@ -38,7 +46,7 @@ class ProcessChatImport implements ShouldQueue
             );
         } finally {
             /**
-             * Удаляем файл после обработки
+             * Delete file after handling it
              */
             if (Storage::exists($this->path)) {
                 Storage::delete($this->path);

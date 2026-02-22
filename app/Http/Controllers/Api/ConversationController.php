@@ -7,11 +7,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class ConversationController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * @param Request $request
+     *
+     * @return JsonResponse
+     */
+    public function index(Request $request): JsonResponse
     {
         $messengerType = $request->string('messenger')->toString();
 
@@ -36,8 +43,8 @@ class ConversationController extends Controller
                     ->first();
 
                 return [
-                    'id' => $conversation->id,
-                    'title' => $conversation->title,
+                    'id'      => $conversation->id,
+                    'title'   => $conversation->title,
                     'preview' => $lastMessage?->text,
                 ];
             });
@@ -45,7 +52,13 @@ class ConversationController extends Controller
         return response()->json($conversations);
     }
 
-    public function messages(Request $request, Conversation $conversation)
+    /**
+     * @param Request      $request
+     * @param Conversation $conversation
+     *
+     * @return JsonResponse
+     */
+    public function messages(Request $request, Conversation $conversation): JsonResponse
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
 
@@ -57,7 +70,13 @@ class ConversationController extends Controller
         return response()->json($messages);
     }
 
-    public function destroy(Request $request, Conversation $conversation)
+    /**
+     * @param Request      $request
+     * @param Conversation $conversation
+     *
+     * @return Response
+     */
+    public function destroy(Request $request, Conversation $conversation): Response
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
 

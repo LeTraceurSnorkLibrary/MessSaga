@@ -10,6 +10,9 @@ namespace App\Models;
  */
 class WhatsAppMessage extends Message
 {
+    /**
+     * @inheritdoc
+     */
     protected $table = 'whatsapp_messages';
 
     /**

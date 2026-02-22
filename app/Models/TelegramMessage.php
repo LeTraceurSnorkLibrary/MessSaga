@@ -10,6 +10,9 @@ namespace App\Models;
  */
 class TelegramMessage extends Message
 {
+    /**
+     * @inheritdoc
+     */
     protected $table = 'telegram_messages';
 
     /**

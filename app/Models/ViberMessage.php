@@ -10,6 +10,9 @@ namespace App\Models;
  */
 class ViberMessage extends Message
 {
+    /**
+     * @inheritdoc
+     */
     protected $table = 'viber_messages';
 
     /**

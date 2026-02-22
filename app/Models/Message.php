@@ -47,6 +47,8 @@ abstract class Message extends Model
 
     /**
      * Отношение к переписке.
+     *
+     * @return BelongsTo
      */
     public function conversation(): BelongsTo
     {

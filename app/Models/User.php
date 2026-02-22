@@ -40,6 +40,8 @@ class User extends Authenticatable
 
     /**
      * Boot the model.
+     *
+     * @return void
      */
     protected static function boot(): void
     {
