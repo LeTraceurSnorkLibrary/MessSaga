@@ -1,22 +1,20 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
+import {Link} from '@inertiajs/vue3';
 </script>
-
 <template>
     <div class="guest-layout">
         <div class="guest-layout__logo">
             <Link href="/">
-                <ApplicationLogo class="guest-layout__logo-img" />
+                <ApplicationLogo class="guest-layout__logo-img"/>
             </Link>
         </div>
 
         <div class="guest-layout__card">
-            <slot />
+            <slot/>
         </div>
     </div>
 </template>
-
 <style lang="scss" scoped>
 .guest-layout {
     display: flex;
@@ -102,17 +100,5 @@ import { Link } from '@inertiajs/vue3';
     margin-left: 0.5rem;
     font-size: 0.875rem;
     color: var(--gray-600);
-}
-
-.guest-layout__card :deep(.form-actions) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.75rem;
-}
-
-.guest-layout__card :deep(.form-actions--between) {
-    justify-content: space-between;
 }
 </style>

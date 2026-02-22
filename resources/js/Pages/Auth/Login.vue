@@ -26,7 +26,6 @@ const submit = () => {
     });
 };
 </script>
-
 <template>
     <GuestLayout>
         <Head title="Log in"/>
@@ -40,9 +39,9 @@ const submit = () => {
                 id="email"
                 v-model="form.email"
                 :error="form.errors.email"
-                label="Email"
                 autocomplete="username"
                 autofocus
+                label="Email"
                 required
                 type="email"
             />
@@ -51,8 +50,8 @@ const submit = () => {
                 id="password"
                 v-model="form.password"
                 :error="form.errors.password"
-                label="Password"
                 autocomplete="current-password"
+                label="Пароль"
                 required
                 type="password"
             />
@@ -60,7 +59,7 @@ const submit = () => {
             <div class="form-remember">
                 <label class="form-remember__label">
                     <Checkbox v-model:checked="form.remember" name="remember"/>
-                    <span class="form-remember__text">Remember me</span>
+                    <span class="form-remember__text">Запомнить меня</span>
                 </label>
             </div>
 
@@ -70,23 +69,32 @@ const submit = () => {
                     :href="route('password.request')"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                    Forgot your password?
+                    Забыли пароль?
                 </Link>
                 <Link
                     :href="route('register')"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                    Register
+                    Зарегистрироваться
                 </Link>
                 <UIButton
-                    type="submit"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
+                    type="submit"
                     variant="primary"
                 >
-                    Log in
+                    Войти
                 </UIButton>
             </div>
         </form>
     </GuestLayout>
 </template>
+<style lang="scss" scoped>
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+</style>
