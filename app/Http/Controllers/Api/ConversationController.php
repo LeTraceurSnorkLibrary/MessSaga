@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
+use App\Services\Parsers\ParserRegistry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,14 @@ use Illuminate\Http\Response;
 
 class ConversationController extends Controller
 {
+    /**
+     * @param ParserRegistry $parserRegistry
+     */
+    public function __construct(
+        private readonly ParserRegistry $parserRegistry
+    ) {
+    }
+
     /**
      * @param Request $request
      *
@@ -36,9 +45,17 @@ class ConversationController extends Controller
             ->orderByDesc('id')
             ->get()
             ->map(function (Conversation $conversation) {
-                // Получаем последнее сообщение в зависимости от типа мессенджера
-                // Используем messagesQuery() для получения query builder
-                $lastMessage = $conversation->messagesQuery()
+                $messengerType = $conversation->messengerAccount->type;
+
+                /**
+                 * Получаем парсер из реестра
+                 */
+                $parser = $this->parserRegistry->get($messengerType);
+
+                /**
+                 * Используем метод парсера для получения последнего сообщения
+                 */
+                $lastMessage = $parser->getMessagesRelation($conversation)
                     ->latest('sent_at')
                     ->first();
 
@@ -46,6 +63,7 @@ class ConversationController extends Controller
                     'id'      => $conversation->id,
                     'title'   => $conversation->title,
                     'preview' => $lastMessage?->text,
+                    'type'    => $messengerType,
                 ];
             });
 
@@ -62,8 +80,17 @@ class ConversationController extends Controller
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
 
-        // Получаем сообщения используя универсальный метод messagesQuery()
-        $messages = $conversation->messagesQuery()
+        $messengerType = $conversation->messengerAccount->type;
+
+        /**
+         * Получаем парсер из реестра
+         */
+        $parser = $this->parserRegistry->get($messengerType);
+
+        /**
+         * Получаем сообщения через парсер
+         */
+        $messages = $parser->getMessagesRelation($conversation)
             ->orderBy('sent_at')
             ->get(['id', 'sender_name', 'sent_at', 'text', 'message_type']);
 
@@ -80,7 +107,10 @@ class ConversationController extends Controller
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
 
-        $conversation->delete(); // каскадно удалит сообщения за счёт foreign key
+        /**
+         * Каскадно удалит сообщения за счёт foreign key
+         */
+        $conversation->delete();
 
         return response()->noContent();
     }

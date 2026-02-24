@@ -10,7 +10,9 @@ use App\Services\Parsers\ParserRegistry;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class ImportService
 {
@@ -27,22 +29,40 @@ class ImportService
      * @param string $messengerType
      * @param string $path
      *
+     * @throws Throwable
      * @return void
      */
     public function import(int $userId, string $messengerType, string $path): void
     {
         $absolutePath = Storage::path($path);
 
-        $parser = $this->parserRegistry->get($messengerType);
-        $dto    = $parser->parse($absolutePath);
+        try {
+            $parser = $this->parserRegistry->get($messengerType);
+            $dto    = $parser->parse($absolutePath);
+        } catch (Throwable $e) {
+            Log::error('Import parsing failed', [
+                'user_id'        => $userId,
+                'messenger_type' => $messengerType,
+                'path'           => $path,
+                'error'          => $e->getMessage(),
+                'trace'          => $e->getTraceAsString(),
+            ]);
+
+            return;
+        }
 
         if (!$dto->hasConversation()) {
+            Log::notice('Import skipped - no conversation data', [
+                'user_id'        => $userId,
+                'messenger_type' => $messengerType,
+            ]);
+
             return;
         }
 
         $messageModelClass = $parser->getMessageModelClass();
 
-        DB::transaction(function () use ($userId, $messengerType, $dto, $messageModelClass) {
+        DB::transaction(function () use ($userId, $messengerType, $dto, $messageModelClass, $parser) {
             $conversationData = $dto->getConversationData();
 
             $account = MessengerAccount::firstOrCreate(
@@ -71,7 +91,11 @@ class ImportService
                 ],
             );
 
-            $messagesRelation = $conversation->messagesQuery();
+            /**
+             * Используем relation из парсера, а не из модели
+             */
+            $messagesRelation = $parser->getMessagesRelation($conversation);
+
             $existingMessages = $messagesRelation
                 ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
                 ->keyBy(function ($msg) {
@@ -115,6 +139,11 @@ class ImportService
 
             if ($newMessagesToInsert) {
                 $messageModelClass::insert($newMessagesToInsert);
+
+                Log::info('Messages imported', [
+                    'conversation_id' => $conversation->id,
+                    'count'           => count($newMessagesToInsert),
+                ]);
             }
         });
     }

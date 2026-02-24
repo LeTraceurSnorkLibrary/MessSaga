@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Parsers;
 
 use App\DTO\ConversationImportDTO;
+use App\Models\Conversation;
 use App\Models\TelegramMessage;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 
 class TelegramParser implements ParserInterface
@@ -19,11 +21,11 @@ class TelegramParser implements ParserInterface
         }
 
         $conversationData = [
-            'external_id'   => Arr::get($raw, 'id'),
-            'title'          => Arr::get($raw, 'name', 'Telegram chat'),
-            'participants'   => Arr::get($raw, 'participants', []),
-            'account_name'   => Arr::get($raw, 'dialog_name'),
-            'account_meta'   => [
+            'external_id'  => Arr::get($raw, 'id'),
+            'title'        => Arr::get($raw, 'name', 'Telegram chat'),
+            'participants' => Arr::get($raw, 'participants', []),
+            'account_name' => Arr::get($raw, 'dialog_name'),
+            'account_meta' => [
                 'type' => Arr::get($raw, 'type'),
             ],
         ];
@@ -43,18 +45,20 @@ class TelegramParser implements ParserInterface
             $text = $msg['text'] ?? '';
             if (is_array($text)) {
                 $text = collect($text)
-                    ->map(fn($part) => is_array($part) ? ($part['text'] ?? '') : $part)
+                    ->map(fn($part) => is_array($part)
+                        ? ($part['text'] ?? '')
+                        : $part)
                     ->join('');
             }
 
             $messageData = [
                 'external_id'        => $msg['id'] ?? null,
-                'sender_name'         => $msg['from'] ?? null,
-                'sender_external_id'  => $msg['from_id'] ?? null,
-                'sent_at'             => $msg['date'] ?? null,
-                'text'                => $text,
-                'message_type'        => $messageType,
-                'raw'                 => $msg,
+                'sender_name'        => $msg['from'] ?? null,
+                'sender_external_id' => $msg['from_id'] ?? null,
+                'sent_at'            => $msg['date'] ?? null,
+                'text'               => $text,
+                'message_type'       => $messageType,
+                'raw'                => $msg,
             ];
 
             if ($messageType === 'sticker' || isset($msg['sticker'])) {
@@ -68,8 +72,8 @@ class TelegramParser implements ParserInterface
             }
 
             if ($messageType === 'video_message' || (isset($msg['media_type']) && $msg['media_type'] === 'video_message')) {
-                $messageData['video_file_id']   = Arr::get($msg, 'file');
-                $messageData['video_duration']  = Arr::get($msg, 'duration_seconds');
+                $messageData['video_file_id']  = Arr::get($msg, 'file');
+                $messageData['video_duration'] = Arr::get($msg, 'duration_seconds');
             }
 
             if ($messageType === 'photo' || isset($msg['photo'])) {
@@ -99,10 +103,18 @@ class TelegramParser implements ParserInterface
     }
 
     /**
-     * @return class-string<\App\Models\TelegramMessage>
+     * @return class-string<TelegramMessage>
      */
     public function getMessageModelClass(): string
     {
         return TelegramMessage::class;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMessagesRelation(Conversation $conversation): HasMany
+    {
+        return $conversation->telegramMessages();
     }
 }
