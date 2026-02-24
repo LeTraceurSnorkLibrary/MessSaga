@@ -6,22 +6,19 @@ namespace App\Services;
 
 use App\Models\Conversation;
 use App\Models\MessengerAccount;
-use App\Models\TelegramMessage;
-use App\Models\ViberMessage;
-use App\Models\WhatsAppMessage;
-use App\Services\Parsers\TelegramParser;
+use App\Services\Parsers\ParserRegistry;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 
 class ImportService
 {
     /**
-     * @param TelegramParser $telegramParser
+     * @param ParserRegistry $parserRegistry
      */
     public function __construct(
-        protected TelegramParser $telegramParser,
+        protected ParserRegistry $parserRegistry,
     ) {
     }
 
@@ -36,16 +33,18 @@ class ImportService
     {
         $absolutePath = Storage::path($path);
 
-        [$conversationData, $messagesData] = match ($messengerType) {
-            'telegram' => $this->telegramParser->parse($absolutePath),
-            default    => [null, []],
-        };
+        $parser = $this->parserRegistry->get($messengerType);
+        $dto    = $parser->parse($absolutePath);
 
-        if (!$conversationData) {
+        if (!$dto->hasConversation()) {
             return;
         }
 
-        DB::transaction(function () use ($userId, $messengerType, $conversationData, $messagesData) {
+        $messageModelClass = $parser->getMessageModelClass();
+
+        DB::transaction(function () use ($userId, $messengerType, $dto, $messageModelClass) {
+            $conversationData = $dto->getConversationData();
+
             $account = MessengerAccount::firstOrCreate(
                 [
                     'user_id' => $userId,
@@ -72,26 +71,7 @@ class ImportService
                 ],
             );
 
-            /**
-             * Определяем модель сообщений в зависимости от типа мессенджера
-             */
-            $messageModel = match ($messengerType) {
-                'telegram' => TelegramMessage::class,
-                'whatsapp' => WhatsAppMessage::class,
-                'viber'    => ViberMessage::class,
-                default    => throw new RuntimeException("Unknown messenger type: {$messengerType}"),
-            };
-
-            /**
-             * Загружаем все существующие сообщения из БД
-             */
-            $messagesRelation = match ($messengerType) {
-                'telegram' => $conversation->telegramMessages(),
-                'whatsapp' => $conversation->whatsappMessages(),
-                'viber'    => $conversation->viberMessages(),
-                default    => throw new RuntimeException("Unknown messenger type: {$messengerType}"),
-            };
-
+            $messagesRelation = $conversation->messagesQuery();
             $existingMessages = $messagesRelation
                 ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
                 ->keyBy(function ($msg) {
@@ -110,7 +90,7 @@ class ImportService
              * Подготавливаем новые сообщения с ключами для дедупликации
              */
             $newMessagesToInsert = [];
-            foreach ($messagesData as $message) {
+            foreach ($dto->getMessages() as $message) {
                 $key = $message['external_id'] ?? md5(
                     ($message['sent_at'] ?? '') .
                     ($message['text'] ?? '') .
@@ -125,91 +105,63 @@ class ImportService
                     continue;
                 }
 
-                $text          = $message['text'] ?? null;
-                $encryptedText = $text
-                    ? Crypt::encryptString($text)
-                    : null;
-
-                // Базовые поля для всех типов сообщений
-                $messageData = [
-                    'conversation_id'    => $conversation->id,
-                    'external_id'        => $message['external_id'] ?? null,
-                    'sender_name'        => $message['sender_name'] ?? null,
-                    'sender_external_id' => $message['sender_external_id'] ?? null,
-                    'sent_at'            => $message['sent_at'] ?? null,
-                    'text'               => $encryptedText,
-                    'message_type'       => $message['message_type'] ?? 'text',
-                    // insert() обходит касты модели, поэтому массив нужно сериализовать вручную
-                    'raw'                => isset($message['raw'])
-                        ? json_encode($message['raw'])
-                        : null,
-                    'created_at'         => now(),
-                    'updated_at'         => now(),
-                ];
-
-                // Добавляем специфичные поля для Telegram
-                if ($messengerType === 'telegram') {
-                    $messageData = array_merge($messageData, [
-                        'sticker_id'                => $message['sticker_id'] ?? null,
-                        'sticker_set_name'          => $message['sticker_set_name'] ?? null,
-                        'voice_duration'            => $message['voice_duration'] ?? null,
-                        'voice_file_id'             => $message['voice_file_id'] ?? null,
-                        'video_file_id'             => $message['video_file_id'] ?? null,
-                        'video_duration'            => $message['video_duration'] ?? null,
-                        'photo_file_id'             => $message['photo_file_id'] ?? null,
-                        'photo_sizes'               => isset($message['photo_sizes'])
-                            ? json_encode($message['photo_sizes'])
-                            : null,
-                        'service_action'            => $message['service_action'] ?? null,
-                        'service_actor'             => isset($message['service_actor'])
-                            ? json_encode($message['service_actor'])
-                            : null,
-                        'forwarded_from_chat_id'    => $message['forwarded_from_chat_id'] ?? null,
-                        'forwarded_from_message_id' => $message['forwarded_from_message_id'] ?? null,
-                        'edited_at'                 => $message['edited_at'] ?? null,
-                        'reactions'                 => isset($message['reactions'])
-                            ? json_encode($message['reactions'])
-                            : null,
-                    ]);
-                }
-
-                // Добавляем специфичные поля для WhatsApp
-                if ($messengerType === 'whatsapp') {
-                    $messageData = array_merge($messageData, [
-                        'status'             => $message['status'] ?? null,
-                        'is_forwarded'       => $message['is_forwarded'] ?? false,
-                        'voice_note_file_id' => $message['voice_note_file_id'] ?? null,
-                        'media_file_id'      => $message['media_file_id'] ?? null,
-                        'reactions'          => isset($message['reactions'])
-                            ? json_encode($message['reactions'])
-                            : null,
-                        'labels'             => isset($message['labels'])
-                            ? json_encode($message['labels'])
-                            : null,
-                    ]);
-                }
-
-                // Добавляем специфичные поля для Viber
-                if ($messengerType === 'viber') {
-                    $messageData = array_merge($messageData, [
-                        'media_url'  => $message['media_url'] ?? null,
-                        'sticker_id' => $message['sticker_id'] ?? null,
-                        'urls'       => isset($message['urls'])
-                            ? json_encode($message['urls'])
-                            : null,
-                    ]);
-                }
-
-                $newMessagesToInsert[] = $messageData;
+                $row                   = $this->prepareMessageRowForInsert(
+                    $message,
+                    $conversation->id,
+                    $messageModelClass
+                );
+                $newMessagesToInsert[] = $row;
             }
 
-            /**
-             * Вставляем только новые сообщения в соответствующую таблицу
-             */
             if ($newMessagesToInsert) {
-                $messageModel::insert($newMessagesToInsert);
+                $messageModelClass::insert($newMessagesToInsert);
             }
         });
     }
-}
 
+    /**
+     * Собирает строку для insert: добавляет conversation_id, шифрует text, timestamps, кодирует array/json-поля по
+     * casts модели.
+     *
+     * @param array<string, mixed> $message
+     * @param class-string<Model>  $messageModelClass
+     *
+     * @return array<string, mixed>
+     */
+    private function prepareMessageRowForInsert(array $message, int $conversationId, string $messageModelClass): array
+    {
+        $text = $message['text'] ?? null;
+        $row  = array_merge($message, [
+            'conversation_id' => $conversationId,
+            'text'            => $text
+                ? Crypt::encryptString($text)
+                : null,
+            'created_at'      => now(),
+            'updated_at'      => now(),
+        ]);
+
+        /**
+         * @var Model $model
+         */
+        $model   = $messageModelClass::make();
+        $casts   = $model->getCasts();
+        $allowed = array_merge($model->getFillable(), ['created_at', 'updated_at']);
+        // Нормализуем строку: у всех строк один и тот же набор ключей в одном порядке (иначе bulk insert падает)
+        $row = array_merge(
+            array_fill_keys($allowed, null),
+            array_intersect_key($row, array_flip($allowed))
+        );
+
+        foreach ($row as $key => $value) {
+            if (!isset($casts[$key])) {
+                continue;
+            }
+            $cast = $casts[$key];
+            if (($cast === 'array' || $cast === 'json') && is_array($value)) {
+                $row[$key] = json_encode($value);
+            }
+        }
+
+        return $row;
+    }
+}
