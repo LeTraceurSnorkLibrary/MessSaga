@@ -80,6 +80,7 @@ const mergedAttrs = computed(() => ({
     --button-font-size: 1rem;
     --button-line-height: 1.5;
     --button-color: var(--gray-0);
+    --button-color-interaction: var(--gray-0);
     --button-color-disabled: var(--gray-500);
     --button-bg-color: var(--rose-500);
     --button-bg-color-interaction: var(--rose-600);
@@ -123,6 +124,8 @@ const mergedAttrs = computed(() => ({
     }
 
     &:hover:not(:disabled) {
+        --button-color: var(--button-color-interaction);
+
         border-color: var(--button-border-color-interaction);
         box-shadow: var(--button-box-shadow-interaction);
     }
@@ -195,6 +198,7 @@ const mergedAttrs = computed(() => ({
         background-image: none;
 
         &:hover:not(:disabled):not(.button--slight-hover) {
+            color: var(--button-color);
             background-color: var(--button-bg-color);
             background-image: var(--button-bg-image);
         }
@@ -202,6 +206,7 @@ const mergedAttrs = computed(() => ({
 
     &--secondary {
         --button-color: var(--gray-700);
+        --button-color-interaction: var(--gray-700);
         --button-color-disabled: var(--gray-500);
         --button-bg-color: var(--gray-0);
         --button-bg-color-interaction: var(--gray-0);
@@ -215,6 +220,7 @@ const mergedAttrs = computed(() => ({
 
     &--tertiary {
         --button-color: var(--gray-700);
+        --button-color-interaction: var(--gray-700);
         --button-color-disabled: var(--gray-500);
         --button-bg-color: var(--gray-0);
         --button-bg-color-interaction: var(--gray-200);
@@ -228,6 +234,7 @@ const mergedAttrs = computed(() => ({
 
     &--danger {
         --button-color: var(--gray-0);
+        --button-color-interaction: var(--gray-0);
         --button-color-disabled: var(--gray-500);
         --button-bg-color: var(--rose-600);
         --button-bg-color-interaction: var(--rose-700);
@@ -235,8 +242,8 @@ const mergedAttrs = computed(() => ({
         --button-bg-image: none;
         --button-bg-image-interaction: none;
         --button-bg-image-disabled: none;
-        --button-border-color: transparent;
-        --button-border-color-interaction: transparent;
+        --button-border-color: var(--rose-600);
+        --button-border-color-interaction: var(--rose-700);
     }
 
     &--with-shadow {
