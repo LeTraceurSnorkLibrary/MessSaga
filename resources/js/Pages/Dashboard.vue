@@ -1,11 +1,11 @@
 <script setup>
-import {onUnmounted, ref} from 'vue';
+import ConversationList from '@/Components/ConversationList.vue';
+import ImportWizard from '@/Components/ImportWizard.vue';
+import MessageThread from '@/Components/MessageThread.vue';
+import MessengerTabs from '@/Components/MessengerTabs.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {Head} from '@inertiajs/vue3';
-import MessengerTabs from '@/Components/MessengerTabs.vue';
-import ConversationList from '@/Components/ConversationList.vue';
-import MessageThread from '@/Components/MessageThread.vue';
-import ImportWizard from '@/Components/ImportWizard.vue';
+import {onUnmounted, ref, watch} from 'vue';
 
 const selectedMessenger = ref('telegram');
 const conversations = ref([]);
@@ -18,21 +18,20 @@ const pollingStartTime = ref(null);
 const POLLING_INTERVAL_MS = 2000;
 const POLLING_TIMEOUT_MS = 60000;
 
+const previousConversationsCount = ref(0);
+const previousMessagesCount = ref(0);
+
 const loadConversations = async () => {
     loadingConversations.value = true;
     try {
         const response = await window.axios.get('/api/conversations', {
-            params: {messenger: selectedMessenger.value},
+            params: { messenger: selectedMessenger.value },
         });
-        const previousCount = conversations.value.length;
+        previousConversationsCount.value = conversations.value.length;
         conversations.value = response.data;
 
-        if (!currentConversation.value && conversations.value.length > 0) {
-            handleConversationSelect(conversations.value[0]);
-        }
-
-        if (pollingInterval.value && conversations.value.length !== previousCount) {
-            stopPolling();
+        if (!pollingInterval.value && !currentConversation.value && conversations.value.length > 0) {
+            await handleConversationSelect(conversations.value[0]);
         }
     } finally {
         loadingConversations.value = false;
@@ -42,6 +41,8 @@ const loadConversations = async () => {
 const startPolling = () => {
     stopPolling();
     pollingStartTime.value = Date.now();
+    previousConversationsCount.value = conversations.value.length;
+    previousMessagesCount.value = messages.value.length;
 
     pollingInterval.value = setInterval(async () => {
         if (Date.now() - pollingStartTime.value > POLLING_TIMEOUT_MS) {
@@ -49,16 +50,31 @@ const startPolling = () => {
             return;
         }
         try {
-            const response = await window.axios.get('/api/conversations', {
-                params: {messenger: selectedMessenger.value},
+            const convResponse = await window.axios.get('/api/conversations', {
+                params: { messenger: selectedMessenger.value },
             });
-            const previousCount = conversations.value.length;
-            conversations.value = response.data;
 
-            if (conversations.value.length > previousCount) {
+            const newConversationsCount = convResponse.data.length;
+            const conversationsChanged = newConversationsCount !== previousConversationsCount.value;
+            conversations.value = convResponse.data;
+            previousConversationsCount.value = newConversationsCount;
+
+            let messagesChanged = false;
+            if (currentConversation.value) {
+                const msgResponse = await window.axios.get(
+                    `/api/conversations/${currentConversation.value.id}/messages`
+                );
+
+                const newMessagesCount = msgResponse.data.length;
+                messagesChanged = newMessagesCount !== previousMessagesCount.value;
+                messages.value = msgResponse.data;
+                previousMessagesCount.value = newMessagesCount;
+            }
+
+            if (conversationsChanged || messagesChanged) {
                 stopPolling();
                 if (!currentConversation.value && conversations.value.length > 0) {
-                    handleConversationSelect(conversations.value[0]);
+                    await handleConversationSelect(conversations.value[0]);
                 }
             }
         } catch (error) {
@@ -81,12 +97,15 @@ const handleImportStarted = () => {
 };
 
 const loadMessages = async (conversationId) => {
-    if (!conversationId) return;
+    if (!conversationId) {
+        return;
+    }
     loadingMessages.value = true;
     try {
         const response = await window.axios.get(
             `/api/conversations/${conversationId}/messages`
         );
+        previousMessagesCount.value = messages.value.length;
         messages.value = response.data;
     } finally {
         loadingMessages.value = false;
@@ -106,8 +125,12 @@ const handleConversationSelect = async (conversation) => {
 };
 
 const handleConversationDelete = async () => {
-    if (!currentConversation.value) return;
-    if (!window.confirm('Удалить этот чат вместе со всеми сообщениями?')) return;
+    if (!currentConversation.value) {
+        return;
+    }
+    if (!window.confirm('Удалить этот чат вместе со всеми сообщениями?')) {
+        return;
+    }
 
     await window.axios.delete(
         `/api/conversations/${currentConversation.value.id}`
@@ -117,15 +140,20 @@ const handleConversationDelete = async () => {
     await loadConversations();
 };
 
+watch(currentConversation, (newConv, oldConv) => {
+    if (newConv?.id !== oldConv?.id && newConv) {
+        loadMessages(newConv.id);
+    }
+});
+
 onUnmounted(() => {
     stopPolling();
 });
 
 loadConversations();
 </script>
-
 <template>
-    <Head title="MessSaga"/>
+    <Head title="MessSaga" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -169,7 +197,6 @@ loadConversations();
         </div>
     </AuthenticatedLayout>
 </template>
-
 <style scoped>
 .dashboard-page {
     padding: 2rem 0;
