@@ -18,3 +18,10 @@
 @mixin text--150($font-size, $font-weight: variables.$font-weight--normal) {
     @include text($font-size, variables.$line-height--150, $font-weight);
 }
+
+@mixin title($font-size, $line-height: variables.$line-height--150, $font-weight: variables.$font-weight--bold) {
+    font-family: var(--font-family-title);
+    font-size: $font-size;
+    line-height: $line-height;
+    font-weight: $font-weight;
+}

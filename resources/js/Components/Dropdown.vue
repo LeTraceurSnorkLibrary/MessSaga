@@ -1,84 +1,109 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import {computed, onMounted, onUnmounted, ref} from 'vue';
 
 const props = defineProps({
-    align: {
-        type: String,
-        default: 'right',
-    },
-    width: {
-        type: String,
-        default: '48',
-    },
-    contentClasses: {
-        type: String,
-        default: 'py-1 bg-white',
-    },
+    align: {type: String, default: 'right'},
+    width: {type: [String, Number], default: '48'},
+    contentClasses: {type: String, default: ''},
 });
 
+const open = ref(false);
+
 const closeOnEscape = (e) => {
-    if (open.value && e.key === 'Escape') {
-        open.value = false;
-    }
+    if (open.value && e.key === 'Escape') open.value = false;
 };
 
 onMounted(() => document.addEventListener('keydown', closeOnEscape));
 onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 
-const widthClass = computed(() => {
-    return {
-        48: 'w-48',
-    }[props.width.toString()];
+const widthStyle = computed(() => ({
+    width: props.width === '48' ? '12rem' : `${Number(props.width)}px`,
+}));
+
+const alignmentStyle = computed(() => {
+    if (props.align === 'left') return {left: 0};
+    if (props.align === 'right') return {right: 0, left: 'auto'};
+    return {left: '50%', transform: 'translateX(-50%)'};
 });
 
-const alignmentClasses = computed(() => {
-    if (props.align === 'left') {
-        return 'ltr:origin-top-left rtl:origin-top-right start-0';
-    } else if (props.align === 'right') {
-        return 'ltr:origin-top-right rtl:origin-top-left end-0';
-    } else {
-        return 'origin-top';
-    }
-});
-
-const open = ref(false);
+const panelStyle = computed(() => ({...widthStyle.value, ...alignmentStyle.value}));
 </script>
 
 <template>
-    <div class="relative">
+    <div class="dropdown">
         <div @click="open = !open">
-            <slot name="trigger" />
+            <slot name="trigger"/>
         </div>
 
-        <!-- Full Screen Dropdown Overlay -->
         <div
             v-show="open"
-            class="fixed inset-0 z-40"
+            aria-hidden="true"
+            class="dropdown__overlay"
             @click="open = false"
-        ></div>
+        />
 
         <Transition
-            enter-active-class="transition ease-out duration-200"
-            enter-from-class="opacity-0 scale-95"
-            enter-to-class="opacity-100 scale-100"
-            leave-active-class="transition ease-in duration-75"
-            leave-from-class="opacity-100 scale-100"
-            leave-to-class="opacity-0 scale-95"
+            enter-active-class="dropdown__enter-active"
+            enter-from-class="dropdown__enter-from"
+            enter-to-class="dropdown__enter-to"
+            leave-active-class="dropdown__leave-active"
+            leave-from-class="dropdown__leave-from"
+            leave-to-class="dropdown__leave-to"
         >
             <div
                 v-show="open"
-                class="absolute z-50 mt-2 rounded-md shadow-lg"
-                :class="[widthClass, alignmentClasses]"
-                style="display: none"
+                :style="panelStyle"
+                class="dropdown__panel"
                 @click="open = false"
             >
-                <div
-                    class="rounded-md ring-1 ring-black ring-opacity-5"
-                    :class="contentClasses"
-                >
-                    <slot name="content" />
+                <div :class="contentClasses" class="dropdown__content">
+                    <slot name="content"/>
                 </div>
             </div>
         </Transition>
     </div>
 </template>
+
+<style scoped>
+.dropdown {
+    position: relative;
+}
+
+.dropdown__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+.dropdown__panel {
+    position: absolute;
+    z-index: 50;
+    margin-top: 0.5rem;
+    border-radius: 0.375rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.dropdown__enter-active,
+.dropdown__leave-active {
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.dropdown__enter-from,
+.dropdown__leave-to {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.dropdown__enter-to,
+.dropdown__leave-from {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.dropdown__content {
+    padding: 0.25rem 0;
+    background: var(--gray-0);
+    border-radius: 0.375rem;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+</style>

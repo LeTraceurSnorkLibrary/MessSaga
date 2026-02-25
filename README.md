@@ -165,6 +165,6 @@ DB_PASSWORD=
 ## Стек
 
 - **Backend:** Laravel 12, PHP 8.2+
-- **Frontend:** Vue 3, Inertia.js, Vite, Tailwind CSS
+- **Frontend:** Vue 3, Inertia.js, Vite
 - **БД по умолчанию:** MySQL (опционально SQLite)
 - **Очереди:** database driver (таблица `jobs`)

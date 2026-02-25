@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "210822e34ac05d4dde6de5ce91fc3b64",
+    "content-hash": "bcbe3b1d5f0f8326adb3e3325a99e844",
     "packages": [
         {
             "name": "brick/math",
@@ -5765,6 +5765,61 @@
                 }
             ],
             "time": "2026-01-01T22:13:48+00:00"
+        },
+        {
+            "name": "teapot/status-code",
+            "version": "2.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/teapot-php/status-code.git",
+                "reference": "37668b9c1dd756e54bca489fb5c62c14223cb87e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/teapot-php/status-code/zipball/37668b9c1dd756e54bca489fb5c62c14223cb87e",
+                "reference": "37668b9c1dd756e54bca489fb5c62c14223cb87e",
+                "shasum": ""
+            },
+            "require": {
+                "php": "~7.4.0 || ~8.0.0 || ~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0"
+            },
+            "require-dev": {
+                "ergebnis/composer-normalize": "^2.48.2",
+                "ergebnis/php-cs-fixer-config": "^6.56.1",
+                "phpstan/phpstan": "^2.1.32",
+                "phpstan/phpstan-deprecation-rules": "^2.0.3",
+                "phpstan/phpstan-strict-rules": "^2.0.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Teapot\\StatusCode\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Barney Hanlon",
+                    "email": "barney@shrikeh.net"
+                },
+                {
+                    "name": "Andreas Möller",
+                    "email": "am@localheinz.com"
+                }
+            ],
+            "description": "PHP HTTP Response Status code library",
+            "homepage": "https://github.com/teapot-php/status-code",
+            "keywords": [
+                "http"
+            ],
+            "support": {
+                "issues": "https://github.com/teapot-php/status-code/issues",
+                "source": "https://github.com/teapot-php/status-code/tree/2.5.0"
+            },
+            "time": "2025-11-20T08:53:39+00:00"
         },
         {
             "name": "tightenco/ziggy",

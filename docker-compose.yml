@@ -1,0 +1,17 @@
+# Локальный MySQL: make db-mysql-up | make db-mysql-down
+
+services:
+  mysql:
+    image: mysql:9.6
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: messsaga
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

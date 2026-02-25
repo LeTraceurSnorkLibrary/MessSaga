@@ -1,8 +1,6 @@
 <script setup>
+import UIInput from '@/Components/base/UIInput.vue';
 import UIButton from '@/Components/UIButton.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
 import {Link, useForm, usePage} from '@inertiajs/vue3';
 
 defineProps({
@@ -21,92 +19,153 @@ const form = useForm({
     email: user.email,
 });
 </script>
-
 <template>
-    <section>
-        <header>
-            <h2 class="text-lg font-medium text-gray-900">
-                Profile Information
+    <section class="profile-form">
+        <header class="profile-form__header">
+            <h2 class="profile-form__title">
+                Данные профиля
             </h2>
-
-            <p class="mt-1 text-sm text-gray-600">
-                Update your account's profile information and email address.
+            <p class="profile-form__desc">
+                Имя и email, привязанные к аккаунту.
             </p>
         </header>
 
         <form
-            class="mt-6 space-y-6"
-            @submit.prevent="form.patch(route('profile.update'))"
+            class="profile-form__body"
+            @submit.prevent="form.patch(route('profile.update'), { preserveScroll: true })"
         >
-            <div>
-                <InputLabel for="name" value="Name" />
+            <UIInput
+                id="name"
+                v-model="form.name"
+                :error="form.errors.name"
+                autocomplete="name"
+                autofocus
+                label="Имя"
+                required
+                type="text"
+            />
 
-                <TextInput
-                    id="name"
-                    v-model="form.name"
-                    autocomplete="name"
-                    autofocus
-                    class="mt-1 block w-full"
-                    required
-                    type="text"
-                />
+            <UIInput
+                id="email"
+                v-model="form.email"
+                :error="form.errors.email"
+                autocomplete="username"
+                label="Email"
+                required
+                type="email"
+            />
 
-                <InputError :message="form.errors.name" class="mt-2" />
-            </div>
-
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    autocomplete="username"
-                    class="mt-1 block w-full"
-                    required
-                    type="email"
-                />
-
-                <InputError :message="form.errors.email" class="mt-2" />
-            </div>
-
-            <div v-if="mustVerifyEmail && user.email_verified_at === null">
-                <p class="mt-2 text-sm text-gray-800">
-                    Your email address is unverified.
+            <div v-if="mustVerifyEmail && user.email_verified_at === null" class="profile-form__verify">
+                <p class="profile-form__verify-text">
+                    Email не подтверждён.
                     <Link
                         :href="route('verification.send')"
                         as="button"
-                        class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        class="profile-form__verify-link"
                         method="post"
                     >
-                        Click here to re-send the verification email.
+                        Отправить письмо повторно
                     </Link>
                 </p>
-
-                <div
+                <p
                     v-show="status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
+                    class="profile-form__verify-sent"
                 >
-                    A new verification link has been sent to your email address.
-                </div>
+                    Ссылка для подтверждения отправлена на вашу почту.
+                </p>
             </div>
 
-            <div class="flex items-center gap-4">
-                <UIButton :disabled="form.processing">Save</UIButton>
-
+            <div class="profile-form__actions">
+                <UIButton type="submit" :disabled="form.processing">Сохранить</UIButton>
                 <Transition
-                    enter-active-class="transition ease-in-out"
-                    enter-from-class="opacity-0"
-                    leave-active-class="transition ease-in-out"
-                    leave-to-class="opacity-0"
+                    enter-active-class="profile-form__success--enter-active"
+                    enter-from-class="profile-form__success--enter-from"
+                    leave-active-class="profile-form__success--leave-active"
+                    leave-to-class="profile-form__success--leave-to"
                 >
-                    <p
-                        v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600"
-                    >
-                        Saved.
+                    <p v-if="form.recentlySuccessful" class="profile-form__success">
+                        Сохранено.
                     </p>
                 </Transition>
             </div>
         </form>
     </section>
 </template>
+<style scoped>
+.profile-form__header {
+    margin-bottom: 1.5rem;
+}
+
+.profile-form__title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.profile-form__desc {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.profile-form__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.profile-form__verify {
+    margin-top: 0.25rem;
+}
+
+.profile-form__verify-text {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--gray-800);
+}
+
+.profile-form__verify-link {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+.profile-form__verify-link:hover {
+    color: var(--gray-900);
+}
+
+.profile-form__verify-sent {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--green-600);
+}
+
+.profile-form__actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.profile-form__success {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.profile-form__success--enter-active,
+.profile-form__success--leave-active {
+    transition: opacity 0.15s ease;
+}
+
+.profile-form__success--enter-from,
+.profile-form__success--leave-to {
+    opacity: 0;
+}
+</style>

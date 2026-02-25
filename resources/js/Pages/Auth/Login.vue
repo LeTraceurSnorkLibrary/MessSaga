@@ -1,9 +1,7 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
+import UIInput from '@/Components/base/UIInput.vue';
 import Checkbox from '@/Components/Checkbox.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import {Head, Link, useForm} from '@inertiajs/vue3';
 
@@ -28,74 +26,75 @@ const submit = () => {
     });
 };
 </script>
-
 <template>
     <GuestLayout>
-        <Head title="Log in" />
+        <Head title="Log in"/>
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        <p v-if="status" class="auth-status">
             {{ status }}
-        </div>
+        </p>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+            <UIInput
+                id="email"
+                v-model="form.email"
+                :error="form.errors.email"
+                autocomplete="username"
+                autofocus
+                label="Email"
+                required
+                type="email"
+            />
 
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    autocomplete="username"
-                    autofocus
-                    class="mt-1 block w-full"
-                    required
-                    type="email"
-                />
+            <UIInput
+                id="password"
+                v-model="form.password"
+                :error="form.errors.password"
+                autocomplete="current-password"
+                label="Пароль"
+                required
+                type="password"
+            />
 
-                <InputError :message="form.errors.email" class="mt-2" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    v-model="form.password"
-                    autocomplete="current-password"
-                    class="mt-1 block w-full"
-                    required
-                    type="password"
-                />
-
-                <InputError :message="form.errors.password" class="mt-2" />
-            </div>
-
-            <div class="mt-4 block">
-                <label class="flex items-center">
-                    <Checkbox v-model:checked="form.remember" name="remember" />
-                    <span class="ms-2 text-sm text-gray-600"
-                    >Remember me</span
-                    >
+            <div class="form-remember">
+                <label class="form-remember__label">
+                    <Checkbox v-model:checked="form.remember" name="remember"/>
+                    <span class="form-remember__text">Запомнить меня</span>
                 </label>
             </div>
 
-            <div class="mt-4 flex items-center justify-end">
+            <div class="form-actions">
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                    Forgot your password?
+                    Забыли пароль?
                 </Link>
-
+                <Link
+                    :href="route('register')"
+                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                    Зарегистрироваться
+                </Link>
                 <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
+                    type="submit"
                     variant="primary"
-                    class="ms-4"
                 >
-                    Log in
+                    Войти
                 </UIButton>
             </div>
         </form>
     </GuestLayout>
 </template>
+<style lang="scss" scoped>
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+</style>

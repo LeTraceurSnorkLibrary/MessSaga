@@ -25,23 +25,21 @@ const verificationLinkSent = computed(
     <GuestLayout>
         <Head title="Email Verification" />
 
-        <div class="mb-4 text-sm text-gray-600">
+        <p class="auth-intro">
             Thanks for signing up! Before getting started, could you verify your
             email address by clicking on the link we just emailed to you? If you
             didn't receive the email, we will gladly send you another.
-        </div>
+        </p>
 
-        <div
-            v-if="verificationLinkSent"
-            class="mb-4 text-sm font-medium text-green-600"
-        >
+        <p v-if="verificationLinkSent" class="auth-status">
             A new verification link has been sent to the email address you
             provided during registration.
-        </div>
+        </p>
 
         <form @submit.prevent="submit">
-            <div class="mt-4 flex items-center justify-between">
+            <div class="form-actions form-actions--between">
                 <UIButton
+                    type="submit"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
@@ -53,9 +51,9 @@ const verificationLinkSent = computed(
                     as="button"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     method="post"
-                >Log Out
-                </Link
                 >
+                    Log Out
+                </Link>
             </div>
         </form>
     </GuestLayout>
