@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace App\Services\Parsers;
 
 use App\DTO\ConversationImportDTO;
-use App\Models\Conversation;
 use App\Models\WhatsAppMessage;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
-class WhatsAppParser implements ParserInterface
+class WhatsAppParser extends AbstractParser implements ParserInterface
 {
+    /**
+     * @inheritdoc
+     */
+    public const PARSER_CORRESPONDING_MESSAGE_MODEL = WhatsAppMessage::class;
+
     /**
      * Паттерн для строки сообщения WhatsApp:
      * 22.12.2025, 11:27 - Имя: Текст сообщения
@@ -60,22 +63,6 @@ class WhatsAppParser implements ParserInterface
             ]);
             throw new RuntimeException('Failed to parse WhatsApp export: ' . $e->getMessage(), 0, $e);
         }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMessageModelClass(): string
-    {
-        return WhatsAppMessage::class;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMessagesRelation(Conversation $conversation): HasMany
-    {
-        return $conversation->whatsappMessages();
     }
 
     /**
