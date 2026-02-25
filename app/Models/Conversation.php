@@ -39,32 +39,16 @@ class Conversation extends Model
     }
 
     /**
-     * Получить сообщения Telegram.
+     * Returns hasMany for messages of passed $messageModel class.
      *
-     * @return HasMany
-     */
-    public function telegramMessages(): HasMany
-    {
-        return $this->hasMany(TelegramMessage::class);
-    }
-
-    /**
-     * Получить сообщения WhatsApp.
+     * @template TRelatedModel of Model
      *
-     * @return HasMany
-     */
-    public function whatsappMessages(): HasMany
-    {
-        return $this->hasMany(WhatsAppMessage::class);
-    }
-
-    /**
-     * Получить сообщения Viber.
+     * @param class-string<TRelatedModel> $messageModel
      *
-     * @return HasMany
+     * @return HasMany<TRelatedModel, $this>
      */
-    public function viberMessages(): HasMany
+    public function messages(string $messageModel): HasMany
     {
-        return $this->hasMany(ViberMessage::class);
+        return $this->hasMany($messageModel);
     }
 }

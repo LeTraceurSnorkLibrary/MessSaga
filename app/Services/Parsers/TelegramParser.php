@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace App\Services\Parsers;
 
 use App\DTO\ConversationImportDTO;
-use App\Models\Conversation;
 use App\Models\TelegramMessage;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 
-class TelegramParser implements ParserInterface
+class TelegramParser extends AbstractParser implements ParserInterface
 {
+    /**
+     * @inheritdoc
+     */
+    public const PARSER_CORRESPONDING_MESSAGE_MODEL = TelegramMessage::class;
+
+    /**
+     * @inheritdoc
+     */
     public function parse(string $path): ConversationImportDTO
     {
         $raw = json_decode(file_get_contents($path), true);
@@ -100,21 +106,5 @@ class TelegramParser implements ParserInterface
         }
 
         return new ConversationImportDTO($conversationData, $messages);
-    }
-
-    /**
-     * @return class-string<TelegramMessage>
-     */
-    public function getMessageModelClass(): string
-    {
-        return TelegramMessage::class;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMessagesRelation(Conversation $conversation): HasMany
-    {
-        return $conversation->telegramMessages();
     }
 }
