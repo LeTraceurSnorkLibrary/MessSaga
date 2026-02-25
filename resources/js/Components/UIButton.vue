@@ -5,7 +5,7 @@ const props = defineProps({
     variant: {
         type: String,
         default: 'primary',
-        validator: (v) => ['primary', 'secondary', 'tertiary'].includes(v),
+        validator: (v) => ['primary', 'secondary', 'tertiary', 'danger'].includes(v),
     },
     type: {
         type: String,
@@ -224,6 +224,19 @@ const mergedAttrs = computed(() => ({
         --button-bg-image-disabled: none;
         --button-border-color: var(--gray-0);
         --button-border-color-interaction: var(--gray-200);
+    }
+
+    &--danger {
+        --button-color: var(--gray-0);
+        --button-color-disabled: var(--gray-500);
+        --button-bg-color: var(--rose-600);
+        --button-bg-color-interaction: var(--rose-700);
+        --button-bg-color-disabled: var(--gray-400);
+        --button-bg-image: none;
+        --button-bg-image-interaction: none;
+        --button-bg-image-disabled: none;
+        --button-border-color: transparent;
+        --button-border-color-interaction: transparent;
     }
 
     &--with-shadow {

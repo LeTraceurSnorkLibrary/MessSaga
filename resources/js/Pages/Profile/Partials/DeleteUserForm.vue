@@ -1,7 +1,7 @@
 <script setup>
-import UIButton from '@/Components/UIButton.vue';
 import UIInput from '@/Components/base/UIInput.vue';
 import Modal from '@/Components/Modal.vue';
+import UIButton from '@/Components/UIButton.vue';
 import {useForm} from '@inertiajs/vue3';
 import {nextTick, ref} from 'vue';
 
@@ -14,90 +14,109 @@ const form = useForm({
 
 const confirmUserDeletion = () => {
     confirmingUserDeletion.value = true;
-
-    nextTick(() => passwordInput.value.focus());
+    nextTick(() => passwordInput.value?.focus());
 };
 
 const deleteUser = () => {
     form.delete(route('profile.destroy'), {
         preserveScroll: true,
         onSuccess: () => closeModal(),
-        onError: () => passwordInput.value.focus(),
+        onError: () => passwordInput.value?.focus(),
         onFinish: () => form.reset(),
     });
 };
 
 const closeModal = () => {
     confirmingUserDeletion.value = false;
-
     form.clearErrors();
     form.reset();
 };
 </script>
-
 <template>
-    <section class="space-y-6">
-        <header>
-            <h2 class="text-lg font-medium text-gray-900">
-                Delete Account
+    <section class="profile-form profile-form--danger">
+        <header class="profile-form__header">
+            <h2 class="profile-form__title">
+                Удаление аккаунта
             </h2>
-
-            <p class="mt-1 text-sm text-gray-600">
-                Once your account is deleted, all of its resources and data will
-                be permanently deleted. Before deleting your account, please
-                download any data or information that you wish to retain.
+            <p class="profile-form__desc">
+                После удаления все данные аккаунта будут безвозвратно удалены. Сохраните нужные переписки и данные
+                заранее.
             </p>
         </header>
 
-        <UIButton variant="danger"
-                  @click="confirmUserDeletion"
-        >Delete Account
+        <UIButton variant="danger" @click="confirmUserDeletion">
+            Удалить аккаунт
         </UIButton>
 
         <Modal :show="confirmingUserDeletion" @close="closeModal">
-            <div class="p-6">
-                <h2
-                    class="text-lg font-medium text-gray-900"
-                >
-                    Are you sure you want to delete your account?
+            <div class="profile-form__modal">
+                <h2 class="profile-form__title">
+                    Вы уверены, что хотите удалить аккаунт?
                 </h2>
-
-                <p class="mt-1 text-sm text-gray-600">
-                    Once your account is deleted, all of its resources and data
-                    will be permanently deleted. Please enter your password to
-                    confirm you would like to permanently delete your account.
+                <p class="profile-form__desc">
+                    Все данные будут удалены без возможности восстановления. Введите пароль для подтверждения.
                 </p>
 
-                <div class="mt-6">
+                <div class="profile-form__modal-field">
                     <UIInput
                         id="password"
                         ref="passwordInput"
                         v-model="form.password"
                         :error="form.errors.password"
-                        label="Password"
+                        label="Пароль"
                         label-sr-only
-                        placeholder="Password"
+                        placeholder="Пароль"
                         type="password"
                         @keyup.enter="deleteUser"
                     />
                 </div>
 
-                <div class="mt-6 flex justify-end">
+                <div class="profile-form__modal-actions">
                     <UIButton variant="secondary" @click="closeModal">
-                        Cancel
+                        Отмена
                     </UIButton>
-
                     <UIButton
-                        :class="{ 'opacity-25': form.processing }"
+                        :class="{ 'profile-form__button--busy': form.processing }"
                         :disabled="form.processing"
-                        class="ms-3"
                         variant="danger"
                         @click="deleteUser"
                     >
-                        Delete Account
+                        Удалить аккаунт
                     </UIButton>
                 </div>
             </div>
         </Modal>
     </section>
 </template>
+<style scoped>
+.profile-form--danger .profile-form__desc {
+    margin-bottom: 1rem;
+}
+
+.profile-form__modal {
+    padding: 1.5rem;
+}
+
+.profile-form__modal .profile-form__title {
+    margin-bottom: 0.25rem;
+}
+
+.profile-form__modal .profile-form__desc {
+    margin-top: 0;
+}
+
+.profile-form__modal-field {
+    margin-top: 1.5rem;
+}
+
+.profile-form__modal-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.profile-form__button--busy {
+    opacity: 0.7;
+}
+</style>
