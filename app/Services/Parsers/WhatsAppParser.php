@@ -7,108 +7,83 @@ namespace App\Services\Parsers;
 use App\DTO\ConversationImportDTO;
 use App\Models\WhatsAppMessage;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-use RuntimeException;
-use Throwable;
+use Illuminate\Support\Str;
 
 class WhatsAppParser extends AbstractParser implements ParserInterface
 {
-    /**
-     * @inheritdoc
-     */
     public const PARSER_CORRESPONDING_MESSAGE_MODEL = WhatsAppMessage::class;
 
-    /**
-     * Паттерн для строки сообщения WhatsApp:
-     * 22.12.2025, 11:27 - Имя: Текст сообщения
-     */
-    private const MESSAGE_PATTERN = '/^(\d{2}\.\d{2}\.\d{4}),\s(\d{2}:\d{2})\s-\s([^:]+):\s?(.*)$/u';
+    private const DATE_FORMAT = 'd.m.Y H:i';
 
-    /**
-     * Паттерн для системных сообщений (шифрование, добавление медиа)
-     */
-    private const SYSTEM_PATTERN = '/^(\d{2}\.\d{2}\.\d{4}),\s(\d{2}:\d{2})\s-\s(.+)$/u';
-
-    /**
-     * @inheritdoc
-     */
     public function parse(string $path): ConversationImportDTO
     {
         $content = file_get_contents($path);
 
         if ($content === false) {
-            Log::error('WhatsAppParser: cannot read file', ['path' => $path]);
-            throw new RuntimeException("Cannot read file: {$path}");
-        }
-
-        $lines = explode("\n", $content);
-        $lines = array_filter($lines, fn ($line) => trim($line) !== '');
-
-        if (empty($lines)) {
-            Log::warning('WhatsAppParser: empty file', ['path' => $path]);
-
             return new ConversationImportDTO([], []);
         }
 
-        try {
-            [$conversationData, $participants] = $this->extractConversationData($lines);
-            $messages = $this->parseMessages($lines, $participants);
+        $lines = collect(explode("\n", $content))
+            ->map(fn ($line) => trim($line))
+            ->filter()
+            ->values()
+            ->toArray();
 
-            return new ConversationImportDTO($conversationData, $messages);
-        } catch (Throwable $e) {
-            Log::error('WhatsAppParser: unexpected error', [
-                'path'  => $path,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw new RuntimeException('Failed to parse WhatsApp export: ' . $e->getMessage(), 0, $e);
+        if (empty($lines)) {
+            return new ConversationImportDTO([], []);
         }
+
+        $participants     = $this->extractParticipants($lines);
+        $conversationData = $this->buildConversationData($lines, $participants);
+        $messages         = $this->parseMessages($lines);
+
+        return new ConversationImportDTO($conversationData, $messages);
     }
 
-    /**
-     * Извлекает данные о переписке и определяет участников
-     *
-     * @param array $lines
-     *
-     * @return array{0: array<string, mixed>, 1: array<string>}
-     */
-    private function extractConversationData(array $lines): array
+    private function extractParticipants(array $lines): array
     {
         $participants = [];
-        $contactName  = null;
-        $phoneNumber  = null;
 
         foreach ($lines as $line) {
-            if (preg_match(self::MESSAGE_PATTERN, $line, $matches)) {
-                $sender = trim($matches[3]);
-
-                // Определяем, является ли отправитель контактом или номером
-                if (preg_match('/^\+?\d[\d\s\-]{7,}\d$/', $sender)) {
-                    // Это номер телефона
-                    $phoneNumber = $this->normalizePhoneNumber($sender);
-                } else {
-                    // Это имя контакта
-                    $contactName ??= $sender;
-                }
-
+            if ($this->isMessageLine($line, $matches)) {
+                $sender                = trim($matches[3]);
                 $participants[$sender] = true;
             }
         }
 
-        // Определяем название переписки: приоритет у имени контакта
-        $title = $contactName ?? $phoneNumber ?? 'WhatsApp chat';
+        return array_keys($participants);
+    }
 
-        // Создаём account_name для MessengerAccount
+    private function buildConversationData(array $lines, array $participants): array
+    {
+        $contactName = null;
+        $phoneNumber = null;
+
+        // Ищем первого отправителя, чтобы определить тип чата
+        foreach ($lines as $line) {
+            if ($this->isMessageLine($line, $matches)) {
+                $sender = trim($matches[3]);
+
+                if ($this->isPhoneNumber($sender)) {
+                    $phoneNumber = $this->normalizePhone($sender);
+                } else {
+                    $contactName = $sender;
+                    break; // Нашли имя, дальше можно не искать
+                }
+            }
+        }
+
+        $title       = $contactName ?? $phoneNumber ?? 'WhatsApp chat';
         $accountName = $contactName
             ? "WhatsApp: {$contactName}"
             : ($phoneNumber
                 ? "WhatsApp: {$phoneNumber}"
                 : 'WhatsApp');
 
-        $conversationData = [
-            'external_id'  => $phoneNumber, // Используем телефон как external_id если есть
+        return [
+            'external_id'  => $phoneNumber,
             'title'        => $title,
-            'participants' => array_keys($participants),
+            'participants' => $participants,
             'account_name' => $accountName,
             'account_meta' => [
                 'phone_number' => $phoneNumber,
@@ -116,83 +91,41 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
                 'type'         => 'personal_chat',
             ],
         ];
-
-        return [$conversationData, array_keys($participants)];
     }
 
-    /**
-     * Парсит сообщения из строк
-     *
-     * @param array $lines
-     * @param array $participants
-     *
-     * @return array<array-key, array<string, mixed>>
-     */
-    private function parseMessages(array $lines, array $participants): array
+    private function parseMessages(array $lines): array
     {
         $messages       = [];
         $currentMessage = null;
 
         foreach ($lines as $line) {
-            $line = trim($line);
-
-            // Пытаемся распарсить как новое сообщение
-            if (preg_match(self::MESSAGE_PATTERN, $line, $matches)) {
-                // Сохраняем предыдущее сообщение, если оно было
-                if ($currentMessage) {
-                    $messages[] = $this->finalizeMessage($currentMessage);
-                }
-
-                $date   = $matches[1];
-                $time   = $matches[2];
-                $sender = trim($matches[3]);
-                $text   = trim($matches[4]);
-
-                $currentMessage = [
-                    'external_id'        => null, // У WhatsApp нет ID сообщений
-                    'sender_name'        => $sender,
-                    'sender_external_id' => $this->getSenderId($sender, $participants),
-                    'sent_at'            => $this->parseDateTime($date, $time),
-                    'text'               => $text
-                        ?: null,
-                    'message_type'       => 'text',
-                    'raw'                => ['line' => $line],
-                ];
-
-                // Проверяем на медиа-файлы
-                if (str_contains($text, '(файл добавлен)') || str_contains($line, '‎IMG-')) {
-                    $currentMessage['message_type'] = 'media';
-                    $currentMessage['media_file']   = $this->extractMediaFile($text);
-                }
-
-            } elseif (preg_match(self::SYSTEM_PATTERN, $line, $matches)) {
-                // Системное сообщение
+            // Системное сообщение
+            if ($this->isSystemLine($line, $matches)) {
                 if ($currentMessage) {
                     $messages[]     = $this->finalizeMessage($currentMessage);
                     $currentMessage = null;
                 }
 
-                $date = $matches[1];
-                $time = $matches[2];
-                $text = trim($matches[3]);
+                $messages[] = $this->createSystemMessage($matches);
+                continue;
+            }
 
-                $messages[] = [
-                    'external_id'        => null,
-                    'sender_name'        => 'System',
-                    'sender_external_id' => null,
-                    'sent_at'            => $this->parseDateTime($date, $time),
-                    'text'               => $text,
-                    'message_type'       => 'system',
-                    'raw'                => ['line' => $line],
-                ];
+            // Обычное сообщение
+            if ($this->isMessageLine($line, $matches)) {
+                if ($currentMessage) {
+                    $messages[] = $this->finalizeMessage($currentMessage);
+                }
 
-            } elseif ($currentMessage) {
-                // Это продолжение предыдущего сообщения (многострочный текст)
+                $currentMessage = $this->createMessage($matches);
+                continue;
+            }
+
+            // Продолжение предыдущего сообщения
+            if ($currentMessage) {
                 $currentMessage['text'] .= "\n" . $line;
             }
         }
 
-        // Добавляем последнее сообщение
         if ($currentMessage) {
             $messages[] = $this->finalizeMessage($currentMessage);
         }
@@ -200,58 +133,88 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
         return $messages;
     }
 
-    /**
-     * Финальная обработка сообщения перед сохранением
-     */
-    private function finalizeMessage(array $message): array
+    private function isMessageLine(string $line, ?array &$matches = null): bool
     {
-        // Очищаем текст от маркеров медиа
-        if ($message['message_type'] === 'media') {
-            $message['text'] = preg_replace('/\s*\(файл добавлен\)$/', '', $message['text']);
-            $message['text'] = preg_replace('/^‎/', '', $message['text']);
+        $pattern = '/^(\d{2}\.\d{2}\.\d{4}), (\d{2}:\d{2}) - ([^:]+): ?(.*)$/u';
+
+        return (bool)preg_match($pattern, $line, $matches);
+    }
+
+    private function isSystemLine(string $line, ?array &$matches = null): bool
+    {
+        $pattern = '/^(\d{2}\.\d{2}\.\d{4}), (\d{2}:\d{2}) - (.+)$/u';
+
+        return (bool)preg_match($pattern, $line, $matches);
+    }
+
+    private function isPhoneNumber(string $value): bool
+    {
+        return (bool)preg_match('/^\+?\d[\d\s\-]{7,}\d$/', $value);
+    }
+
+    private function createMessage(array $matches): array
+    {
+        [, $date, $time, $sender, $text] = $matches;
+
+        $message = [
+            'external_id'        => null,
+            'sender_name'        => trim($sender),
+            'sender_external_id' => trim($sender),
+            'sent_at'            => Carbon::createFromFormat(self::DATE_FORMAT, "{$date} {$time}"),
+            'text'               => trim($text)
+                ?: null,
+            'message_type'       => 'text',
+            'raw'                => ['line' => implode(' - ', [$date, $time, $sender, $text])],
+        ];
+
+        // Определяем тип сообщения
+        if (Str::contains($text, ['(файл добавлен)', '‎IMG-', '‎VID-', '‎AUD-'])) {
+            $message['message_type'] = 'media';
+            $message['media_file']   = $this->extractFilename($text);
         }
 
         return $message;
     }
 
-    /**
-     * Парсит дату и время из формата WhatsApp
-     */
-    private function parseDateTime(string $date, string $time): Carbon
+    private function createSystemMessage(array $matches): array
     {
-        // Формат: 22.12.2025, 11:27
-        return Carbon::createFromFormat('d.m.Y H:i', "{$date} {$time}");
+        [, $date, $time, $text] = $matches;
+
+        return [
+            'external_id'        => null,
+            'sender_name'        => 'System',
+            'sender_external_id' => null,
+            'sent_at'            => Carbon::createFromFormat(self::DATE_FORMAT, "{$date} {$time}"),
+            'text'               => trim($text),
+            'message_type'       => 'system',
+            'raw'                => ['line' => implode(' - ', [$date, $time, $text])],
+        ];
     }
 
-    /**
-     * Нормализует номер телефона
-     */
-    private function normalizePhoneNumber(string $phone): string
+    private function finalizeMessage(array $message): array
     {
-        // Удаляем все кроме цифр и плюса
-        $phone = preg_replace('/[^\d+]/', '', $phone);
+        if ($message['message_type'] === 'media' && isset($message['text'])) {
+            $message['text'] = preg_replace(
+                ['/\s*\(файл добавлен\)$/', '/^‎/'],
+                ['', ''],
+                $message['text']
+            );
+        }
 
-        return $phone;
+        return $message;
     }
 
-    /**
-     * Извлекает имя файла из текста сообщения
-     */
-    private function extractMediaFile(string $text): ?string
+    private function extractFilename(string $text): ?string
     {
-        if (preg_match('/‎?([^\/\\\]+\.\w+)/u', $text, $matches)) {
+        if (preg_match('/([^\/\\\]+\.\w+)/u', $text, $matches)) {
             return $matches[1];
         }
 
         return null;
     }
 
-    /**
-     * Получает ID отправителя (для совместимости с другими парсерами)
-     */
-    private function getSenderId(string $sender, array $participants): ?string
+    private function normalizePhone(string $phone): string
     {
-        // Для WhatsApp используем сам sender как ID
-        return $sender;
+        return preg_replace('/[^\d+]/', '', $phone);
     }
 }
