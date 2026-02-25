@@ -1,9 +1,11 @@
 <script setup>
-import {ref} from 'vue';
-import UIButton from "@/Components/UIButton.vue";
+import Loader from '@/Components/base/Loader.vue';
+import UIButton from '@/Components/UIButton.vue';
+import {useCapitalizeFirstLetter} from '@/composables/useCapitalizeFirstLetter.ts';
+import {computed, ref} from 'vue';
 
 const props = defineProps({
-    selectedMessenger: {type: String, default: 'telegram'},
+    selectedMessenger: { type: String, default: 'telegram' },
 });
 
 const emit = defineEmits(['imported']);
@@ -12,6 +14,11 @@ const file = ref(null);
 const loading = ref(false);
 const message = ref('');
 const fileInputRef = ref(null);
+
+const { capitalizeFirstLetter } = useCapitalizeFirstLetter();
+const capitalizedMessenger = computed(() => {
+    return capitalizeFirstLetter(props.selectedMessenger);
+});
 
 const submit = async () => {
     if (!file.value) {
@@ -28,7 +35,7 @@ const submit = async () => {
         formData.append('file', file.value);
 
         await window.axios.post('/api/import/chats', formData, {
-            headers: {'Content-Type': 'multipart/form-data'},
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
 
         message.value =
@@ -52,23 +59,18 @@ const onFileChange = (event) => {
     file.value = selected ?? null;
 };
 </script>
-
 <template>
     <div class="import-wizard">
         <div class="import-wizard__inner">
             <div class="import-wizard__title">Импорт переписки</div>
             <div class="import-wizard__row">
-                <label class="import-wizard__label">Мессенджер:</label>
-                <select
-                    :value="selectedMessenger"
-                    class="import-wizard__select"
-                    disabled
-                >
-                    <option value="telegram">Telegram (.json экспорт)</option>
-                    <option disabled value="whatsapp">WhatsApp (скоро)</option>
-                    <option disabled value="viber">Viber (скоро)</option>
-                </select>
+                <p class="import-wizard__label">Выберите вкладку соответствующего мессенджера из списка ниже.
+                    Переписка будет загружена в него.</p>
             </div>
+            <input
+                :value="selectedMessenger"
+                type="hidden"
+            />
             <div class="import-wizard__row">
                 <label class="import-wizard__label">Файл экспорта:</label>
                 <input
@@ -79,20 +81,23 @@ const onFileChange = (event) => {
                 />
             </div>
             <div class="import-wizard__actions">
-                <UIButton
-                    :disabled="loading"
-                    size="s"
-                    type="button"
-                    @click="submit"
-                >
-                    {{ loading ? 'Импортируем...' : 'Запустить импорт' }}
-                </UIButton>
+                <div class="import-wizard__button">
+                    <UIButton
+                        :disabled="loading"
+                        size="s"
+                        type="button"
+                        w100
+                        @click="submit"
+                    >
+                        <Loader v-if="loading" />
+                        <span v-else>Запустить импорт в {{ capitalizedMessenger.value }}</span>
+                    </UIButton>
+                </div>
                 <span v-if="message" class="import-wizard__message">{{ message }}</span>
             </div>
         </div>
     </div>
 </template>
-
 <style scoped>
 .import-wizard {
     border: 1px dashed var(--gray-300);
@@ -125,16 +130,6 @@ const onFileChange = (event) => {
     color: var(--gray-600);
 }
 
-.import-wizard__select {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    color: var(--gray-800);
-    background: var(--gray-100);
-    border: 1px solid var(--gray-300);
-    border-radius: 0.375rem;
-    box-shadow: var(--shadow-sm);
-}
-
 .import-wizard__file {
     font-size: 0.875rem;
 }
@@ -143,6 +138,10 @@ const onFileChange = (event) => {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+}
+
+.import-wizard__button {
+    min-width: 225px;
 }
 
 .import-wizard__message {

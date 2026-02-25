@@ -49,7 +49,7 @@ const attrs = useAttrs();
 const mergedAttrs = computed(() => ({
     ...attrs,
     ...(props.tag === 'button'
-        ? {type: props.type, disabled: props.disabled}
+        ? { type: props.type, disabled: props.disabled }
         : {}),
 }));
 </script>
@@ -69,7 +69,7 @@ const mergedAttrs = computed(() => ({
         @click="$emit('click', $event)"
     >
         <span class="button__content">
-            <slot/>
+            <slot />
         </span>
     </Component>
 </template>
@@ -78,6 +78,7 @@ const mergedAttrs = computed(() => ({
 
 .button {
     --button-font-size: 1rem;
+    --button-line-height: 1.5;
     --button-color: var(--gray-0);
     --button-color-disabled: var(--gray-500);
     --button-bg-color: var(--rose-500);
@@ -94,7 +95,7 @@ const mergedAttrs = computed(() => ({
     --button-border-color-interaction: transparent;
     --button-box-shadow-interaction: none;
 
-    @include typography.text--150(var(--button-font-size), typography.$font-weight--underbold);
+    @include typography.text(var(--button-font-size), var(--button-line-height), typography.$font-weight--underbold);
 
     cursor: pointer;
     display: inline-flex;
@@ -235,5 +236,6 @@ const mergedAttrs = computed(() => ({
     align-items: center;
     justify-content: center;
     gap: 0.25rem;
+    height: calc(var(--button-font-size) * var(--button-line-height));
 }
 </style>

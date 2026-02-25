@@ -2,13 +2,13 @@
 import {useDate} from '@/composables/useDate';
 
 defineProps({
-    messages: {type: Array, default: () => []},
-    loading: {type: Boolean, default: false},
-    conversationTitle: {type: String, default: ''},
+    messages: { type: Array, default: () => [] },
+    loading: { type: Boolean, default: false },
+    conversationTitle: { type: String, default: '' },
 });
 
 const emit = defineEmits(['delete']);
-const {formatDate} = useDate();
+const { formatDate } = useDate();
 </script>
 
 <template>
