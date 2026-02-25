@@ -5,6 +5,7 @@ import {ref} from 'vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
+import HTitle from "@/Components/particles/HTitle.vue";
 
 defineProps({
     mustVerifyEmail: {
@@ -40,9 +41,7 @@ const setTab = (id) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="profile-header__title">
-                Профиль
-            </h2>
+            <HTitle size="h5" tag="h1">Профиль</HTitle>
         </template>
 
         <div class="profile-page">
