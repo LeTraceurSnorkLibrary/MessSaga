@@ -16,9 +16,9 @@ defineProps({
 });
 
 const tabs = [
-    { id: 'info', label: 'Данные профиля' },
-    { id: 'password', label: 'Смена пароля' },
-    { id: 'delete', label: 'Удаление аккаунта' },
+    {id: 'info', label: 'Данные профиля'},
+    {id: 'password', label: 'Смена пароля'},
+    {id: 'delete', label: 'Удаление аккаунта'},
 ];
 
 const activeTab = ref('info');
@@ -36,7 +36,7 @@ const setTab = (id) => {
 };
 </script>
 <template>
-    <Head title="Профиль" />
+    <Head title="Профиль"/>
 
     <AuthenticatedLayout>
         <template #header>
@@ -76,26 +76,27 @@ const setTab = (id) => {
                         v-show="activeTab === 'password'"
                         class="profile-page__section"
                     >
-                        <UpdatePasswordForm class="profile-page__form" />
+                        <UpdatePasswordForm class="profile-page__form"/>
                     </section>
 
                     <section
                         v-show="activeTab === 'delete'"
                         class="profile-page__section"
                     >
-                        <DeleteUserForm class="profile-page__form" />
+                        <DeleteUserForm class="profile-page__form"/>
                     </section>
                 </div>
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
-<style scoped>
+<style lang="scss" scoped>
+@use '../../../scss/typography' as typography;
+
 .profile-header__title {
+    @include typography.text--150(1.25rem, typography.$font-weight--underbold);
+
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    line-height: 1.3;
     color: var(--gray-800);
 }
 
@@ -107,27 +108,23 @@ const setTab = (id) => {
     max-width: 80rem;
     margin: 0 auto;
     padding: 0 1rem;
-}
 
-@media (min-width: 640px) {
-    .profile-page__container {
+    @media (min-width: 640px) {
         padding-left: 1.5rem;
         padding-right: 1.5rem;
     }
-}
 
-@media (min-width: 1024px) {
-    .profile-page__container {
+    @media (min-width: 1024px) {
         padding-left: 2rem;
         padding-right: 2rem;
     }
 }
 
 .profile-page__tabs {
-    border-bottom: 1px solid var(--gray-200);
     display: flex;
     gap: 1rem;
     margin-bottom: -1px;
+    border-bottom: 1px solid var(--gray-200);
 }
 
 .profile-page__panel {
@@ -135,15 +132,15 @@ const setTab = (id) => {
 }
 
 .profile-page__tab {
-    white-space: nowrap;
+    @include typography.text--150(0.875rem, typography.$font-weight--semibold);
+
+    cursor: pointer;
     padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
     color: var(--gray-500);
-    background: transparent;
+    white-space: nowrap;
     border: none;
     border-bottom: 2px solid transparent;
-    cursor: pointer;
+    background: transparent;
     transition: color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -159,10 +156,8 @@ const setTab = (id) => {
 
 .profile-page__section {
     padding: 1.5rem 0 0;
-}
 
-@media (min-width: 640px) {
-    .profile-page__section {
+    @media (min-width: 640px) {
         padding-top: 2rem;
     }
 }
