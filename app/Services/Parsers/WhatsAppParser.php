@@ -11,10 +11,19 @@ use Illuminate\Support\Str;
 
 class WhatsAppParser extends AbstractParser implements ParserInterface
 {
+    /**
+     * @inheritdoc
+     */
     public const PARSER_CORRESPONDING_MESSAGE_MODEL = WhatsAppMessage::class;
 
-    private const DATE_FORMAT = 'd.m.Y H:i';
+    /**
+     * Формат даты в экспорте сообщений WhatsApp
+     */
+    private const EXPORT_MESSAGES_DATE_FORMAT = 'd.m.Y H:i';
 
+    /**
+     * @inheritdoc
+     */
     public function parse(string $path): ConversationImportDTO
     {
         $content = file_get_contents($path);
@@ -23,11 +32,7 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
             return new ConversationImportDTO([], []);
         }
 
-        $lines = collect(explode("\n", $content))
-            ->map(fn ($line) => trim($line))
-            ->filter()
-            ->values()
-            ->toArray();
+        $lines = explode("\n", $content);
 
         if (empty($lines)) {
             return new ConversationImportDTO([], []);
@@ -68,7 +73,7 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
                     $phoneNumber = $this->normalizePhone($sender);
                 } else {
                     $contactName = $sender;
-                    break; // Нашли имя, дальше можно не искать
+                    break;
                 }
             }
         }
@@ -97,37 +102,44 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
     {
         $messages       = [];
         $currentMessage = null;
+        $messageLines   = [];
 
         foreach ($lines as $line) {
-            // Системное сообщение
-            if ($this->isSystemLine($line, $matches)) {
-                if ($currentMessage) {
-                    $messages[]     = $this->finalizeMessage($currentMessage);
-                    $currentMessage = null;
+            $trimmedLine = rtrim($line, "\r");
+
+            // Если строка начинается с даты - это новое сообщение
+            if ($this->isMessageLine($trimmedLine, $matches) || $this->isSystemLine($trimmedLine, $systemMatches)) {
+
+                // Сохраняем предыдущее сообщение, если оно было
+                if ($currentMessage !== null) {
+                    // Склеиваем все строки сообщения
+                    $currentMessage['text'] = implode("\n", $messageLines);
+                    $messages[]             = $this->finalizeMessage($currentMessage);
                 }
 
-                $messages[] = $this->createSystemMessage($matches);
-                continue;
-            }
-
-            // Обычное сообщение
-            if ($this->isMessageLine($line, $matches)) {
-                if ($currentMessage) {
-                    $messages[] = $this->finalizeMessage($currentMessage);
+                // Начинаем новое сообщение
+                if (isset($matches)) {
+                    $currentMessage = $this->createMessage($matches);
+                    $messageLines   = [trim($matches[4])]; // Первая строка текста
+                    $matches        = null;
+                } else {
+                    $currentMessage = $this->createSystemMessage($systemMatches);
+                    $messageLines   = [trim($systemMatches[3])];
+                    $systemMatches  = null;
                 }
 
-                $currentMessage = $this->createMessage($matches);
-                continue;
-            }
-
-            // Продолжение предыдущего сообщения
-            if ($currentMessage) {
-                $currentMessage['text'] .= "\n" . $line;
+            } else {
+                // Это продолжение текущего сообщения
+                if ($currentMessage !== null) {
+                    $messageLines[] = $trimmedLine;
+                }
             }
         }
 
-        if ($currentMessage) {
-            $messages[] = $this->finalizeMessage($currentMessage);
+        // Сохраняем последнее сообщение
+        if ($currentMessage !== null) {
+            $currentMessage['text'] = implode("\n", $messageLines);
+            $messages[]             = $this->finalizeMessage($currentMessage);
         }
 
         return $messages;
@@ -137,14 +149,29 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
     {
         $pattern = '/^(\d{2}\.\d{2}\.\d{4}), (\d{2}:\d{2}) - ([^:]+): ?(.*)$/u';
 
-        return (bool)preg_match($pattern, $line, $matches);
+        if (preg_match($pattern, $line, $found)) {
+            $matches = $found;
+
+            return true;
+        }
+
+        return false;
     }
 
     private function isSystemLine(string $line, ?array &$matches = null): bool
     {
         $pattern = '/^(\d{2}\.\d{2}\.\d{4}), (\d{2}:\d{2}) - (.+)$/u';
 
-        return (bool)preg_match($pattern, $line, $matches);
+        if (preg_match($pattern, $line, $found)) {
+            // Убеждаемся, что это не сообщение (нет двоеточия после отправителя)
+            if (!str_contains($found[3], ': ')) {
+                $matches = $found;
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isPhoneNumber(string $value): bool
@@ -154,23 +181,25 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
 
     private function createMessage(array $matches): array
     {
-        [, $date, $time, $sender, $text] = $matches;
+        [, $date, $time, $sender, $firstLine] = $matches;
 
         $message = [
             'external_id'        => null,
             'sender_name'        => trim($sender),
             'sender_external_id' => trim($sender),
-            'sent_at'            => Carbon::createFromFormat(self::DATE_FORMAT, "{$date} {$time}"),
-            'text'               => trim($text)
-                ?: null,
+            'sent_at'            => Carbon::createFromFormat(self::EXPORT_MESSAGES_DATE_FORMAT, "{$date} {$time}"),
+            'text'               => null, // Заполним позже, когда соберём все строки
             'message_type'       => 'text',
-            'raw'                => ['line' => implode(' - ', [$date, $time, $sender, $text])],
+            'raw'                => [
+                'date'   => $date,
+                'time'   => $time,
+                'sender' => trim($sender),
+            ],
         ];
 
-        // Определяем тип сообщения
-        if (Str::contains($text, ['(файл добавлен)', '‎IMG-', '‎VID-', '‎AUD-'])) {
+        // Определяем тип сообщения по первой строке
+        if (Str::contains($firstLine, ['(файл добавлен)', '‎IMG-', '‎VID-', '‎AUD-'])) {
             $message['message_type'] = 'media';
-            $message['media_file']   = $this->extractFilename($text);
         }
 
         return $message;
@@ -184,33 +213,38 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
             'external_id'        => null,
             'sender_name'        => 'System',
             'sender_external_id' => null,
-            'sent_at'            => Carbon::createFromFormat(self::DATE_FORMAT, "{$date} {$time}"),
-            'text'               => trim($text),
+            'sent_at'            => Carbon::createFromFormat(self::EXPORT_MESSAGES_DATE_FORMAT, "{$date} {$time}"),
+            'text'               => null, // Заполним позже
             'message_type'       => 'system',
-            'raw'                => ['line' => implode(' - ', [$date, $time, $text])],
+            'raw'                => [
+                'date' => $date,
+                'time' => $time,
+            ],
         ];
     }
 
     private function finalizeMessage(array $message): array
     {
+        // Если это медиа-сообщение, очищаем текст от маркеров
         if ($message['message_type'] === 'media' && isset($message['text'])) {
             $message['text'] = preg_replace(
-                ['/\s*\(файл добавлен\)$/', '/^‎/'],
+                ['/\s*\(файл добавлен\)$/m', '/^‎/u'],
                 ['', ''],
                 $message['text']
             );
+
+            // Извлекаем имя файла из текста
+            if (preg_match('/([^\/\\\]+\.\w+)/u', $message['text'], $fileMatches)) {
+                $message['media_file'] = $fileMatches[1];
+            }
+        }
+
+        // Очищаем текст от лишних пробелов по краям
+        if (isset($message['text'])) {
+            $message['text'] = trim($message['text']);
         }
 
         return $message;
-    }
-
-    private function extractFilename(string $text): ?string
-    {
-        if (preg_match('/([^\/\\\]+\.\w+)/u', $text, $matches)) {
-            return $matches[1];
-        }
-
-        return null;
     }
 
     private function normalizePhone(string $phone): string
