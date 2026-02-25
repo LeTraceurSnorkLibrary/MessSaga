@@ -1,11 +1,11 @@
 <script setup>
-import {onMounted, onUnmounted, ref} from 'vue';
+import NavMenu from "@/Components/base/NavMenu.vue";
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
+import HomeIcon from "@/Components/particles/icons/HomeIcon.vue";
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import {Link} from '@inertiajs/vue3';
-import HomeIcon from "@/Components/particles/icons/HomeIcon.vue";
-import NavMenu from "@/Components/base/NavMenu.vue";
+import {onMounted, onUnmounted, ref} from 'vue';
 
 const showingNavigationDropdown = ref(false);
 
@@ -23,13 +23,14 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
                 <div class="auth-layout__nav-inner">
                     <div class="auth-layout__logo">
                         <Link href="/">
-                            <HomeIcon class="auth-layout__logo-svg"/>
+                            <HomeIcon class="auth-layout__logo-svg" />
                         </Link>
                     </div>
 
                     <div class="auth-layout__menu">
                         <NavMenu :items="[
-                            {label: 'Переписки', href: route('dashboard')}
+                            {label: 'Переписки', href: route('dashboard')},
+                            {label: 'Профиль', href: route('profile.edit')},
                         ]"></NavMenu>
                     </div>
 
@@ -43,7 +44,7 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
                                          xmlns="http://www.w3.org/2000/svg">
                                       <path clip-rule="evenodd"
                                             d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                            fill-rule="evenodd"/>
+                                            fill-rule="evenodd" />
                                     </svg>
                                   </button>
                                 </span>
@@ -65,12 +66,12 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
                             <svg v-show="!showingNavigationDropdown" class="auth-layout__hamburger-icon"
                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round"
-                                      stroke-width="2"/>
+                                      stroke-width="2" />
                             </svg>
                             <svg v-show="showingNavigationDropdown" class="auth-layout__hamburger-icon"
                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"
-                                      stroke-width="2"/>
+                                      stroke-width="2" />
                             </svg>
                         </button>
                     </div>
@@ -99,12 +100,12 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 
             <header v-if="$slots.header" class="auth-layout__page-header">
                 <div class="auth-layout__page-header-inner">
-                    <slot name="header"/>
+                    <slot name="header" />
                 </div>
             </header>
 
             <main class="auth-layout__main">
-                <slot/>
+                <slot />
             </main>
         </div>
     </div>
