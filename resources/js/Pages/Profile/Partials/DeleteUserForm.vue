@@ -89,6 +89,23 @@ const closeModal = () => {
     </section>
 </template>
 <style scoped>
+.profile-form__header {
+    margin-bottom: 1.5rem;
+}
+
+.profile-form__title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.profile-form__desc {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
 .profile-form--danger .profile-form__desc {
     margin-bottom: 1rem;
 }
