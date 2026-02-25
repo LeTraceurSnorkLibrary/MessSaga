@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Teapot\StatusCode\Http;
 
 class ConversationController extends Controller
 {
@@ -78,7 +79,7 @@ class ConversationController extends Controller
      */
     public function messages(Request $request, Conversation $conversation): JsonResponse
     {
-        abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
+        abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
 
         $messengerType = $conversation->messengerAccount->type;
 
@@ -105,7 +106,7 @@ class ConversationController extends Controller
      */
     public function destroy(Request $request, Conversation $conversation): Response
     {
-        abort_unless($conversation->messengerAccount->user_id === $request->user()->id, 403);
+        abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
 
         /**
          * Каскадно удалит сообщения за счёт foreign key

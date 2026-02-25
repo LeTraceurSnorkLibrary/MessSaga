@@ -11,6 +11,7 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "letraceursnork/copyright-year-range": "1.0.0",
+        "teapot/status-code": "2.5.0",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
