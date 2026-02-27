@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Models\Conversation;
 use App\Models\MessengerAccount;
 use App\Services\Parsers\ParserRegistry;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -34,11 +36,11 @@ class ImportService
      * @throws Throwable
      */
     public function import(
-        int $userId,
+        int    $userId,
         string $messengerType,
         string $path,
         string $mode = 'auto',
-        ?int $targetConversationId = null
+        ?int   $targetConversationId = null
     ): void {
         $absolutePath = Storage::path($path);
 
@@ -68,97 +70,139 @@ class ImportService
 
         $messageModelClass = $parser->getMessageModelClass();
 
-        DB::transaction(
-            function () use ($userId, $messengerType, $dto, $messageModelClass, $parser, $mode, $targetConversationId) {
-                $conversationData = $dto->getConversationData();
+        DB::transaction(function () use (
+            $userId,
+            $messengerType,
+            $dto,
+            $messageModelClass,
+            $parser,
+            $mode,
+            $targetConversationId
+        ) {
+            $conversationData = $dto->getConversationData();
 
-                $account = MessengerAccount::firstOrCreate(
-                    [
-                        'user_id' => $userId,
-                        'type'    => $messengerType,
-                    ],
-                    [
-                        'name' => $conversationData['account_name'] ?? ucfirst($messengerType),
-                        'meta' => $conversationData['account_meta'] ?? [],
-                    ],
-                );
+            $account = MessengerAccount::firstOrCreate(
+                [
+                    'user_id' => $userId,
+                    'type'    => $messengerType,
+                ],
+                [
+                    'name' => $conversationData['account_name'] ?? ucfirst($messengerType),
+                    'meta' => $conversationData['account_meta'] ?? [],
+                ],
+            );
 
-                // Определяем целевую переписку на основе режима
-                $conversation = $this->resolveConversation(
-                    mode: $mode,
-                    targetConversationId: $targetConversationId,
-                    accountId: $account->id,
-                    externalId: (string)($conversationData['external_id'] ?? null),
-                    conversationData: $conversationData,
-                    userId: $userId,
-                );
+            // Определяем целевую переписку на основе режима
+            $conversation = $this->resolveConversation(
+                mode: $mode,
+                targetConversationId: $targetConversationId,
+                accountId: $account->id,
+                externalId: (string)($conversationData['external_id'] ?? null),
+                conversationData: $conversationData,
+                userId: $userId,
+            );
 
-                if (!$conversation) {
-                    Log::warning('Import aborted - no conversation target', [
-                        'mode'      => $mode,
-                        'target_id' => $targetConversationId,
-                        'user_id'   => $userId,
-                    ]);
+            if (!$conversation) {
+                Log::warning('Import aborted - no conversation target', [
+                    'mode'      => $mode,
+                    'target_id' => $targetConversationId,
+                    'user_id'   => $userId,
+                ]);
 
-                    return;
-                }
+                return;
+            }
 
-                /**
-                 * Используем relation из парсера, а не из модели
-                 */
-                $messagesRelation = $parser->getMessagesRelation($conversation);
+            /**
+             * Используем relation из парсера, а не из модели
+             */
+            $messagesRelation = $parser->getMessagesRelation($conversation);
 
-                $existingMessages = $messagesRelation
-                    ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
-                    ->keyBy(function ($msg) {
-                        /**
-                         * Ключ для дедупликации: external_id или комбинация sent_at + text + sender
-                         */
-                        return $msg->external_id ?? md5(
-                            ($msg->sent_at?->toIso8601String() ?? '') .
+            /**
+             * Load existing messages for deduplication
+             */
+            $existingMessages = $messagesRelation
+                ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
+                ->keyBy(function ($msg) {
+                    /**
+                     * Deduplicaton key: external_id, if present
+                     */
+                    if ($msg->external_id) {
+                        return 'ID:' . $msg->external_id;
+                    }
+
+                    /**
+                     * Deduplicaton key: combination of sent_at + text + sender
+                     */
+                    return 'hash:' . md5(
+                            ($msg->sent_at?->format('Y-m-d H:i:s') ?? '') .
                             ($msg->text ?? '') .
                             ($msg->sender_name ?? '') .
                             ($msg->sender_external_id ?? '')
                         );
-                    });
+                });
 
+            /**
+             * Preparing new messages with deduplication keys
+             */
+            $newMessagesToInsert = [];
+            foreach ($dto->getMessages() as $message) {
                 /**
-                 * Подготавливаем новые сообщения с ключами для дедупликации
+                 * Prepare a key for deduplication
                  */
-                $newMessagesToInsert = [];
-                foreach ($dto->getMessages() as $message) {
-                    $key = $message['external_id'] ?? md5(
-                        ($message['sent_at'] ?? '') .
-                        ($message['text'] ?? '') .
-                        ($message['sender_name'] ?? '') .
-                        ($message['sender_external_id'] ?? '')
-                    );
-
+                if (!empty($message['external_id'])) {
+                    $key = 'ID:' . $message['external_id'];
+                } else {
                     /**
-                     * Пропускаем, если такое сообщение уже есть
+                     * Format sent_at field
                      */
-                    if ($existingMessages->has($key)) {
-                        continue;
+                    $sentAt = $message['sent_at'] ?? '';
+                    if ($sentAt instanceof Carbon) {
+                        $sentAtFormatted = $sentAt->format('Y-m-d H:i:s');
+                    } elseif (is_string($sentAt)) {
+                        try {
+                            $sentAtFormatted = Carbon::parse($sentAt)->format('Y-m-d H:i:s');
+                        } catch (Exception $e) {
+                            $sentAtFormatted = $sentAt;
+                        }
+                    } else {
+                        $sentAtFormatted = (string)$sentAt;
                     }
 
-                    $row                   = $this->prepareMessageRowForInsert(
-                        $message,
-                        $conversation->id,
-                        $messageModelClass
-                    );
-                    $newMessagesToInsert[] = $row;
+                    $key = 'hash:' . md5(
+                            $sentAtFormatted .
+                            ($message['text'] ?? '') .
+                            ($message['sender_name'] ?? '') .
+                            ($message['sender_external_id'] ?? '')
+                        );
                 }
 
-                if ($newMessagesToInsert) {
-                    $messageModelClass::insert($newMessagesToInsert);
-
-                    Log::info('Messages imported', [
-                        'conversation_id' => $conversation->id,
-                        'count'           => count($newMessagesToInsert),
-                    ]);
+                /**
+                 * Skip message if already exist
+                 */
+                if ($existingMessages->has($key)) {
+                    continue;
                 }
+
+                $newMessagesToInsert[] = $this->prepareMessageRowForInsert(
+                    $message,
+                    $conversation->id,
+                    $messageModelClass
+                );
             }
-        );
+
+            if (count($newMessagesToInsert) > 0) {
+                $messageModelClass::insert($newMessagesToInsert);
+
+                Log::info('Messages imported', [
+                    'conversation_id' => $conversation->id,
+                    'count'           => count($newMessagesToInsert),
+                ]);
+            } else {
+                Log::info('No new messages to import', [
+                    'conversation_id' => $conversation->id,
+                ]);
+            }
+        });
     }
 
     /**
@@ -174,12 +218,12 @@ class ImportService
      * @return Conversation|null
      */
     private function resolveConversation(
-        string $mode,
-        ?int $targetConversationId,
-        int $accountId,
+        string  $mode,
+        ?int    $targetConversationId,
+        int     $accountId,
         ?string $externalId,
-        array $conversationData,
-        int $userId
+        array   $conversationData,
+        int     $userId
     ): ?Conversation {
         if ($mode === 'new') {
             // Принудительно создаём новую переписку
@@ -234,8 +278,18 @@ class ImportService
     private function prepareMessageRowForInsert(array $message, int $conversationId, string $messageModelClass): array
     {
         $text = $message['text'] ?? null;
-        $row  = array_merge($message, [
+
+        // Обрабатываем sent_at
+        $sentAt = $message['sent_at'] ?? null;
+        if ($sentAt instanceof Carbon) {
+            $sentAt = $sentAt->format('Y-m-d H:i:s');
+        } elseif (is_string($sentAt)) {
+            // Оставляем как есть, база данных примет
+        }
+
+        $row = array_merge($message, [
             'conversation_id' => $conversationId,
+            'sent_at'         => $sentAt,
             'text'            => $text
                 ? Crypt::encryptString($text)
                 : null,
