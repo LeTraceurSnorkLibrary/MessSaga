@@ -5,9 +5,9 @@ import {useCapitalizeFirstLetter} from '@/composables/useCapitalizeFirstLetter.t
 import {computed, ref} from 'vue';
 
 const props = defineProps({
-    selectedMessenger: { type: String, default: 'telegram' },
-    mode: { type: String, default: 'auto' },
-    selectedConversationId: { type: Number, default: null },
+    selectedMessenger: {type: String, default: 'telegram'},
+    mode: {type: String, default: 'auto'},
+    selectedConversationId: {type: Number, default: null},
 });
 
 const emit = defineEmits(['imported']);
@@ -17,7 +17,7 @@ const loading = ref(false);
 const message = ref('');
 const fileInputRef = ref(null);
 
-const { capitalizeFirstLetter } = useCapitalizeFirstLetter();
+const {capitalizeFirstLetter} = useCapitalizeFirstLetter();
 const capitalizedMessenger = computed(() => {
     return capitalizeFirstLetter(props.selectedMessenger);
 });
@@ -46,7 +46,7 @@ const submit = async () => {
         }
 
         await window.axios.post('/api/import/chats', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: {'Content-Type': 'multipart/form-data'},
         });
 
         message.value =
@@ -92,6 +92,9 @@ const onFileChange = (event) => {
                     @change="onFileChange"
                 />
             </div>
+            <div class="import-wizard__row">
+                <slot name="import-mode"/>
+            </div>
             <div class="import-wizard__actions">
                 <div class="import-wizard__button">
                     <UIButton
@@ -101,7 +104,7 @@ const onFileChange = (event) => {
                         w100
                         @click="submit"
                     >
-                        <Loader v-if="loading" />
+                        <Loader v-if="loading"/>
                         <span v-else>Запустить импорт в {{ capitalizedMessenger.value }}</span>
                     </UIButton>
                 </div>

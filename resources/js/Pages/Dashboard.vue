@@ -33,20 +33,20 @@ const modeOptions = computed(() => {
     switch (selectedMessenger.value) {
         case 'telegram':
             return [
-                { value: 'auto', label: 'Авто' },
-                { value: 'new', label: 'Всегда новая' },
-                { value: 'select', label: 'В указанную переписку...' },
+                {value: 'auto', label: 'Авто'},
+                {value: 'new', label: 'Всегда новая'},
+                {value: 'select', label: 'В указанную переписку...'},
             ];
         case 'whatsapp':
             return [
-                { value: 'auto', label: 'Авто (тестовый режим)' },
-                { value: 'new', label: 'Всегда новая' },
-                { value: 'select', label: 'В указанную переписку...' },
+                {value: 'auto', label: 'Авто (тестовый режим)'},
+                {value: 'new', label: 'Всегда новая'},
+                {value: 'select', label: 'В указанную переписку...'},
             ];
         default:
             return [
-                { value: 'new', label: 'Всегда новая' },
-                { value: 'select', label: 'В указанную переписку...' },
+                {value: 'new', label: 'Всегда новая'},
+                {value: 'select', label: 'В указанную переписку...'},
             ];
     }
 });
@@ -58,7 +58,7 @@ const loadConversations = async () => {
     loadingConversations.value = true;
     try {
         const response = await window.axios.get('/api/conversations', {
-            params: { messenger: selectedMessenger.value },
+            params: {messenger: selectedMessenger.value},
         });
         previousConversationsCount.value = conversations.value.length;
         conversations.value = response.data;
@@ -84,7 +84,7 @@ const startPolling = () => {
         }
         try {
             const convResponse = await window.axios.get('/api/conversations', {
-                params: { messenger: selectedMessenger.value },
+                params: {messenger: selectedMessenger.value},
             });
 
             const newConversationsCount = convResponse.data.length;
@@ -196,7 +196,7 @@ onUnmounted(() => {
 loadConversations();
 </script>
 <template>
-    <Head title="MessSaga" />
+    <Head title="MessSaga"/>
 
     <AuthenticatedLayout>
         <template #header>
@@ -208,23 +208,23 @@ loadConversations();
         <div class="dashboard-page">
             <div class="dashboard-page__container">
 
-                <div class="import-wizard__row">
-                    <div class="import-mode-selector">
-                        <span class="import-mode-selector__label">Режим загрузки:</span>
-                        <select v-model="importMode" class="import-mode-selector__select">
-                            <option v-for="opt in modeOptions" :key="opt.value" :value="opt.value">
-                                {{ opt.label }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-
                 <ImportWizard
                     :mode="importMode"
                     :selected-conversation-id="selectedConversationId"
                     :selected-messenger="selectedMessenger"
                     @imported="handleImportStarted"
-                />
+                >
+                    <template #import-mode>
+                        <div class="import-mode-selector">
+                            <span class="import-mode-selector__label">Режим загрузки:</span>
+                            <select v-model="importMode" class="import-mode-selector__select">
+                                <option v-for="opt in modeOptions" :key="opt.value" :value="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                    </template>
+                </ImportWizard>
 
                 <div class="dashboard-page__content">
                     <MessengerTabs
@@ -320,7 +320,6 @@ loadConversations();
 }
 
 .import-mode-selector {
-    margin-bottom: 1rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -333,20 +332,18 @@ loadConversations();
 
 .import-mode-selector__select {
     padding: 0.375rem 2rem 0.375rem 0.75rem;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius-md);
     font-size: 0.875rem;
+    border: 1px solid var(--gray-300);
     background-color: var(--gray-0);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.5rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
     appearance: none;
-}
 
-.import-mode-selector__select:focus {
-    outline: none;
-    border-color: var(--orange-400);
-    ring: 2px solid var(--orange-200);
+    &:focus {
+        outline: 2px solid var(--orange-200);
+        border-color: var(--orange-400);
+    }
 }
 </style>
