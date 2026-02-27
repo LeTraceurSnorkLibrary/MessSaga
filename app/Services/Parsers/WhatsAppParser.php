@@ -6,8 +6,11 @@ namespace App\Services\Parsers;
 
 use App\DTO\ConversationImportDTO;
 use App\Models\WhatsAppMessage;
-use Carbon\Carbon;
-use Illuminate\Support\Str;
+use App\Services\Parsers\WhatsApp\ContentParser;
+use App\Services\Parsers\WhatsApp\LineTypeEnum;
+use App\Services\Parsers\WhatsApp\MessageBuilder;
+use InvalidArgumentException;
+use RuntimeException;
 
 class WhatsAppParser extends AbstractParser implements ParserInterface
 {
@@ -17,9 +20,14 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
     public const PARSER_CORRESPONDING_MESSAGE_MODEL = WhatsAppMessage::class;
 
     /**
-     * Формат даты в экспорте сообщений WhatsApp
+     * @param ContentParser  $contentParser
+     * @param MessageBuilder $messageBuilder
      */
-    private const EXPORT_MESSAGES_DATE_FORMAT = 'd.m.Y H:i';
+    public function __construct(
+        private readonly ContentParser $contentParser,
+        private readonly MessageBuilder $messageBuilder,
+    ) {
+    }
 
     /**
      * @inheritdoc
@@ -27,228 +35,137 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
     public function parse(string $path): ConversationImportDTO
     {
         $content = file_get_contents($path);
-
         if ($content === false) {
             return new ConversationImportDTO([], []);
         }
 
         $lines = explode("\n", $content);
-
         if (empty($lines)) {
             return new ConversationImportDTO([], []);
         }
 
-        $participants     = $this->extractParticipants($lines);
-        $conversationData = $this->buildConversationData($lines, $participants);
+        $participants     = $this->contentParser->parseParticipants($lines);
+        $conversationData = $this->contentParser->parseConversationData($lines, $participants);
         $messages         = $this->parseMessages($lines);
 
         return new ConversationImportDTO($conversationData, $messages);
     }
 
-    private function extractParticipants(array $lines): array
-    {
-        $participants = [];
-
-        foreach ($lines as $line) {
-            if ($this->isMessageLine($line, $matches)) {
-                $sender                = trim($matches[3]);
-                $participants[$sender] = true;
-            }
-        }
-
-        return array_keys($participants);
-    }
-
-    private function buildConversationData(array $lines, array $participants): array
-    {
-        $contactName = null;
-        $phoneNumber = null;
-
-        // Ищем первого отправителя, чтобы определить тип чата
-        foreach ($lines as $line) {
-            if ($this->isMessageLine($line, $matches)) {
-                $sender = trim($matches[3]);
-
-                if ($this->isPhoneNumber($sender)) {
-                    $phoneNumber = $this->normalizePhone($sender);
-                } else {
-                    $contactName = $sender;
-                    break;
-                }
-            }
-        }
-
-        $title       = $contactName ?? $phoneNumber ?? 'WhatsApp chat';
-        $accountName = $contactName
-            ? "WhatsApp: {$contactName}"
-            : ($phoneNumber
-                ? "WhatsApp: {$phoneNumber}"
-                : 'WhatsApp');
-
-        return [
-            'external_id'  => $phoneNumber,
-            'title'        => $title,
-            'participants' => $participants,
-            'account_name' => $accountName,
-            'account_meta' => [
-                'phone_number' => $phoneNumber,
-                'contact_name' => $contactName,
-                'type'         => 'personal_chat',
-            ],
-        ];
-    }
-
+    /**
+     * Parse lines into messages
+     *
+     * @param string[] $lines
+     *
+     * @return array<array>
+     */
     private function parseMessages(array $lines): array
     {
-        $messages       = [];
-        $currentMessage = null;
-        $messageLines   = [];
+        $groups = $this->groupLinesByType($lines);
+
+        return array_map(
+            fn (array $group) => $this->processGroup($group),
+            $groups
+        );
+    }
+
+    /**
+     * Group lines into messages
+     *
+     * @param string[] $lines
+     *
+     * @return array<int, array{type: LineTypeEnum, lines: string[]}>
+     */
+    private function groupLinesByType(array $lines): array
+    {
+        $groups       = [];
+        $currentGroup = null;
 
         foreach ($lines as $line) {
             $trimmedLine = rtrim($line, "\r");
+            $type        = $this->contentParser->detectLineType($trimmedLine);
 
-            // Если строка начинается с даты - это новое сообщение
-            if ($this->isMessageLine($trimmedLine, $matches) || $this->isSystemLine($trimmedLine, $systemMatches)) {
-
-                // Сохраняем предыдущее сообщение, если оно было
-                if ($currentMessage !== null) {
-                    // Склеиваем все строки сообщения
-                    $currentMessage['text'] = implode("\n", $messageLines);
-                    $messages[]             = $this->finalizeMessage($currentMessage);
+            // Начинаем новую группу, если строка начинает сообщение
+            if ($type->isNewMessage()) {
+                if ($currentGroup !== null) {
+                    $groups[] = $currentGroup;
                 }
 
-                // Начинаем новое сообщение
-                if (isset($matches)) {
-                    $currentMessage = $this->createMessage($matches);
-                    $messageLines   = [trim($matches[4])]; // Первая строка текста
-                    $matches        = null;
-                } else {
-                    $currentMessage = $this->createSystemMessage($systemMatches);
-                    $messageLines   = [trim($systemMatches[3])];
-                    $systemMatches  = null;
-                }
-
-            } else {
-                // Это продолжение текущего сообщения
-                if ($currentMessage !== null) {
-                    $messageLines[] = $trimmedLine;
-                }
+                $currentGroup = [
+                    'type'  => $type,
+                    'lines' => [$trimmedLine],
+                ];
+            } elseif ($currentGroup !== null) {
+                // Продолжение текущей группы
+                $currentGroup['lines'][] = $trimmedLine;
             }
         }
 
-        // Сохраняем последнее сообщение
-        if ($currentMessage !== null) {
-            $currentMessage['text'] = implode("\n", $messageLines);
-            $messages[]             = $this->finalizeMessage($currentMessage);
+        if ($currentGroup !== null) {
+            $groups[] = $currentGroup;
         }
 
-        return $messages;
+        return $groups;
     }
 
-    private function isMessageLine(string $line, ?array &$matches = null): bool
+    /**
+     * Process lines group into message
+     *
+     * @param array{type: LineTypeEnum, lines: string[]} $group
+     *
+     * @return array
+     */
+    private function processGroup(array $group): array
     {
-        $pattern = '/^(\d{2}\.\d{2}\.\d{4}), (\d{2}:\d{2}) - ([^:]+): ?(.*)$/u';
+        return match ($group['type']) {
+            LineTypeEnum::SYSTEM  => $this->processSystemGroup($group['lines']),
+            LineTypeEnum::MESSAGE => $this->processMessageGroup($group['lines']),
+            default               => throw new InvalidArgumentException('Cannot process continuation group'),
+        };
+    }
 
-        if (preg_match($pattern, $line, $found)) {
-            $matches = $found;
+    /**
+     * Process group that is a system message
+     *
+     * @param string[] $lines
+     *
+     * @return array
+     */
+    private function processSystemGroup(array $lines): array
+    {
+        $firstLine = $lines[0];
+        $data      = $this->contentParser->parseSystemLine($firstLine);
 
-            return true;
+        if ($data === null) {
+            throw new RuntimeException('Failed to parse system line');
         }
 
-        return false;
+        $system = $this->messageBuilder->createSystemMessage($data);
+
+        return $this->messageBuilder->finalizeSystem($system);
     }
 
-    private function isSystemLine(string $line, ?array &$matches = null): bool
+    /**
+     * Process group that is a message
+     *
+     * @param string[] $lines
+     *
+     * @return array
+     */
+    private function processMessageGroup(array $lines): array
     {
-        $pattern = '/^(\d{2}\.\d{2}\.\d{4}), (\d{2}:\d{2}) - (.+)$/u';
+        $firstLine = $lines[0];
+        $restLines = array_slice($lines, 1);
 
-        if (preg_match($pattern, $line, $found)) {
-            // Убеждаемся, что это не сообщение (нет двоеточия после отправителя)
-            if (!str_contains($found[3], ': ')) {
-                $matches = $found;
+        $data = $this->contentParser->parseMessageLine($firstLine);
 
-                return true;
-            }
+        if ($data === null) {
+            throw new RuntimeException('Failed to parse message line');
         }
 
-        return false;
-    }
+        $draft = $this->messageBuilder->createDraftFromMessageData($data);
 
-    private function isPhoneNumber(string $value): bool
-    {
-        return (bool)preg_match('/^\+?\d[\d\s\-]{7,}\d$/', $value);
-    }
+        $allLines = [$data['firstLine'], ...$restLines];
 
-    private function createMessage(array $matches): array
-    {
-        [, $date, $time, $sender, $firstLine] = $matches;
-
-        $message = [
-            'external_id'        => null,
-            'sender_name'        => trim($sender),
-            'sender_external_id' => trim($sender),
-            'sent_at'            => Carbon::createFromFormat(self::EXPORT_MESSAGES_DATE_FORMAT, "{$date} {$time}"),
-            'text'               => null, // Заполним позже, когда соберём все строки
-            'message_type'       => 'text',
-            'raw'                => [
-                'date'   => $date,
-                'time'   => $time,
-                'sender' => trim($sender),
-            ],
-        ];
-
-        // Определяем тип сообщения по первой строке
-        if (Str::contains($firstLine, ['(файл добавлен)', '‎IMG-', '‎VID-', '‎AUD-'])) {
-            $message['message_type'] = 'media';
-        }
-
-        return $message;
-    }
-
-    private function createSystemMessage(array $matches): array
-    {
-        [, $date, $time, $text] = $matches;
-
-        return [
-            'external_id'        => null,
-            'sender_name'        => 'System',
-            'sender_external_id' => null,
-            'sent_at'            => Carbon::createFromFormat(self::EXPORT_MESSAGES_DATE_FORMAT, "{$date} {$time}"),
-            'text'               => null, // Заполним позже
-            'message_type'       => 'system',
-            'raw'                => [
-                'date' => $date,
-                'time' => $time,
-            ],
-        ];
-    }
-
-    private function finalizeMessage(array $message): array
-    {
-        // Если это медиа-сообщение, очищаем текст от маркеров
-        if ($message['message_type'] === 'media' && isset($message['text'])) {
-            $message['text'] = preg_replace(
-                ['/\s*\(файл добавлен\)$/m', '/^‎/u'],
-                ['', ''],
-                $message['text']
-            );
-
-            // Извлекаем имя файла из текста
-            if (preg_match('/([^\/\\\]+\.\w+)/u', $message['text'], $fileMatches)) {
-                $message['media_file'] = $fileMatches[1];
-            }
-        }
-
-        // Очищаем текст от лишних пробелов по краям
-        if (isset($message['text'])) {
-            $message['text'] = trim($message['text']);
-        }
-
-        return $message;
-    }
-
-    private function normalizePhone(string $phone): string
-    {
-        return preg_replace('/[^\d+]/', '', $phone);
+        return $this->messageBuilder->finalizeDraft($draft, $allLines);
     }
 }
