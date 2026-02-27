@@ -17,14 +17,18 @@ class ProcessChatImport implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * @param int    $userId
-     * @param string $messengerType
-     * @param string $path
+     * @param int      $userId
+     * @param string   $messengerType
+     * @param string   $path
+     * @param string   $importMode
+     * @param int|null $targetConversationId
      */
     public function __construct(
         public int $userId,
         public string $messengerType,
         public string $path,
+        public string $importMode,
+        public ?int $targetConversationId = null,
     ) {
     }
 
@@ -43,6 +47,8 @@ class ProcessChatImport implements ShouldQueue
                 userId: $this->userId,
                 messengerType: $this->messengerType,
                 path: $this->path,
+                mode: $this->importMode,
+                targetConversationId: $this->targetConversationId,
             );
         } finally {
             /**

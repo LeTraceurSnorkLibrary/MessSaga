@@ -1,10 +1,16 @@
 <script setup>
 defineProps({
-    conversations: {type: Array, default: () => []},
-    loading: {type: Boolean, default: false},
+    conversations: { type: Array, default: () => [] },
+    loading: { type: Boolean, default: false },
+    selectionMode: { type: Boolean, default: false },
+    selectedId: { type: Number, default: null },
 });
 
 const emit = defineEmits(['select']);
+
+const handleItemClick = (conversation) => {
+    emit('select', conversation);
+};
 </script>
 
 <template>
@@ -15,11 +21,23 @@ const emit = defineEmits(['select']);
             <li
                 v-for="conversation in conversations"
                 :key="conversation.id"
+                :class="{ 'conv-list__item--selected': selectionMode && selectedId === conversation.id }"
                 class="conv-list__item"
-                @click="emit('select', conversation)"
+                @click="handleItemClick(conversation)"
             >
-                <div class="conv-list__title">{{ conversation.title || 'Без названия' }}</div>
-                <div class="conv-list__preview">{{ conversation.preview || '' }}</div>
+                <div class="conv-list__row">
+                    <!-- радио-кнопка в режиме выбора -->
+                    <span v-if="selectionMode" class="conv-list__radio">
+                        <span
+                            :class="{ 'conv-list__radio-dot--selected': selectedId === conversation.id }"
+                            class="conv-list__radio-dot"
+                        ></span>
+                    </span>
+                    <div class="conv-list__content">
+                        <div class="conv-list__title">{{ conversation.title || 'Без названия' }}</div>
+                        <div class="conv-list__preview">{{ conversation.preview || '' }}</div>
+                    </div>
+                </div>
             </li>
             <li v-if="!conversations.length" class="conv-list__empty">Пока нет переписок.</li>
         </ul>
@@ -69,6 +87,43 @@ const emit = defineEmits(['select']);
 
 .conv-list__item:hover {
     background: var(--gray-50);
+}
+
+.conv-list__item--selected {
+    background-color: var(--orange-50);
+}
+
+.conv-list__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.conv-list__radio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+}
+
+.conv-list__radio-dot {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background-color: var(--gray-300);
+    transition: background-color 0.2s;
+}
+
+.conv-list__radio-dot--selected {
+    background-color: var(--gray-800);
+    box-shadow: 0 0 0 2px var(--gray-200);
+}
+
+.conv-list__content {
+    flex: 1;
 }
 
 .conv-list__title {

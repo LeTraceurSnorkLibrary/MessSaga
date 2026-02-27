@@ -117,30 +117,43 @@ class ContentParser
         $phoneNumber = null;
 
         foreach ($lines as $line) {
-            $sender = $this->parseSender($line);
-            if (!$sender) {
+            $data = $this->parseMessageLine(rtrim($line, "\r"));
+            if (!$data) {
                 continue;
             }
 
-            $isPhoneNumber = $this->phoneUtil->validator()->isPhoneNumber($sender);
-            if ($isPhoneNumber) {
+            $sender = $data['sender'];
+
+            if ($this->phoneUtil->validator()->isPhoneNumber($sender)) {
                 $phoneNumber = $this->phoneUtil->formatter()::international($sender);
-                $contactName = $phoneNumber;
-                break;
-            } else {
+                continue;
+            }
+
+            if (!$contactName) {
                 $contactName = $sender;
+                break;
             }
         }
+
+        // Генерируем external_id:
+        // - Если есть телефон - используем его
+        // - Если есть имя контакта - хешируем его
+        // - Иначе генерируем из участников
+        $contactNameExternalId  = $contactName
+            ? $this->generateExternalId($contactName)
+            : null;
+        $participantsExternalId = $this->generateExternalId(implode('_', $participants));
+        $externalId             = $phoneNumber ?? $contactNameExternalId ?? $participantsExternalId;
 
         $title       = $contactName ?? $phoneNumber ?? 'WhatsApp chat';
         $accountName = $contactName
             ? "WhatsApp: {$contactName}"
             : ($phoneNumber
                 ? "WhatsApp: {$phoneNumber}"
-                : 'Неопознанный контакт');
+                : 'WhatsApp');
 
         return [
-            'external_id'  => $phoneNumber,
+            'external_id'  => $externalId,
             'title'        => $title,
             'participants' => $participants,
             'account_name' => $accountName,
@@ -168,5 +181,15 @@ class ContentParser
         }
 
         return LineTypeEnum::CONTINUATION;
+    }
+
+    /**
+     * @param string $value
+     *
+     * @return string
+     */
+    private function generateExternalId(string $value): string
+    {
+        return 'whatsapp_' . hash('xxh64', $value);
     }
 }

@@ -5,7 +5,7 @@ import MessageThread from '@/Components/MessageThread.vue';
 import MessengerTabs from '@/Components/MessengerTabs.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {Head} from '@inertiajs/vue3';
-import {onUnmounted, ref, watch} from 'vue';
+import {computed, onUnmounted, ref, watch} from 'vue';
 
 const selectedMessenger = ref('telegram');
 const conversations = ref([]);
@@ -18,8 +18,41 @@ const pollingStartTime = ref(null);
 const POLLING_INTERVAL_MS = 2000;
 const POLLING_TIMEOUT_MS = 60000;
 
+// Новые состояния для режима импорта
+const importMode = ref('auto'); // 'auto', 'new', 'select'
+const selectedConversationId = ref(null);
+
 const previousConversationsCount = ref(0);
 const previousMessagesCount = ref(0);
+
+/**
+ * Опции для селектора в зависимости от мессенджера
+ * @type {ComputedRef<Array<{ value: 'auto' | 'new' | 'select', label: string }>>}
+ */
+const modeOptions = computed(() => {
+    switch (selectedMessenger.value) {
+        case 'telegram':
+            return [
+                { value: 'auto', label: 'Авто' },
+                { value: 'new', label: 'Всегда новая' },
+                { value: 'select', label: 'В указанную переписку...' },
+            ];
+        case 'whatsapp':
+            return [
+                { value: 'auto', label: 'Авто (тестовый режим)' },
+                { value: 'new', label: 'Всегда новая' },
+                { value: 'select', label: 'В указанную переписку...' },
+            ];
+        default:
+            return [
+                { value: 'new', label: 'Всегда новая' },
+                { value: 'select', label: 'В указанную переписку...' },
+            ];
+    }
+});
+
+// Флаг для включения режима выбора в списке переписок
+const isSelectionMode = computed(() => importMode.value === 'select');
 
 const loadConversations = async () => {
     loadingConversations.value = true;
@@ -119,9 +152,13 @@ const handleMessengerChange = async (value) => {
     await loadConversations();
 };
 
-const handleConversationSelect = async (conversation) => {
+const handleConversationSelect = (conversation) => {
+    if (isSelectionMode.value) {
+        selectedConversationId.value = conversation.id;
+    }
+
     currentConversation.value = conversation;
-    await loadMessages(conversation.id);
+    loadMessages(conversation.id);
 };
 
 const handleConversationDelete = async () => {
@@ -146,6 +183,12 @@ watch(currentConversation, (newConv, oldConv) => {
     }
 });
 
+watch(importMode, (newMode) => {
+    if (newMode !== 'select') {
+        selectedConversationId.value = null;
+    }
+});
+
 onUnmounted(() => {
     stopPolling();
 });
@@ -164,7 +207,21 @@ loadConversations();
 
         <div class="dashboard-page">
             <div class="dashboard-page__container">
+
+                <div class="import-wizard__row">
+                    <div class="import-mode-selector">
+                        <span class="import-mode-selector__label">Режим загрузки:</span>
+                        <select v-model="importMode" class="import-mode-selector__select">
+                            <option v-for="opt in modeOptions" :key="opt.value" :value="opt.value">
+                                {{ opt.label }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
                 <ImportWizard
+                    :mode="importMode"
+                    :selected-conversation-id="selectedConversationId"
                     :selected-messenger="selectedMessenger"
                     @imported="handleImportStarted"
                 />
@@ -180,6 +237,8 @@ loadConversations();
                             <ConversationList
                                 :conversations="conversations"
                                 :loading="loadingConversations"
+                                :selected-id="selectedConversationId"
+                                :selection-mode="isSelectionMode"
                                 @select="handleConversationSelect"
                             />
                         </div>
@@ -258,5 +317,36 @@ loadConversations();
 
 .dashboard-page__thread {
     min-height: 24rem;
+}
+
+.import-mode-selector {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.import-mode-selector__label {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.import-mode-selector__select {
+    padding: 0.375rem 2rem 0.375rem 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    background-color: var(--gray-0);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    appearance: none;
+}
+
+.import-mode-selector__select:focus {
+    outline: none;
+    border-color: var(--orange-400);
+    ring: 2px solid var(--orange-200);
 }
 </style>

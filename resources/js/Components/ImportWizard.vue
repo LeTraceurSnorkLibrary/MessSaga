@@ -6,6 +6,8 @@ import {computed, ref} from 'vue';
 
 const props = defineProps({
     selectedMessenger: { type: String, default: 'telegram' },
+    mode: { type: String, default: 'auto' },
+    selectedConversationId: { type: Number, default: null },
 });
 
 const emit = defineEmits(['imported']);
@@ -26,6 +28,11 @@ const submit = async () => {
         return;
     }
 
+    if (props.mode === 'select' && !props.selectedConversationId) {
+        message.value = 'В режиме "Выбрать" необходимо выбрать переписку из списка.';
+        return;
+    }
+
     loading.value = true;
     message.value = '';
 
@@ -33,6 +40,10 @@ const submit = async () => {
         const formData = new FormData();
         formData.append('messenger_type', props.selectedMessenger);
         formData.append('file', file.value);
+        formData.append('import_mode', props.mode);
+        if (props.mode === 'select' && props.selectedConversationId) {
+            formData.append('target_conversation_id', props.selectedConversationId.toString());
+        }
 
         await window.axios.post('/api/import/chats', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -59,6 +70,7 @@ const onFileChange = (event) => {
     file.value = selected ?? null;
 };
 </script>
+
 <template>
     <div class="import-wizard">
         <div class="import-wizard__inner">
@@ -98,6 +110,7 @@ const onFileChange = (event) => {
         </div>
     </div>
 </template>
+
 <style scoped>
 .import-wizard {
     border: 1px dashed var(--gray-300);

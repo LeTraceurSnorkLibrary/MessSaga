@@ -25,15 +25,21 @@ class ImportService
     }
 
     /**
-     * @param int    $userId
-     * @param string $messengerType
-     * @param string $path
+     * @param int      $userId
+     * @param string   $messengerType
+     * @param string   $path
+     * @param string   $mode auto|new|select
+     * @param int|null $targetConversationId
      *
      * @throws Throwable
-     * @return void
      */
-    public function import(int $userId, string $messengerType, string $path): void
-    {
+    public function import(
+        int $userId,
+        string $messengerType,
+        string $path,
+        string $mode = 'auto',
+        ?int $targetConversationId = null
+    ): void {
         $absolutePath = Storage::path($path);
 
         try {
@@ -62,90 +68,158 @@ class ImportService
 
         $messageModelClass = $parser->getMessageModelClass();
 
-        DB::transaction(function () use ($userId, $messengerType, $dto, $messageModelClass, $parser) {
-            $conversationData = $dto->getConversationData();
+        DB::transaction(
+            function () use ($userId, $messengerType, $dto, $messageModelClass, $parser, $mode, $targetConversationId) {
+                $conversationData = $dto->getConversationData();
 
-            $account = MessengerAccount::firstOrCreate(
-                [
-                    'user_id' => $userId,
-                    'type'    => $messengerType,
-                ],
-                [
-                    'name' => $conversationData['account_name'] ?? ucfirst($messengerType),
-                    'meta' => $conversationData['account_meta'] ?? [],
-                ],
-            );
-
-            /**
-             * Автоматически находим или создаём переписку по external_id из экспорта.
-             * Переписка ищется только среди переписок текущего пользователя (через messenger_account_id).
-             */
-            $conversation = Conversation::updateOrCreate(
-                [
-                    'messenger_account_id' => $account->id,
-                    'external_id'          => $conversationData['external_id'] ?? null,
-                ],
-                [
-                    'title'        => $conversationData['title'] ?? 'Unknown chat',
-                    'participants' => $conversationData['participants'] ?? [],
-                ],
-            );
-
-            /**
-             * Используем relation из парсера, а не из модели
-             */
-            $messagesRelation = $parser->getMessagesRelation($conversation);
-
-            $existingMessages = $messagesRelation
-                ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
-                ->keyBy(function ($msg) {
-                    /**
-                     * Ключ для дедупликации: external_id или комбинация sent_at + text + sender
-                     */
-                    return $msg->external_id ?? md5(
-                        ($msg->sent_at?->toIso8601String() ?? '') .
-                        ($msg->text ?? '') .
-                        ($msg->sender_name ?? '') .
-                        ($msg->sender_external_id ?? '')
-                    );
-                });
-
-            /**
-             * Подготавливаем новые сообщения с ключами для дедупликации
-             */
-            $newMessagesToInsert = [];
-            foreach ($dto->getMessages() as $message) {
-                $key = $message['external_id'] ?? md5(
-                    ($message['sent_at'] ?? '') .
-                    ($message['text'] ?? '') .
-                    ($message['sender_name'] ?? '') .
-                    ($message['sender_external_id'] ?? '')
+                $account = MessengerAccount::firstOrCreate(
+                    [
+                        'user_id' => $userId,
+                        'type'    => $messengerType,
+                    ],
+                    [
+                        'name' => $conversationData['account_name'] ?? ucfirst($messengerType),
+                        'meta' => $conversationData['account_meta'] ?? [],
+                    ],
                 );
 
-                /**
-                 * Пропускаем, если такое сообщение уже есть
-                 */
-                if ($existingMessages->has($key)) {
-                    continue;
+                // Определяем целевую переписку на основе режима
+                $conversation = $this->resolveConversation(
+                    mode: $mode,
+                    targetConversationId: $targetConversationId,
+                    accountId: $account->id,
+                    externalId: (string)($conversationData['external_id'] ?? null),
+                    conversationData: $conversationData,
+                    userId: $userId,
+                );
+
+                if (!$conversation) {
+                    Log::warning('Import aborted - no conversation target', [
+                        'mode'      => $mode,
+                        'target_id' => $targetConversationId,
+                        'user_id'   => $userId,
+                    ]);
+
+                    return;
                 }
 
-                $row                   = $this->prepareMessageRowForInsert(
-                    $message,
-                    $conversation->id,
-                    $messageModelClass
-                );
-                $newMessagesToInsert[] = $row;
+                /**
+                 * Используем relation из парсера, а не из модели
+                 */
+                $messagesRelation = $parser->getMessagesRelation($conversation);
+
+                $existingMessages = $messagesRelation
+                    ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
+                    ->keyBy(function ($msg) {
+                        /**
+                         * Ключ для дедупликации: external_id или комбинация sent_at + text + sender
+                         */
+                        return $msg->external_id ?? md5(
+                            ($msg->sent_at?->toIso8601String() ?? '') .
+                            ($msg->text ?? '') .
+                            ($msg->sender_name ?? '') .
+                            ($msg->sender_external_id ?? '')
+                        );
+                    });
+
+                /**
+                 * Подготавливаем новые сообщения с ключами для дедупликации
+                 */
+                $newMessagesToInsert = [];
+                foreach ($dto->getMessages() as $message) {
+                    $key = $message['external_id'] ?? md5(
+                        ($message['sent_at'] ?? '') .
+                        ($message['text'] ?? '') .
+                        ($message['sender_name'] ?? '') .
+                        ($message['sender_external_id'] ?? '')
+                    );
+
+                    /**
+                     * Пропускаем, если такое сообщение уже есть
+                     */
+                    if ($existingMessages->has($key)) {
+                        continue;
+                    }
+
+                    $row                   = $this->prepareMessageRowForInsert(
+                        $message,
+                        $conversation->id,
+                        $messageModelClass
+                    );
+                    $newMessagesToInsert[] = $row;
+                }
+
+                if ($newMessagesToInsert) {
+                    $messageModelClass::insert($newMessagesToInsert);
+
+                    Log::info('Messages imported', [
+                        'conversation_id' => $conversation->id,
+                        'count'           => count($newMessagesToInsert),
+                    ]);
+                }
             }
+        );
+    }
 
-            if ($newMessagesToInsert) {
-                $messageModelClass::insert($newMessagesToInsert);
+    /**
+     * Определяет целевую переписку на основе режима.
+     *
+     * @param string      $mode
+     * @param int|null    $targetConversationId
+     * @param int         $accountId
+     * @param string|null $externalId
+     * @param array       $conversationData
+     * @param int         $userId
+     *
+     * @return Conversation|null
+     */
+    private function resolveConversation(
+        string $mode,
+        ?int $targetConversationId,
+        int $accountId,
+        ?string $externalId,
+        array $conversationData,
+        int $userId
+    ): ?Conversation {
+        if ($mode === 'new') {
+            // Принудительно создаём новую переписку
+            return Conversation::create([
+                'messenger_account_id' => $accountId,
+                'external_id'          => $externalId, // может быть null, но ок
+                'title'                => $conversationData['title'] ?? 'Unknown chat',
+                'participants'         => $conversationData['participants'] ?? [],
+            ]);
+        }
 
-                Log::info('Messages imported', [
-                    'conversation_id' => $conversation->id,
-                    'count'           => count($newMessagesToInsert),
+        if ($mode === 'select') {
+            // Используем указанную переписку, проверяем принадлежность (уже проверено в контроллере, но для надёжности)
+            $conversation = Conversation::where('id', $targetConversationId)
+                ->whereHas('messengerAccount', fn ($q) => $q->where('user_id', $userId))
+                ->first();
+
+            if (!$conversation) {
+                Log::warning('Selected conversation not found or not owned', [
+                    'target_id' => $targetConversationId,
+                    'user_id'   => $userId,
                 ]);
+
+                return null;
             }
-        });
+
+            return $conversation;
+        }
+
+        // Режим 'auto' - стандартное поведение
+        return Conversation::updateOrCreate(
+            [
+                'messenger_account_id' => $accountId,
+                'external_id'          => $externalId,
+            ],
+            [
+                'title'        => $conversationData['title'] ?? 'Unknown chat',
+                'participants' => $conversationData['participants'] ?? [],
+            ]
+        );
     }
 
     /**
