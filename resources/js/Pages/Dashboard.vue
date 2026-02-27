@@ -256,7 +256,9 @@ loadConversations();
         </div>
     </AuthenticatedLayout>
 </template>
-<style scoped>
+<style lang="scss" scoped>
+@use '../../scss/typography' as typography;
+
 .dashboard-page {
     padding: 2rem 0;
 }
@@ -265,26 +267,21 @@ loadConversations();
     max-width: 80rem;
     margin: 0 auto;
     padding: 0 1rem;
-}
 
-@media (min-width: 640px) {
-    .dashboard-page__container {
+    @media (min-width: 640px) {
         padding-left: 1.5rem;
         padding-right: 1.5rem;
     }
-}
 
-@media (min-width: 1024px) {
-    .dashboard-page__container {
+    @media (min-width: 1024px) {
         padding-left: 2rem;
         padding-right: 2rem;
     }
 }
 
 .dashboard-page__heading {
-    font-size: 1.25rem;
-    font-weight: 600;
-    line-height: 1.3;
+    @include typography.text--150(1.25rem, typography.$font-weight--underbold);
+
     color: var(--gray-800);
     margin: 0;
 }
@@ -303,10 +300,8 @@ loadConversations();
     display: grid;
     grid-template-columns: 1fr;
     gap: 1rem;
-}
 
-@media (min-width: 768px) {
-    .dashboard-page__grid {
+    @media (min-width: 768px) {
         grid-template-columns: 1fr 2fr;
     }
 }
@@ -326,13 +321,15 @@ loadConversations();
 }
 
 .import-mode-selector__label {
-    font-size: 0.875rem;
+    @include typography.text--150(0.875rem);
+
     color: var(--gray-600);
 }
 
 .import-mode-selector__select {
+    @include typography.text--150(0.875rem);
+
     padding: 0.375rem 2rem 0.375rem 0.75rem;
-    font-size: 0.875rem;
     border: 1px solid var(--gray-300);
     background-color: var(--gray-0);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");

@@ -70,7 +70,6 @@ const onFileChange = (event) => {
     file.value = selected ?? null;
 };
 </script>
-
 <template>
     <div class="import-wizard">
         <div class="import-wizard__inner">
@@ -113,12 +112,13 @@ const onFileChange = (event) => {
         </div>
     </div>
 </template>
+<style lang="scss" scoped>
+@use '../../scss/typography' as typography;
 
-<style scoped>
 .import-wizard {
+    padding: 1rem;
     border: 1px dashed var(--gray-300);
     border-radius: var(--radius-lg);
-    padding: 1rem;
     background: var(--gray-50);
 }
 
@@ -129,17 +129,18 @@ const onFileChange = (event) => {
 }
 
 .import-wizard__title {
-    font-size: 0.875rem;
-    font-weight: 600;
+    @include typography.title(0.875rem, typography.$line-height--150, typography.$font-weight--underbold);
+
     color: var(--gray-700);
 }
 
 .import-wizard__row {
+    @include typography.text--150(0.875rem);
+
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.875rem;
 }
 
 .import-wizard__label {
@@ -147,7 +148,7 @@ const onFileChange = (event) => {
 }
 
 .import-wizard__file {
-    font-size: 0.875rem;
+    @include typography.text--150(0.875rem);
 }
 
 .import-wizard__actions {
@@ -161,7 +162,8 @@ const onFileChange = (event) => {
 }
 
 .import-wizard__message {
-    font-size: 0.75rem;
+    @include typography.text--150(0.75rem);
+
     color: var(--gray-600);
 }
 </style>
