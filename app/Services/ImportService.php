@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Conversation;
 use App\Models\MessengerAccount;
+use App\Services\Import\DTO\ImportModeDTO;
+use App\Services\Import\ImportStrategyFactory;
 use App\Services\Parsers\ParserRegistry;
 use Carbon\Carbon;
 use Exception;
@@ -19,10 +20,12 @@ use Throwable;
 class ImportService
 {
     /**
-     * @param ParserRegistry $parserRegistry
+     * @param ParserRegistry        $parserRegistry
+     * @param ImportStrategyFactory $strategyFactory
      */
     public function __construct(
-        protected ParserRegistry $parserRegistry,
+        protected ParserRegistry        $parserRegistry,
+        protected ImportStrategyFactory $strategyFactory,
     ) {
     }
 
@@ -69,6 +72,8 @@ class ImportService
         }
 
         $messageModelClass = $parser->getMessageModelClass();
+        $importStrategy    = $this->strategyFactory->getStrategy($mode);
+        $importModeDTO     = ImportModeDTO::fromRequest($mode, $targetConversationId);
 
         DB::transaction(function () use (
             $userId,
@@ -76,8 +81,8 @@ class ImportService
             $dto,
             $messageModelClass,
             $parser,
-            $mode,
-            $targetConversationId
+            $importStrategy,
+            $importModeDTO
         ) {
             $conversationData = $dto->getConversationData();
 
@@ -92,20 +97,18 @@ class ImportService
                 ],
             );
 
-            // Определяем целевую переписку на основе режима
-            $conversation = $this->resolveConversation(
-                mode: $mode,
-                targetConversationId: $targetConversationId,
-                accountId: $account->id,
-                externalId: (string)($conversationData['external_id'] ?? null),
+            // Определяем целевую переписку через стратегию (НИ ОДНОГО IF!)
+            $conversation = $importStrategy->resolveConversation(
+                account: $account,
                 conversationData: $conversationData,
                 userId: $userId,
+                mode: $importModeDTO
             );
 
             if (!$conversation) {
                 Log::warning('Import aborted - no conversation target', [
-                    'mode'      => $mode,
-                    'target_id' => $targetConversationId,
+                    'mode'      => $importStrategy->getName(),
+                    'target_id' => $importModeDTO->targetConversationId,
                     'user_id'   => $userId,
                 ]);
 
@@ -206,67 +209,6 @@ class ImportService
     }
 
     /**
-     * Определяет целевую переписку на основе режима.
-     *
-     * @param string      $mode
-     * @param int|null    $targetConversationId
-     * @param int         $accountId
-     * @param string|null $externalId
-     * @param array       $conversationData
-     * @param int         $userId
-     *
-     * @return Conversation|null
-     */
-    private function resolveConversation(
-        string  $mode,
-        ?int    $targetConversationId,
-        int     $accountId,
-        ?string $externalId,
-        array   $conversationData,
-        int     $userId
-    ): ?Conversation {
-        if ($mode === 'new') {
-            // Принудительно создаём новую переписку
-            return Conversation::create([
-                'messenger_account_id' => $accountId,
-                'external_id'          => $externalId, // может быть null, но ок
-                'title'                => $conversationData['title'] ?? 'Unknown chat',
-                'participants'         => $conversationData['participants'] ?? [],
-            ]);
-        }
-
-        if ($mode === 'select') {
-            // Используем указанную переписку, проверяем принадлежность (уже проверено в контроллере, но для надёжности)
-            $conversation = Conversation::where('id', $targetConversationId)
-                ->whereHas('messengerAccount', fn ($q) => $q->where('user_id', $userId))
-                ->first();
-
-            if (!$conversation) {
-                Log::warning('Selected conversation not found or not owned', [
-                    'target_id' => $targetConversationId,
-                    'user_id'   => $userId,
-                ]);
-
-                return null;
-            }
-
-            return $conversation;
-        }
-
-        // Режим 'auto' - стандартное поведение
-        return Conversation::updateOrCreate(
-            [
-                'messenger_account_id' => $accountId,
-                'external_id'          => $externalId,
-            ],
-            [
-                'title'        => $conversationData['title'] ?? 'Unknown chat',
-                'participants' => $conversationData['participants'] ?? [],
-            ]
-        );
-    }
-
-    /**
      * Собирает строку для insert: добавляет conversation_id, шифрует text, timestamps, кодирует array/json-поля по
      * casts модели.
      *
@@ -283,8 +225,6 @@ class ImportService
         $sentAt = $message['sent_at'] ?? null;
         if ($sentAt instanceof Carbon) {
             $sentAt = $sentAt->format('Y-m-d H:i:s');
-        } elseif (is_string($sentAt)) {
-            // Оставляем как есть, база данных примет
         }
 
         $row = array_merge($message, [
