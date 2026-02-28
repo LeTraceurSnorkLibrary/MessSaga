@@ -4,16 +4,28 @@ declare(strict_types=1);
 
 namespace App\Services\Parsers\WhatsApp;
 
+use App\Models\MessageTypes\WhatsAppMessageTypesEnum;
 use Carbon\Carbon;
 
 class MessageBuilder
 {
-    private const DATE_FORMAT      = 'd.m.Y H:i';
-    private const MEDIA_INDICATORS = ['(файл добавлен)', '‎IMG-', '‎VID-', '‎AUD-'];
+    /**
+     * Message's datetime format
+     */
+    private const DATETIME_FORMAT = 'd.m.Y H:i';
+
+    /**
+     * Indicators that message is of media-type
+     */
+    private const MEDIA_INDICATORS = ['(файл добавлен)'];
+
+    /**
+     * RegExp to detect filename added to media-typed-message
+     */
     private const FILENAME_PATTERN = '/([^\/\\\]+\.\w+)/u';
 
     /**
-     * Создаёт черновик сообщения из сырых данных
+     * Creates message draft from raw data
      *
      * @param array $data
      *
@@ -22,12 +34,13 @@ class MessageBuilder
     public function createDraftFromMessageData(array $data): array
     {
         $dateTime = Carbon::createFromFormat(
-            self::DATE_FORMAT,
+            self::DATETIME_FORMAT,
             "{$data['date']} {$data['time']}"
         );
 
         $messageType = $this->detectMessageType($data['firstLine']);
-        $mediaFile   = $messageType === 'media'
+        $isMediaType = $messageType === WhatsAppMessageTypesEnum::MEDIA->value;
+        $mediaFile   = $isMediaType
             ? $this->extractFilename($data['firstLine'])
             : null;
 
@@ -38,7 +51,7 @@ class MessageBuilder
             'sent_at'      => $dateTime,
             'message_type' => $messageType,
             'media_file'   => $mediaFile,
-            'text'         => null, // будет заполнен позже
+            'text'         => null,
             'raw'          => [
                 'date'      => $data['date'],
                 'time'      => $data['time'],
@@ -49,7 +62,7 @@ class MessageBuilder
     }
 
     /**
-     * Создаёт системное сообщение
+     * Creates system message
      *
      * @param array $data
      *
@@ -58,7 +71,7 @@ class MessageBuilder
     public function createSystemMessage(array $data): array
     {
         $dateTime = Carbon::createFromFormat(
-            self::DATE_FORMAT,
+            self::DATETIME_FORMAT,
             "{$data['date']} {$data['time']}"
         );
 
@@ -91,8 +104,7 @@ class MessageBuilder
     {
         $fullText = implode("\n", $messageLines);
 
-        // Для медиа-сообщений очищаем текст от маркеров
-        if ($draft['message_type'] === 'media') {
+        if ($draft['message_type'] === WhatsAppMessageTypesEnum::MEDIA->value) {
             $fullText = $this->cleanMediaText($fullText);
         }
 
@@ -110,6 +122,10 @@ class MessageBuilder
 
     /**
      * Преобразует системное сообщение в формат для вставки
+     *
+     * @param array $system
+     *
+     * @return array
      */
     public function finalizeSystem(array $system): array
     {
@@ -124,17 +140,27 @@ class MessageBuilder
         ];
     }
 
+    /**
+     * @param string $firstLine
+     *
+     * @return string
+     */
     private function detectMessageType(string $firstLine): string
     {
         foreach (self::MEDIA_INDICATORS as $indicator) {
             if (str_contains($firstLine, $indicator)) {
-                return 'media';
+                return WhatsAppMessageTypesEnum::MEDIA->value;
             }
         }
 
-        return 'text';
+        return WhatsAppMessageTypesEnum::TEXT->value;
     }
 
+    /**
+     * @param string $text
+     *
+     * @return string|null
+     */
     private function extractFilename(string $text): ?string
     {
         if (preg_match(self::FILENAME_PATTERN, $text, $matches)) {
@@ -144,11 +170,16 @@ class MessageBuilder
         return null;
     }
 
+    /**
+     * @param string $text
+     *
+     * @return string
+     */
     private function cleanMediaText(string $text): string
     {
-        return preg_replace(
-            ['/\s*\(файл добавлен\)$/m', '/^‎/u'],
-            ['', ''],
+        return str_replace(
+            static::MEDIA_INDICATORS,
+            array_fill(0, count(static::MEDIA_INDICATORS), ''),
             $text
         );
     }
