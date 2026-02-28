@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Parsers\WhatsApp;
+namespace App\Factories\Models\Messages;
 
 use App\Models\MessageTypes\WhatsAppMessageTypesEnum;
 use Carbon\Carbon;
 
-class MessageBuilder
+class WhatsAppMessageBuilder
 {
     /**
      * Message's datetime format

@@ -12,8 +12,8 @@ interface ImportStrategyInterface
     /**
      * Determine import strategy depending on import mode
      *
-     * @param MessengerAccount $account          Аккаунт мессенджера
-     * @param array            $conversationData Данные переписки из парсера
+     * @param MessengerAccount $account
+     * @param array            $conversationData
      *
      * @return Conversation|null
      */

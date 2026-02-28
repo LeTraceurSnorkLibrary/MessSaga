@@ -69,8 +69,10 @@ class ImportStrategyFactory
 
         $strategy = $this->strategies[$mode];
         if ($strategy instanceof SelectImportStrategy) {
-            $strategy->setTargetConversationId($importModeDTO->getTargetConversationId())
-                ->setUserId($this->forUserId);
+            $strategy->setTargetConversationId($importModeDTO->getTargetConversationId());
+            if (isset($this->forUserId)) {
+                $strategy->setUserId($this->forUserId);
+            }
         }
 
         return $strategy;

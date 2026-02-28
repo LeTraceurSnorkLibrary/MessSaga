@@ -23,7 +23,7 @@ class ChatImportController extends Controller
     {
         $data = $request->validate([
             'messenger_type'         => 'required|string|in:telegram,whatsapp,viber',
-            'file'                   => 'required|file|max:102400', // 100MB max
+            'file'                   => 'required|file|max:102400',
             'import_mode'            => 'required|string|in:auto,new,select',
             'target_conversation_id' => 'nullable|integer|exists:conversations,id',
         ]);
@@ -33,16 +33,17 @@ class ChatImportController extends Controller
         /**
          * @var string $import_mode
          */
-        $import_mode = $data['import_mode'];
-        /**
-         * @var int $requestUserId
-         */
-        $requestUserId        = $request->user()->id;
+        $import_mode          = $data['import_mode'];
         $targetConversationId = isset($data['target_conversation_id'])
             ? (int)$data['target_conversation_id']
             : null;
         $importModeDTO        = new ImportModeDTO($import_mode, $targetConversationId);
-        $strategy             = (new ImportStrategyFactory())
+
+        /**
+         * @var int $requestUserId
+         */
+        $requestUserId = $request->user()->id;
+        $strategy      = (new ImportStrategyFactory())
             ->forUserId($requestUserId)
             ->getStrategy($importModeDTO);
 

@@ -65,7 +65,6 @@ class SelectImportStrategy extends AbstractImportStrategy implements ImportStrat
             return null;
         }
 
-        // Используем указанную переписку, проверяем принадлежность
         $conversation = Conversation::where('id', $this->targetConversationId)
             ->whereHas('messengerAccount', fn ($q) => $q->where('user_id', $this->userId))
             ->first();

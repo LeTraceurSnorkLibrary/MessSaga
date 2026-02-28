@@ -10,7 +10,7 @@ use App\Utils\PhoneUtil;
  * Парсит контент WhatsApp-файла в сырые данные
  * Отвечает за преобразование строк в структуры данных
  */
-class ContentParser
+class WhatsAppContentParser
 {
     /**
      * RegExp for general messages

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Parsers;
 
 use App\DTO\ConversationImportDTO;
+use App\Factories\Models\Messages\WhatsAppMessageBuilder;
 use App\Models\WhatsAppMessage;
-use App\Services\Parsers\WhatsApp\ContentParser;
 use App\Services\Parsers\WhatsApp\LineTypeEnum;
-use App\Services\Parsers\WhatsApp\MessageBuilder;
+use App\Services\Parsers\WhatsApp\WhatsAppContentParser;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -20,12 +20,12 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
     public const PARSER_CORRESPONDING_MESSAGE_MODEL = WhatsAppMessage::class;
 
     /**
-     * @param ContentParser  $contentParser
-     * @param MessageBuilder $messageBuilder
+     * @param WhatsAppContentParser  $contentParser
+     * @param WhatsAppMessageBuilder $messageBuilder
      */
     public function __construct(
-        private readonly ContentParser $contentParser,
-        private readonly MessageBuilder $messageBuilder,
+        private readonly WhatsAppContentParser  $contentParser,
+        private readonly WhatsAppMessageBuilder $messageBuilder,
     ) {
     }
 
