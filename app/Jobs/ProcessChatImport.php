@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\ImportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,18 +18,16 @@ class ProcessChatImport implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * @param int      $userId
-     * @param string   $messengerType
-     * @param string   $path
-     * @param string   $importMode
-     * @param int|null $targetConversationId
+     * @param int                     $userId
+     * @param string                  $messengerType
+     * @param string                  $path
+     * @param ImportStrategyInterface $strategy
      */
     public function __construct(
-        public int $userId,
-        public string $messengerType,
-        public string $path,
-        public string $importMode,
-        public ?int $targetConversationId = null,
+        public int                     $userId,
+        public string                  $messengerType,
+        public string                  $path,
+        public ImportStrategyInterface $strategy
     ) {
     }
 
@@ -47,8 +46,7 @@ class ProcessChatImport implements ShouldQueue
                 userId: $this->userId,
                 messengerType: $this->messengerType,
                 path: $this->path,
-                mode: $this->importMode,
-                targetConversationId: $this->targetConversationId,
+                strategy: $this->strategy
             );
         } finally {
             /**

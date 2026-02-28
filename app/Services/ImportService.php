@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\MessengerAccount;
-use App\Services\Import\DTO\ImportModeDTO;
 use App\Services\Import\ImportStrategyFactory;
-use App\Services\Import\Strategies\AutoImportStrategy;
+use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\Parsers\ParserRegistry;
 use Carbon\Carbon;
 use Exception;
@@ -31,20 +30,18 @@ class ImportService
     }
 
     /**
-     * @param int      $userId
-     * @param string   $messengerType
-     * @param string   $path
-     * @param string   $mode auto|new|select
-     * @param int|null $targetConversationId
+     * @param int                     $userId
+     * @param string                  $messengerType
+     * @param string                  $path
+     * @param ImportStrategyInterface $strategy
      *
      * @throws Throwable
      */
     public function import(
-        int    $userId,
-        string $messengerType,
-        string $path,
-        string $mode = AutoImportStrategy::IMPORT_STRATEGY_NAME,
-        ?int   $targetConversationId = null
+        int                     $userId,
+        string                  $messengerType,
+        string                  $path,
+        ImportStrategyInterface $strategy
     ): void {
         $absolutePath = Storage::path($path);
 
@@ -73,8 +70,6 @@ class ImportService
         }
 
         $messageModelClass = $parser->getMessageModelClass();
-        $importStrategy    = $this->strategyFactory->getStrategy($mode);
-        $importModeDTO     = ImportModeDTO::fromRequest($mode, $targetConversationId);
 
         DB::transaction(function () use (
             $userId,
@@ -82,8 +77,7 @@ class ImportService
             $dto,
             $messageModelClass,
             $parser,
-            $importStrategy,
-            $importModeDTO
+            $strategy,
         ) {
             $conversationData = $dto->getConversationData();
 
@@ -98,18 +92,15 @@ class ImportService
                 ],
             );
 
-            $conversation = $importStrategy->resolveConversation(
+            $conversation = $strategy->resolveConversation(
                 account: $account,
-                conversationData: $conversationData,
-                userId: $userId,
-                mode: $importModeDTO
+                conversationData: $conversationData
             );
 
             if (!$conversation) {
                 Log::warning('Import aborted - no conversation target', [
-                    'mode'      => $importStrategy->getName(),
-                    'target_id' => $importModeDTO->targetConversationId,
-                    'user_id'   => $userId,
+                    'mode'    => $strategy->getName(),
+                    'user_id' => $userId,
                 ]);
 
                 return;

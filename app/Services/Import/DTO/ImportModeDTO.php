@@ -14,45 +14,29 @@ final readonly class ImportModeDTO
      * @param int|null $targetConversationId ID переписки для режима select
      */
     public function __construct(
-        public string $mode,
-        public ?int   $targetConversationId = null,
+        private string $mode,
+        private ?int   $targetConversationId = null,
     ) {
     }
 
     /**
-     * Создаёт DTO из запроса
+     * @return string
      */
-    public static function fromRequest(string $mode, ?int $targetConversationId = null): self
+    public function getMode(): string
     {
-        return new self($mode, $targetConversationId);
+        return $this->mode;
     }
 
     /**
-     * Проверяет, является ли режим select
+     * @return int|null
      */
-    public function isSelectMode(): bool
+    public function getTargetConversationId(): ?int
     {
-        return $this->mode === ImportModeEnum::SELECT->value;
+        return $this->targetConversationId;
     }
 
     /**
-     * Проверяет, является ли режим new
-     */
-    public function isNewMode(): bool
-    {
-        return $this->mode === ImportModeEnum::NEW->value;
-    }
-
-    /**
-     * Проверяет, является ли режим auto
-     */
-    public function isAutoMode(): bool
-    {
-        return $this->mode === ImportModeEnum::AUTO->value;
-    }
-
-    /**
-     * Возвращает название режима
+     * @return string
      */
     public function getName(): string
     {

@@ -6,7 +6,6 @@ namespace App\Services\Import\Strategies;
 
 use App\Models\Conversation;
 use App\Models\MessengerAccount;
-use App\Services\Import\DTO\ImportModeDTO;
 use App\Services\Import\DTO\ImportModeEnum;
 
 class AutoImportStrategy extends AbstractImportStrategy implements ImportStrategyInterface
@@ -21,9 +20,7 @@ class AutoImportStrategy extends AbstractImportStrategy implements ImportStrateg
      */
     public function resolveConversation(
         MessengerAccount $account,
-        array            $conversationData,
-        int              $userId,
-        ImportModeDTO    $mode
+        array            $conversationData
     ): ?Conversation {
         return Conversation::updateOrCreate(
             [

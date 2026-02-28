@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessChatImport;
-use App\Services\Import\DTO\ImportModeEnum;
+use App\Services\Import\DTO\ImportModeDTO;
+use App\Services\Import\ImportStrategyFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Teapot\StatusCode\WebDAV;
 
 class ChatImportController extends Controller
 {
@@ -28,23 +28,29 @@ class ChatImportController extends Controller
             'target_conversation_id' => 'nullable|integer|exists:conversations,id',
         ]);
 
-        /**
-         * ID must be present for "select" mode
-         */
-        if ($data['import_mode'] === ImportModeEnum::SELECT->value && empty($data['target_conversation_id'])) {
-            return response()->json([
-                'error' => 'Для режима "select" необходимо указать ID переписки.',
-            ], WebDAV::UNPROCESSABLE_ENTITY);
-        }
-
         $path = $request->file('file')->store('chat_imports');
 
+        /**
+         * @var string $import_mode
+         */
+        $import_mode = $data['import_mode'];
+        /**
+         * @var int $requestUserId
+         */
+        $requestUserId        = $request->user()->id;
+        $targetConversationId = isset($data['target_conversation_id'])
+            ? (int)$data['target_conversation_id']
+            : null;
+        $importModeDTO        = new ImportModeDTO($import_mode, $targetConversationId);
+        $strategy             = (new ImportStrategyFactory())
+            ->forUserId($requestUserId)
+            ->getStrategy($importModeDTO);
+
         ProcessChatImport::dispatch(
-            userId: $request->user()->id,
+            userId: $requestUserId,
             messengerType: $data['messenger_type'],
             path: $path,
-            importMode: $data['import_mode'],
-            targetConversationId: $data['target_conversation_id'] ?? null,
+            strategy: $strategy,
         );
 
         return response()->json([
