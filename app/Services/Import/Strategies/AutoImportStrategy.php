@@ -7,16 +7,24 @@ namespace App\Services\Import\Strategies;
 use App\Models\Conversation;
 use App\Models\MessengerAccount;
 use App\Services\Import\DTO\ImportModeDTO;
+use App\Services\Import\DTO\ImportModeEnum;
 
-class AutoImportStrategy implements ImportStrategyInterface
+class AutoImportStrategy extends AbstractImportStrategy implements ImportStrategyInterface
 {
+    /**
+     * @inheritdoc
+     */
+    public const IMPORT_STRATEGY_NAME = ImportModeEnum::AUTO->value;
+
+    /**
+     * @inheritdoc
+     */
     public function resolveConversation(
         MessengerAccount $account,
         array            $conversationData,
         int              $userId,
         ImportModeDTO    $mode
     ): ?Conversation {
-        // Режим 'auto' - стандартное поведение updateOrCreate
         return Conversation::updateOrCreate(
             [
                 'messenger_account_id' => $account->id,
@@ -27,10 +35,5 @@ class AutoImportStrategy implements ImportStrategyInterface
                 'participants' => $conversationData['participants'] ?? [],
             ]
         );
-    }
-
-    public function getName(): string
-    {
-        return 'auto';
     }
 }

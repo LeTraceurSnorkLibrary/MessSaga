@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessChatImport;
-use App\Models\Conversation;
+use App\Services\Import\DTO\ImportModeEnum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Teapot\StatusCode\Http;
+use Teapot\StatusCode\WebDAV;
 
 class ChatImportController extends Controller
 {
@@ -23,28 +23,18 @@ class ChatImportController extends Controller
     {
         $data = $request->validate([
             'messenger_type'         => 'required|string|in:telegram,whatsapp,viber',
-            'file'                   => 'required|file',
+            'file'                   => 'required|file|max:102400', // 100MB max
             'import_mode'            => 'required|string|in:auto,new,select',
             'target_conversation_id' => 'nullable|integer|exists:conversations,id',
         ]);
 
         /**
-         * Если режим 'select', проверяем наличие ID и принадлежность пользователю
+         * ID must be present for "select" mode
          */
-        if ($data['import_mode'] === 'select') {
-            $request->validate([
-                'target_conversation_id' => 'required|integer|exists:conversations,id',
-            ]);
-
-            $conversation = Conversation::where('id', $data['target_conversation_id'])
-                ->whereHas('messengerAccount', fn ($q) => $q->where('user_id', $request->user()->id))
-                ->first();
-
-            if (!$conversation) {
-                return response()->json([
-                    'error' => 'Выбранная переписка не принадлежит вам.',
-                ], Http::FORBIDDEN);
-            }
+        if ($data['import_mode'] === ImportModeEnum::SELECT->value && empty($data['target_conversation_id'])) {
+            return response()->json([
+                'error' => 'Для режима "select" необходимо указать ID переписки.',
+            ], WebDAV::UNPROCESSABLE_ENTITY);
         }
 
         $path = $request->file('file')->store('chat_imports');
@@ -58,7 +48,8 @@ class ChatImportController extends Controller
         );
 
         return response()->json([
-            'status' => 'queued',
+            'status'  => 'queued',
+            'message' => 'Импорт поставлен в очередь',
         ]);
     }
 }

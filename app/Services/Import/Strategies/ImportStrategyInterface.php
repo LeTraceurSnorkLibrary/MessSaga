@@ -28,7 +28,7 @@ interface ImportStrategyInterface
     ): ?Conversation;
 
     /**
-     * Возвращает название режима
+     * @return string
      */
     public function getName(): string;
 }

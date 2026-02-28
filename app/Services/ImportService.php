@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\MessengerAccount;
 use App\Services\Import\DTO\ImportModeDTO;
 use App\Services\Import\ImportStrategyFactory;
+use App\Services\Import\Strategies\AutoImportStrategy;
 use App\Services\Parsers\ParserRegistry;
 use Carbon\Carbon;
 use Exception;
@@ -42,7 +43,7 @@ class ImportService
         int    $userId,
         string $messengerType,
         string $path,
-        string $mode = 'auto',
+        string $mode = AutoImportStrategy::IMPORT_STRATEGY_NAME,
         ?int   $targetConversationId = null
     ): void {
         $absolutePath = Storage::path($path);
@@ -97,7 +98,6 @@ class ImportService
                 ],
             );
 
-            // Определяем целевую переписку через стратегию (НИ ОДНОГО IF!)
             $conversation = $importStrategy->resolveConversation(
                 account: $account,
                 conversationData: $conversationData,
