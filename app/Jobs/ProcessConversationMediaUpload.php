@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\Conversation;
 use App\Services\Parsers\ParserRegistry;
+use App\Support\FilenameSanitizer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -107,8 +108,10 @@ class ProcessConversationMediaUpload implements ShouldQueue
         if (!is_file($sourceAbsolute)) {
             return null;
         }
-        $safeSegment    = preg_replace('/[^a-zA-Z0-9._\-]/', '_', $exportPath)
-            ?: basename($exportPath);
+        $safeSegment = FilenameSanitizer::sanitize($exportPath);
+        if ($safeSegment === 'file') {
+            $safeSegment = FilenameSanitizer::sanitize(basename($exportPath));
+        }
         $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $safeSegment);
         $content        = file_get_contents($sourceAbsolute);
         if ($content === false) {
@@ -158,7 +161,8 @@ class ProcessConversationMediaUpload implements ShouldQueue
             return null;
         }
         $ext            = pathinfo($absolutePath, PATHINFO_EXTENSION);
-        $name           = ($ext !== '') ? "media_{$index}.{$ext}" : "media_{$index}";
+        $ext            = FilenameSanitizer::sanitize($ext);
+        $name           = ($ext !== '' && $ext !== 'file') ? "media_{$index}.{$ext}" : "media_{$index}";
         $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $name);
         $content        = file_get_contents($absolutePath);
         if ($content === false) {
