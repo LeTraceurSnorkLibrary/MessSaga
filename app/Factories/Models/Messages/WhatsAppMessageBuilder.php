@@ -108,16 +108,25 @@ class WhatsAppMessageBuilder
             $fullText = $this->cleanMediaText($fullText);
         }
 
-        return [
+        // Имя файла для сопоставления с медиа в архиве: из первой строки или из всего текста
+        $mediaFile = $draft['media_file'];
+        if ($draft['message_type'] === WhatsAppMessageTypesEnum::MEDIA->value && $mediaFile === null) {
+            $mediaFile = $this->extractFilename($fullText);
+        }
+
+        $out = [
             'sender_name'        => $draft['sender'],
             'sender_external_id' => $draft['sender'],
             'sent_at'            => $draft['sent_at'],
             'text'               => trim($fullText)
                 ?: null,
             'message_type'       => $draft['message_type'],
-            'media_file'         => $draft['media_file'],
+            'media_file'         => $mediaFile,
             'raw'                => json_encode($draft['raw']),
         ];
+        $out['attachment_export_path'] = $mediaFile;
+
+        return $out;
     }
 
     /**
