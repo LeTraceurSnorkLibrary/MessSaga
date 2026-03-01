@@ -5,7 +5,9 @@ import {useCapitalizeFirstLetter} from '@/composables/useCapitalizeFirstLetter.t
 import {computed, ref} from 'vue';
 
 const props = defineProps({
-    selectedMessenger: { type: String, default: 'telegram' },
+    selectedMessenger: {type: String, default: 'telegram'},
+    mode: {type: String, default: 'auto'},
+    selectedConversationId: {type: Number, default: null},
 });
 
 const emit = defineEmits(['imported']);
@@ -15,7 +17,7 @@ const loading = ref(false);
 const message = ref('');
 const fileInputRef = ref(null);
 
-const { capitalizeFirstLetter } = useCapitalizeFirstLetter();
+const {capitalizeFirstLetter} = useCapitalizeFirstLetter();
 const capitalizedMessenger = computed(() => {
     return capitalizeFirstLetter(props.selectedMessenger);
 });
@@ -26,6 +28,11 @@ const submit = async () => {
         return;
     }
 
+    if (props.mode === 'select' && !props.selectedConversationId) {
+        message.value = 'В режиме "Выбрать" необходимо выбрать переписку из списка.';
+        return;
+    }
+
     loading.value = true;
     message.value = '';
 
@@ -33,9 +40,13 @@ const submit = async () => {
         const formData = new FormData();
         formData.append('messenger_type', props.selectedMessenger);
         formData.append('file', file.value);
+        formData.append('import_mode', props.mode);
+        if (props.mode === 'select' && props.selectedConversationId) {
+            formData.append('target_conversation_id', props.selectedConversationId.toString());
+        }
 
         await window.axios.post('/api/import/chats', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: {'Content-Type': 'multipart/form-data'},
         });
 
         message.value =
@@ -80,6 +91,9 @@ const onFileChange = (event) => {
                     @change="onFileChange"
                 />
             </div>
+            <div class="import-wizard__row">
+                <slot name="import-mode"/>
+            </div>
             <div class="import-wizard__actions">
                 <div class="import-wizard__button">
                     <UIButton
@@ -89,7 +103,7 @@ const onFileChange = (event) => {
                         w100
                         @click="submit"
                     >
-                        <Loader v-if="loading" />
+                        <Loader v-if="loading"/>
                         <span v-else>Запустить импорт в {{ capitalizedMessenger.value }}</span>
                     </UIButton>
                 </div>
@@ -98,11 +112,13 @@ const onFileChange = (event) => {
         </div>
     </div>
 </template>
-<style scoped>
+<style lang="scss" scoped>
+@use '../../scss/typography' as typography;
+
 .import-wizard {
+    padding: 1rem;
     border: 1px dashed var(--gray-300);
     border-radius: var(--radius-lg);
-    padding: 1rem;
     background: var(--gray-50);
 }
 
@@ -113,17 +129,18 @@ const onFileChange = (event) => {
 }
 
 .import-wizard__title {
-    font-size: 0.875rem;
-    font-weight: 600;
+    @include typography.title(0.875rem, typography.$line-height--150, typography.$font-weight--underbold);
+
     color: var(--gray-700);
 }
 
 .import-wizard__row {
+    @include typography.text--150(0.875rem);
+
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.875rem;
 }
 
 .import-wizard__label {
@@ -131,7 +148,7 @@ const onFileChange = (event) => {
 }
 
 .import-wizard__file {
-    font-size: 0.875rem;
+    @include typography.text--150(0.875rem);
 }
 
 .import-wizard__actions {
@@ -145,7 +162,8 @@ const onFileChange = (event) => {
 }
 
 .import-wizard__message {
-    font-size: 0.75rem;
+    @include typography.text--150(0.75rem);
+
     color: var(--gray-600);
 }
 </style>

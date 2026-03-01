@@ -27,10 +27,10 @@ class TelegramParser extends AbstractParser implements ParserInterface
         }
 
         $conversationData = [
-            'external_id'  => Arr::get($raw, 'id'),
+            'external_id'  => sprintf('telegram_%1$s', Arr::get($raw, 'id')),
             'title'        => Arr::get($raw, 'name', 'Telegram chat'),
             'participants' => Arr::get($raw, 'participants', []),
-            'account_name' => Arr::get($raw, 'dialog_name'),
+            'account_name' => Arr::get($raw, 'name'),
             'account_meta' => [
                 'type' => Arr::get($raw, 'type'),
             ],
@@ -51,7 +51,7 @@ class TelegramParser extends AbstractParser implements ParserInterface
             $text = $msg['text'] ?? '';
             if (is_array($text)) {
                 $text = collect($text)
-                    ->map(fn($part) => is_array($part)
+                    ->map(fn ($part) => is_array($part)
                         ? ($part['text'] ?? '')
                         : $part)
                     ->join('');
