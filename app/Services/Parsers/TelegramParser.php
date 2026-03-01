@@ -102,9 +102,38 @@ class TelegramParser extends AbstractParser implements ParserInterface
                 $messageData['edited_at'] = $msg['edited'];
             }
 
+            // Путь к медиа в экспорте (для сопоставления при импорте архива и догрузке)
+            $messageData['attachment_export_path'] = $this->getTelegramAttachmentExportPath($msg, $messageType);
+
             $messages[] = $messageData;
         }
 
         return new ConversationImportDTO($conversationData, $messages);
+    }
+
+    /**
+     * Возвращает путь к файлу медиа в экспорте (как в архиве Telegram).
+     * Используется для копирования при импорте архива и при догрузке медиа.
+     */
+    private function getTelegramAttachmentExportPath(array $msg, string $messageType): ?string
+    {
+        $path = $msg['file'] ?? $msg['photo'] ?? null;
+        if (is_string($path)) {
+            return $path;
+        }
+        if (is_array($path)) {
+            // иногда photo — массив размеров; берём первый или путь
+            $first = reset($path);
+            return is_string($first) ? $first : null;
+        }
+        $stickerPath = Arr::get($msg, 'sticker.file_id');
+        if (is_string($stickerPath)) {
+            return $stickerPath;
+        }
+        $documentPath = $msg['document'] ?? Arr::get($msg, 'document_file_id');
+        if (is_string($documentPath)) {
+            return $documentPath;
+        }
+        return null;
     }
 }

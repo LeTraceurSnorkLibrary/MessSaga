@@ -43,6 +43,8 @@ class ViberMessage extends Message
         'contact_data',
         'sticker_id',
         'urls',
+        'attachment_export_path',
+        'attachment_stored_path',
     ];
 
     /**

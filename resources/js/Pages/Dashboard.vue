@@ -244,10 +244,12 @@ loadConversations();
                         </div>
                         <div class="dashboard-page__thread">
                             <MessageThread
+                                :conversation-id="currentConversation?.id ?? null"
                                 :conversation-title="currentConversation?.title"
                                 :loading="loadingMessages"
                                 :messages="messages"
                                 @delete="handleConversationDelete"
+                                @media-uploaded="currentConversation && loadMessages(currentConversation.id)"
                             />
                         </div>
                     </div>

@@ -29,6 +29,8 @@ class WhatsAppMessage extends Message
         'message_type', // text, media, system
         'media_file',
         'raw',
+        'attachment_export_path',
+        'attachment_stored_path',
     ];
 
     /**
