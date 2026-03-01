@@ -11,10 +11,12 @@ final readonly class ImportModeDTO
 {
     /**
      * @param string   $mode                 Режим импорта (auto, new, select)
+     * @param int      $userId               ID пользователя, который вызывает запрос
      * @param int|null $targetConversationId ID переписки для режима select
      */
     public function __construct(
         private string $mode,
+        private int    $userId,
         private ?int   $targetConversationId = null,
     ) {
     }
@@ -28,18 +30,18 @@ final readonly class ImportModeDTO
     }
 
     /**
+     * @return int
+     */
+    public function getUserId(): int
+    {
+        return $this->userId;
+    }
+
+    /**
      * @return int|null
      */
     public function getTargetConversationId(): ?int
     {
         return $this->targetConversationId;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->mode;
     }
 }

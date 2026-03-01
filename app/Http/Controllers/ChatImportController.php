@@ -13,6 +13,14 @@ use Illuminate\Http\Request;
 class ChatImportController extends Controller
 {
     /**
+     * @param ImportStrategyFactory $strategyFactory
+     */
+    public function __construct(
+        private readonly ImportStrategyFactory $strategyFactory
+    ) {
+    }
+
+    /**
      * Запускает импорт переписки с учётом выбранного режима.
      *
      * @param Request $request
@@ -34,18 +42,18 @@ class ChatImportController extends Controller
          * @var string $import_mode
          */
         $import_mode          = $data['import_mode'];
+        $requestUserId        = $request->user()->id;
         $targetConversationId = isset($data['target_conversation_id'])
             ? (int)$data['target_conversation_id']
             : null;
-        $importModeDTO        = new ImportModeDTO($import_mode, $targetConversationId);
+        $importModeDTO        = new ImportModeDTO(
+            $import_mode,
+            $requestUserId,
+            $targetConversationId
+        );
 
-        /**
-         * @var int $requestUserId
-         */
-        $requestUserId = $request->user()->id;
-        $strategy      = (new ImportStrategyFactory())
-            ->forUserId($requestUserId)
-            ->getStrategy($importModeDTO);
+        $strategy = $this->strategyFactory
+            ->createStrategy($importModeDTO);
 
         ProcessChatImport::dispatch(
             userId: $requestUserId,

@@ -14,11 +14,6 @@ use InvalidArgumentException;
 class ImportStrategyFactory
 {
     /**
-     * @var int
-     */
-    protected int $forUserId;
-
-    /**
      * @var array<string, ImportStrategyInterface>
      */
     private array $strategies = [];
@@ -35,7 +30,7 @@ class ImportStrategyFactory
      *
      * @return $this
      */
-    public function register(ImportStrategyInterface $strategy): self
+    public function register(ImportStrategyInterface $strategy): static
     {
         $this->strategies[$strategy->getName()] = $strategy;
 
@@ -43,36 +38,22 @@ class ImportStrategyFactory
     }
 
     /**
-     * @param int $requestUserId
+     * @param ImportModeDTO $modeDTO
      *
-     * @return $this
-     */
-    public function forUserId(int $requestUserId): static
-    {
-        $this->forUserId = $requestUserId;
-
-        return $this;
-    }
-
-    /**
-     * @param ImportModeDTO $importModeDTO
-     *
-     * @throws InvalidArgumentException
      * @return ImportStrategyInterface
      */
-    public function getStrategy(ImportModeDTO $importModeDTO): ImportStrategyInterface
+    public function createStrategy(ImportModeDTO $modeDTO): ImportStrategyInterface
     {
-        $mode = $importModeDTO->getMode();
+        $mode = $modeDTO->getMode();
+
         if (!isset($this->strategies[$mode])) {
             throw new InvalidArgumentException("Unknown import mode: {$mode}");
         }
 
-        $strategy = $this->strategies[$mode];
+        $strategy = clone $this->strategies[$mode];
+
         if ($strategy instanceof SelectImportStrategy) {
-            $strategy->setTargetConversationId($importModeDTO->getTargetConversationId());
-            if (isset($this->forUserId)) {
-                $strategy->setUserId($this->forUserId);
-            }
+            $strategy->setImportMode($modeDTO);
         }
 
         return $strategy;

@@ -6,6 +6,7 @@ namespace App\Services\Import\Strategies;
 
 use App\Models\Conversation;
 use App\Models\MessengerAccount;
+use App\Services\Import\DTO\ImportModeDTO;
 use App\Services\Import\DTO\ImportModeEnum;
 use Illuminate\Support\Facades\Log;
 
@@ -17,62 +18,55 @@ class SelectImportStrategy extends AbstractImportStrategy implements ImportStrat
     public const IMPORT_STRATEGY_NAME = ImportModeEnum::SELECT->value;
 
     /**
-     * @var int ID of target user
+     * @var ImportModeDTO
      */
-    protected int $userId;
+    protected ImportModeDTO $importMode;
 
     /**
-     * @var int ID of target conversation
-     */
-    protected int $targetConversationId;
-
-    /**
-     * @param int $userId
-     *
-     * @return static
-     */
-    public function setUserId(int $userId): static
-    {
-        $this->userId = $userId;
-
-        return $this;
-    }
-
-    /**
-     * @param int $targetConversationId
+     * @param ImportModeDTO $importMode
      *
      * @return $this
      */
-    public function setTargetConversationId(int $targetConversationId): static
+    public function setImportMode(ImportModeDTO $importMode): static
     {
-        $this->targetConversationId = $targetConversationId;
+        $this->importMode = $importMode;
 
         return $this;
     }
 
     /**
-     * @inheritdoc
+     * @param MessengerAccount $account
+     * @param array            $conversationData
+     *
+     * @return Conversation|null
      */
     public function resolveConversation(
         MessengerAccount $account,
         array            $conversationData
     ): ?Conversation {
-        if (!isset($this->targetConversationId)) {
-            Log::warning('Select mode requires target conversation ID', [
-                'user_id' => $this->userId,
-            ]);
+        $importMode = $this->importMode ?? null;
+        if (!isset($importMode)) {
+            Log::error('SelectImportStrategy used without setting import mode');
 
             return null;
         }
 
-        $conversation = Conversation::where('id', $this->targetConversationId)
-            ->whereHas('messengerAccount', fn ($q) => $q->where('user_id', $this->userId))
+        $targetConversationId = $importMode->getTargetConversationId();
+        if ($targetConversationId === null) {
+            Log::warning('SelectImportStrategy not properly configured');
+
+            return null;
+        }
+
+        $userId       = $importMode->getUserId();
+        $conversation = Conversation::where('id', $targetConversationId)
+            ->whereHas('messengerAccount', fn ($q) => $q->where('user_id', $userId))
             ->first();
 
         if (!$conversation) {
             Log::warning('Selected conversation not found or not owned', [
-                'target_id' => $this->targetConversationId,
-                'user_id'   => $this->userId,
+                'target_id' => $targetConversationId,
+                'user_id'   => $userId,
             ]);
 
             return null;
