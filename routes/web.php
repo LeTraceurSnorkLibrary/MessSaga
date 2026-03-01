@@ -28,6 +28,10 @@ Route::middleware('auth')->group(function () {
         ->name('api.conversations.index');
     Route::get('/api/conversations/{conversation}/messages', [ConversationController::class, 'messages'])
         ->name('api.conversations.messages');
+    Route::get('/api/conversations/{conversation}/messages/{messageId}/attachment', [ConversationController::class, 'attachment'])
+        ->name('api.conversations.messages.attachment');
+    Route::post('/api/conversations/{conversation}/media', [ConversationController::class, 'uploadMedia'])
+        ->name('api.conversations.media.upload');
     Route::delete('/api/conversations/{conversation}', [ConversationController::class, 'destroy'])
         ->name('api.conversations.destroy');
 });

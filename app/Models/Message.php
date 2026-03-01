@@ -32,6 +32,8 @@ abstract class Message extends Model
         'text',
         'message_type',
         'raw',
+        'attachment_export_path',
+        'attachment_stored_path',
     ];
 
     /**
