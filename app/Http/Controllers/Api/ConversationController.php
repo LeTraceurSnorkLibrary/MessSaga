@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Support\FilenameSanitizer;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Teapot\StatusCode\Http;
@@ -168,7 +169,7 @@ class ConversationController extends Controller
 
         $mime = \Illuminate\Support\Facades\File::mimeType(Storage::path($message->attachment_stored_path));
         $mime = $mime ?: 'application/octet-stream';
-        $filename = basename($message->attachment_stored_path);
+        $filename = FilenameSanitizer::sanitize(basename($message->attachment_stored_path));
 
         return response()->streamDownload(
             function () use ($message) {

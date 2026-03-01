@@ -8,6 +8,7 @@ use App\Models\MessengerAccount;
 use App\Services\Import\ImportStrategyFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\Parsers\ParserRegistry;
+use App\Support\FilenameSanitizer;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
@@ -217,8 +218,8 @@ class ImportService
      * casts модели. При переданном $mediaRootPath копирует медиа в хранилище и заполняет attachment_stored_path.
      * Если имени файла нет (WhatsApp и др.) — берёт следующий файл из пула по порядку.
      *
-     * @param array<string, mixed> $message
-     * @param class-string<Model>  $messageModelClass
+     * @param array<string, mixed>                             $message
+     * @param class-string<Model>                              $messageModelClass
      * @param array{pool: array<int, string>, index: int}|null $mediaFallback
      *
      * @return array<string, mixed>
@@ -269,6 +270,13 @@ class ImportService
             'created_at'             => now(),
             'updated_at'             => now(),
         ]);
+
+        if (isset($row['attachment_export_path'])) {
+            $row['attachment_export_path'] = FilenameSanitizer::sanitize($row['attachment_export_path']);
+        }
+        if (isset($row['media_file'])) {
+            $row['media_file'] = FilenameSanitizer::sanitize($row['media_file']);
+        }
 
         /**
          * @var Model $model
@@ -324,8 +332,10 @@ class ImportService
             }
         }
 
-        $safeSegment    = preg_replace('/[^a-zA-Z0-9._\-]/', '_', $exportPath)
-            ?: basename($exportPath);
+        $safeSegment = FilenameSanitizer::sanitize($exportPath);
+        if ($safeSegment === 'file') {
+            $safeSegment = FilenameSanitizer::sanitize(basename($exportPath));
+        }
         $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $safeSegment);
         $content        = file_get_contents($sourceAbsolute);
         if ($content === false) {
@@ -425,10 +435,13 @@ class ImportService
         if (!is_file($absolutePath)) {
             return null;
         }
-        $ext   = pathinfo($absolutePath, PATHINFO_EXTENSION);
-        $name  = ($ext !== '') ? "media_{$index}.{$ext}" : "media_{$index}";
+        $ext            = pathinfo($absolutePath, PATHINFO_EXTENSION);
+        $ext            = FilenameSanitizer::sanitize($ext);
+        $name           = ($ext !== '' && $ext !== 'file')
+            ? "media_{$index}.{$ext}"
+            : "media_{$index}";
         $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $name);
-        $content = file_get_contents($absolutePath);
+        $content        = file_get_contents($absolutePath);
         if ($content === false) {
             return null;
         }
@@ -440,6 +453,7 @@ class ImportService
     private function isMediaMessageType(string $messageType): bool
     {
         $mediaTypes = ['photo', 'voice_message', 'video_message', 'media', 'sticker', 'document', 'gif', 'video'];
+
         return in_array(strtolower($messageType), $mediaTypes, true);
     }
 }
