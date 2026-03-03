@@ -3,19 +3,18 @@ import {useDate} from '@/composables/useDate';
 import {ref} from 'vue';
 
 const props = defineProps({
-    messages: { type: Array, default: () => [] },
-    loading: { type: Boolean, default: false },
-    conversationTitle: { type: String, default: '' },
-    conversationId: { type: Number, default: null },
+    messages: {type: Array, default: () => []},
+    loading: {type: Boolean, default: false},
+    conversationTitle: {type: String, default: ''},
+    conversationId: {type: Number, default: null},
 });
 
 const emit = defineEmits(['delete', 'media-uploaded']);
-const { formatDate } = useDate();
+const {formatDate} = useDate();
 const mediaUploadInput = ref(null);
 
 function showAsImage(message) {
-    const t = (message.message_type || '').toLowerCase();
-    return ['photo', 'gif', 'image'].includes(t);
+    return !!(message.is_attachment_an_image || false);
 }
 
 function showAsAudio(message) {
@@ -39,7 +38,7 @@ async function onMediaFileSelected(event) {
         const form = new FormData();
         form.append('file', file);
         await window.axios.post(`/api/conversations/${props.conversationId}/media`, form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: {'Content-Type': 'multipart/form-data'},
         });
         emit('media-uploaded');
     } finally {
@@ -56,9 +55,9 @@ async function onMediaFileSelected(event) {
                 <template v-if="conversationId && conversationTitle">
                     <input
                         ref="mediaUploadInput"
-                        type="file"
                         accept=".zip"
                         class="message-thread__file-input"
+                        type="file"
                         @change="onMediaFileSelected"
                     />
                     <button
@@ -92,27 +91,36 @@ async function onMediaFileSelected(event) {
                 </div>
                 <template v-if="message.attachment_url">
                     <div v-if="showAsImage(message)" class="message-thread__attachment">
-                        <img :src="message.attachment_url" :alt="message.attachment_export_path || 'Медиа'" class="message-thread__img" loading="lazy" />
+                        <picture>
+                            <img
+                                :alt="message.attachment_export_path || 'Медиа'"
+                                :src="message.attachment_url"
+                                class="message-thread__img"
+                                loading="lazy"
+                            />
+                        </picture>
                     </div>
                     <div v-else-if="showAsAudio(message)" class="message-thread__attachment">
-                        <audio controls :src="message.attachment_url" class="message-thread__audio">
+                        <audio :src="message.attachment_url" class="message-thread__audio" controls>
                             Ваш браузер не поддерживает аудио.
                         </audio>
                     </div>
                     <div v-else-if="showAsVideo(message)" class="message-thread__attachment">
-                        <video controls :src="message.attachment_url" class="message-thread__video">
+                        <video :src="message.attachment_url" class="message-thread__video" controls>
                             Ваш браузер не поддерживает видео.
                         </video>
                     </div>
                     <div v-else class="message-thread__attachment">
-                        <a :href="message.attachment_url" target="_blank" rel="noopener" class="message-thread__download">
+                        <a :href="message.attachment_url" class="message-thread__download" rel="noopener"
+                           target="_blank">
                             Скачать вложение
                         </a>
                     </div>
                 </template>
                 <div v-else-if="message.is_media_without_file" class="message-thread__placeholder">
                     <span class="message-thread__placeholder-text">Медиа-вложение не загружено</span>
-                    <span v-if="message.attachment_export_path" class="message-thread__placeholder-filename">{{ message.attachment_export_path }}</span>
+                    <span v-if="message.attachment_export_path"
+                          class="message-thread__placeholder-filename">{{ message.attachment_export_path }}</span>
                 </div>
                 <div v-if="message.text" class="message-thread__text">{{ message.text }}</div>
             </div>
