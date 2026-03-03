@@ -53,40 +53,23 @@ class ProcessConversationMediaUpload implements ShouldQueue
             $relation = $parser->getMessagesRelation($conversation);
             $model    = $relation->getRelated();
 
-            // 1) Сообщения с указанным путём — ищем файл по имени/пути
+            // Сообщения с указанным путём — ищем файл по имени/пути
             $withPath = $relation
                 ->whereNotNull('attachment_export_path')
                 ->whereNull('attachment_stored_path')
+                ->orderBy('sent_at')
                 ->get(['id', 'attachment_export_path']);
             foreach ($withPath as $message) {
                 $storedPath = $this->copyMediaIfFound(
                     $absoluteExtracted,
                     $message->attachment_export_path,
-                    $conversation->id
+                    $conversation->id,
+                    $message->id
                 );
                 if ($storedPath !== null) {
-                    $model->newQuery()->where('id', $message->id)->update(['attachment_stored_path' => $storedPath]);
-                }
-            }
-
-            // 2) Медиа без пути (например WhatsApp) — сопоставление по порядку
-            $mediaTypes = ['photo', 'voice_message', 'video_message', 'media', 'sticker', 'document', 'gif', 'video'];
-            $withoutPath = $relation
-                ->whereNull('attachment_stored_path')
-                ->where(function ($q) use ($mediaTypes) {
-                    $q->whereNull('attachment_export_path')->orWhere('attachment_export_path', '');
-                })
-                ->whereIn('message_type', $mediaTypes)
-                ->orderBy('sent_at')
-                ->get(['id']);
-            $files = $this->collectAllFiles($absoluteExtracted);
-            foreach ($withoutPath as $idx => $message) {
-                if (!isset($files[$idx])) {
-                    break;
-                }
-                $storedPath = $this->copyFileToStorage($files[$idx], $conversation->id, $idx);
-                if ($storedPath !== null) {
-                    $model->newQuery()->where('id', $message->id)->update(['attachment_stored_path' => $storedPath]);
+                    $model->newQuery()
+                        ->where('id', $message->id)
+                        ->update(['attachment_stored_path' => $storedPath]);
                 }
             }
         } finally {
@@ -97,22 +80,21 @@ class ProcessConversationMediaUpload implements ShouldQueue
         }
     }
 
-    private function copyMediaIfFound(string $mediaRoot, string $attachmentExportPath, int $conversationId): ?string
-    {
-        $exportPath = str_replace(['\\', '../'], ['/', ''], $attachmentExportPath);
-        $exportPath = ltrim($exportPath, '/');
-        if ($exportPath === '') {
+    private function copyMediaIfFound(
+        string $mediaRoot,
+        string $attachmentExportPath,
+        int    $conversationId,
+        int    $messageId
+    ): ?string {
+        // Используем только очищенное имя файла для поиска и сохранения.
+        $basename       = FilenameSanitizer::sanitize(basename($attachmentExportPath));
+        $sourceAbsolute = $this->findFileByBasename($mediaRoot, $basename);
+        if ($sourceAbsolute === null) {
             return null;
         }
-        $sourceAbsolute = rtrim($mediaRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $exportPath);
-        if (!is_file($sourceAbsolute)) {
-            return null;
-        }
-        $safeSegment = FilenameSanitizer::sanitize($exportPath);
-        if ($safeSegment === 'file') {
-            $safeSegment = FilenameSanitizer::sanitize(basename($exportPath));
-        }
-        $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $safeSegment);
+
+        // conversations/<ID_переписки>/media/<ID_сообщения>/<Название_файла>
+        $storedRelative = sprintf('conversations/%d/media/%d/%s', $conversationId, $messageId, $basename);
         $content        = file_get_contents($sourceAbsolute);
         if ($content === false) {
             return null;
@@ -122,54 +104,54 @@ class ProcessConversationMediaUpload implements ShouldQueue
         return $storedRelative;
     }
 
-    /** @return list<string> Абсолютные пути к файлам (без каталогов), отсортированы. */
-    private function collectAllFiles(string $dir): array
-    {
-        $list = [];
-        $this->collectFilesRecursive($dir, $list);
-        sort($list);
-
-        return $list;
-    }
-
-    private function collectFilesRecursive(string $dir, array &$list): void
+    /**
+     * Рекурсивный поиск файла по имени в каталоге (та же логика, что и в ImportService).
+     */
+    private function findFileByBasename(string $dir, string $basename): ?string
     {
         if (!is_dir($dir)) {
-            return;
+            return null;
         }
+
+        $target = strtolower(FilenameSanitizer::sanitize($basename));
+        if ($target === '' || $target === 'file') {
+            return null;
+        }
+
         $items = @scandir($dir);
         if ($items === false) {
-            return;
+            return null;
         }
+
         $sep = DIRECTORY_SEPARATOR;
+
         foreach ($items as $item) {
             if ($item === '.' || $item === '..') {
                 continue;
             }
-            $full = rtrim($dir, $sep) . $sep . $item;
+            $full = $dir . $sep . $item;
             if (is_file($full)) {
-                $list[] = $full;
-            } else {
-                $this->collectFilesRecursive($full, $list);
+                $sanitized = strtolower(FilenameSanitizer::sanitize($item));
+                if ($sanitized === $target) {
+                    return $full;
+                }
             }
         }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            $full = $dir . $sep . $item;
+            if (is_dir($full)) {
+                $found = $this->findFileByBasename($full, $basename);
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
     }
 
-    private function copyFileToStorage(string $absolutePath, int $conversationId, int $index): ?string
-    {
-        if (!is_file($absolutePath)) {
-            return null;
-        }
-        $ext            = pathinfo($absolutePath, PATHINFO_EXTENSION);
-        $ext            = FilenameSanitizer::sanitize($ext);
-        $name           = ($ext !== '' && $ext !== 'file') ? "media_{$index}.{$ext}" : "media_{$index}";
-        $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $name);
-        $content        = file_get_contents($absolutePath);
-        if ($content === false) {
-            return null;
-        }
-        Storage::put($storedRelative, $content);
-
-        return $storedRelative;
-    }
 }

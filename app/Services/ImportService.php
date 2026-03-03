@@ -82,7 +82,6 @@ class ImportService
             $parser,
             $strategy,
             $mediaRootPath,
-            $path,
         ) {
             $conversationData = $dto->getConversationData();
 
@@ -140,12 +139,6 @@ class ImportService
                     );
                 });
 
-            // Пул медиа-файлов из архива для сопоставления по порядку (WhatsApp и др., когда в экспорте нет имени файла)
-            $absoluteExportPath = Storage::path($path);
-            $mediaFallback      = $mediaRootPath !== null
-                ? ['pool' => $this->collectMediaFilesFromRoot($mediaRootPath, $absoluteExportPath), 'index' => 0]
-                : null;
-
             /**
              * Preparing new messages with deduplication keys
              */
@@ -193,8 +186,6 @@ class ImportService
                     $conversation->id,
                     $messageModelClass,
                     $mediaRootPath,
-                    $messengerType,
-                    $mediaFallback
                 );
             }
 
@@ -216,11 +207,9 @@ class ImportService
     /**
      * Собирает строку для insert: добавляет conversation_id, шифрует text, timestamps, кодирует array/json-поля по
      * casts модели. При переданном $mediaRootPath копирует медиа в хранилище и заполняет attachment_stored_path.
-     * Если имени файла нет (WhatsApp и др.) — берёт следующий файл из пула по порядку.
      *
-     * @param array<string, mixed>                             $message
-     * @param class-string<Model>                              $messageModelClass
-     * @param array{pool: array<int, string>, index: int}|null $mediaFallback
+     * @param array<string, mixed> $message
+     * @param class-string<Model>  $messageModelClass
      *
      * @return array<string, mixed>
      */
@@ -228,28 +217,15 @@ class ImportService
         array   $message,
         int     $conversationId,
         string  $messageModelClass,
-        ?string $mediaRootPath = null,
-        string  $messengerType = '',
-        ?array  &$mediaFallback = null
+        ?string $mediaRootPath = null
     ): array {
         $attachmentStoredPath = null;
-        if ($mediaRootPath !== null) {
-            if (!empty($message['attachment_export_path'])) {
-                $attachmentStoredPath = $this->copyMediaToStorage(
-                    $mediaRootPath,
-                    $message['attachment_export_path'],
-                    $conversationId
-                );
-            }
-            // Сопоставление по порядку: медиа-сообщение без имени файла — берём следующий файл из архива
-            if ($attachmentStoredPath === null && $mediaFallback !== null && $this->isMediaMessageType($message['message_type'] ?? '')) {
-                $pool = &$mediaFallback['pool'];
-                $idx  = &$mediaFallback['index'];
-                if (isset($pool[$idx])) {
-                    $attachmentStoredPath = $this->copyFileByAbsolutePath($pool[$idx], $conversationId, $idx);
-                    $idx++;
-                }
-            }
+        if ($mediaRootPath !== null && !empty($message['attachment_export_path'])) {
+            $attachmentStoredPath = $this->copyMediaToStorage(
+                $mediaRootPath,
+                $message['attachment_export_path'],
+                $conversationId
+            );
         }
 
         $text = $message['text'] ?? null;
@@ -313,29 +289,29 @@ class ImportService
         string $attachmentExportPath,
         int    $conversationId
     ): ?string {
-        $exportPath = str_replace(['\\', '../'], ['/', ''], $attachmentExportPath);
-        $exportPath = ltrim($exportPath, '/');
-        if ($exportPath === '') {
+        $basename = FilenameSanitizer::sanitize(basename($attachmentExportPath));
+
+        $root           = rtrim($mediaRootPath, DIRECTORY_SEPARATOR);
+        $sourceAbsolute = $this->findFileByBasename($root, $basename);
+        Log::debug('smth smth', [
+            '$mediaRootPath'        => $mediaRootPath,
+            '$attachmentExportPath' => $attachmentExportPath,
+            '$conversationId'       => $conversationId,
+            '$basename'             => $basename,
+            '$root'                 => $root,
+            '$sourceAbsolute'       => $sourceAbsolute,
+        ]);
+        if ($sourceAbsolute === null) {
+            Log::debug('Import media file not found', [
+                'export_path' => $attachmentExportPath,
+                'basename'    => $basename,
+                'root'        => $mediaRootPath,
+            ]);
+
             return null;
         }
 
-        $root           = rtrim($mediaRootPath, DIRECTORY_SEPARATOR);
-        $sourceAbsolute = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $exportPath);
-
-        if (!is_file($sourceAbsolute)) {
-            $basename       = basename($exportPath);
-            $sourceAbsolute = $this->findFileByBasename($root, $basename);
-            if ($sourceAbsolute === null) {
-                Log::debug('Import media file not found', ['path' => $exportPath, 'root' => $mediaRootPath]);
-
-                return null;
-            }
-        }
-
-        $safeSegment = FilenameSanitizer::sanitize($exportPath);
-        if ($safeSegment === 'file') {
-            $safeSegment = FilenameSanitizer::sanitize(basename($exportPath));
-        }
+        $safeSegment    = $basename;
         $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $safeSegment);
         $content        = file_get_contents($sourceAbsolute);
         if ($content === false) {
@@ -347,28 +323,43 @@ class ImportService
     }
 
     /**
-     * Рекурсивный поиск файла по имени в каталоге (учитывает разный регистр и вложенность).
+     * Рекурсивный поиск файла по имени в каталоге.
+     * Сопоставление идёт по имени, очищенному тем же FilenameSanitizer, что и attachment_export_path,
+     * так что различия только в невидимых символах / регистре не мешают найти файл.
      */
     private function findFileByBasename(string $dir, string $basename): ?string
     {
         if (!is_dir($dir)) {
             return null;
         }
+
+        $target = strtolower(FilenameSanitizer::sanitize($basename));
+        if ($target === '' || $target === 'file') {
+            return null;
+        }
+
         $items = @scandir($dir);
         if ($items === false) {
             return null;
         }
-        $sep           = DIRECTORY_SEPARATOR;
-        $basenameLower = strtolower($basename);
+
+        $sep = DIRECTORY_SEPARATOR;
+
+        // Сначала ищем в текущем каталоге
         foreach ($items as $item) {
             if ($item === '.' || $item === '..') {
                 continue;
             }
             $full = $dir . $sep . $item;
-            if (is_file($full) && strtolower($item) === $basenameLower) {
-                return $full;
+            if (is_file($full)) {
+                $sanitized = strtolower(FilenameSanitizer::sanitize($item));
+                if ($sanitized === $target) {
+                    return $full;
+                }
             }
         }
+
+        // Затем спускаемся в подпапки
         foreach ($items as $item) {
             if ($item === '.' || $item === '..') {
                 continue;
@@ -383,77 +374,5 @@ class ImportService
         }
 
         return null;
-    }
-
-    /**
-     * Собирает список абсолютных путей ко всем файлам в каталоге (рекурсивно).
-     * Исключает файл экспорта ($excludeAbsolutePath), чтобы не считать .txt/.json медиа.
-     */
-    private function collectMediaFilesFromRoot(string $dir, string $excludeAbsolutePath): array
-    {
-        $exclude = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $excludeAbsolutePath);
-        $list    = [];
-        $this->collectMediaFilesRecursive($dir, $exclude, $list);
-
-        sort($list);
-
-        return $list;
-    }
-
-    private function collectMediaFilesRecursive(string $dir, string $excludePath, array &$list): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-        $items = @scandir($dir);
-        if ($items === false) {
-            return;
-        }
-        $sep = DIRECTORY_SEPARATOR;
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-            $full = rtrim($dir, $sep) . $sep . $item;
-            if (is_file($full)) {
-                $normalized = str_replace(['/', '\\'], $sep, $full);
-                if ($normalized !== $excludePath) {
-                    $list[] = $full;
-                }
-            } else {
-                $this->collectMediaFilesRecursive($full, $excludePath, $list);
-            }
-        }
-    }
-
-    /**
-     * Копирует один файл по абсолютному пути в Storage (conversations/{id}/media/...).
-     * Имя в хранилище: по индексу и расширению оригинала, чтобы не перезаписывать.
-     */
-    private function copyFileByAbsolutePath(string $absolutePath, int $conversationId, int $index): ?string
-    {
-        if (!is_file($absolutePath)) {
-            return null;
-        }
-        $ext            = pathinfo($absolutePath, PATHINFO_EXTENSION);
-        $ext            = FilenameSanitizer::sanitize($ext);
-        $name           = ($ext !== '' && $ext !== 'file')
-            ? "media_{$index}.{$ext}"
-            : "media_{$index}";
-        $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $name);
-        $content        = file_get_contents($absolutePath);
-        if ($content === false) {
-            return null;
-        }
-        Storage::put($storedRelative, $content);
-
-        return $storedRelative;
-    }
-
-    private function isMediaMessageType(string $messageType): bool
-    {
-        $mediaTypes = ['photo', 'voice_message', 'video_message', 'media', 'sticker', 'document', 'gif', 'video'];
-
-        return in_array(strtolower($messageType), $mediaTypes, true);
     }
 }

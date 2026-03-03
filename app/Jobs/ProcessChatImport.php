@@ -124,11 +124,18 @@ class ProcessChatImport implements ShouldQueue
         }
 
         $relativeExport = $extractedDir . '/' . str_replace(DIRECTORY_SEPARATOR, '/', $exportRelativePath);
-        // Корень медиа — каталог, где лежит файл экспорта (пути из экспорта относительно него)
-        $exportDir     = dirname($exportRelativePath);
-        $mediaRootPath = $exportDir === '.'
-            ? $absoluteExtracted
-            : $absoluteExtracted . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $exportDir);
+
+        // Для Telegram медиа обычно лежат рядом с файлом экспорта → корнем делаем каталог, где лежит файл.
+        // Для WhatsApp медиа, как правило, в отдельных папках (Media/...), которые живут на уровне корня архива,
+        // а txt‑экспорт лежит в своей папке. Поэтому для WhatsApp корнем поиска медиа делаем весь распакованный архив.
+        $exportDir = dirname($exportRelativePath);
+        if (strtolower($this->messengerType) === 'whatsapp') {
+            $mediaRootPath = $absoluteExtracted;
+        } else {
+            $mediaRootPath = $exportDir === '.'
+                ? $absoluteExtracted
+                : $absoluteExtracted . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $exportDir);
+        }
 
         return [$relativeExport, $mediaRootPath, $extractedDir];
     }
