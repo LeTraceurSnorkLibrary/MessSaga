@@ -18,7 +18,7 @@ final class FilenameSanitizer
      */
     public static function sanitize(string $filename): string
     {
-        $cleaned = preg_replace('/[^a-zA-Z0-9\._\-]+/u', '_', $filename);
+        $cleaned = preg_replace('/[^a-zA-Zа-яА-Я0-9\._\-]+/u', '_', $filename);
         $cleaned = preg_replace('/_+/', '_', $cleaned ?? '');
         $cleaned = trim($cleaned ?? '', '_');
 
