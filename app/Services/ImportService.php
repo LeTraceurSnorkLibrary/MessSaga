@@ -8,6 +8,7 @@ use App\Models\MediaAttachment;
 use App\Models\MessengerAccount;
 use App\Services\Import\ImportStrategyFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
+use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
 use App\Support\FilenameSanitizer;
 use Carbon\Carbon;
@@ -22,12 +23,14 @@ use Throwable;
 class ImportService
 {
     /**
-     * @param ParserRegistry        $parserRegistry
-     * @param ImportStrategyFactory $strategyFactory
+     * @param ParserRegistry          $parserRegistry
+     * @param ImportStrategyFactory   $strategyFactory
+     * @param MediaFileStorageService $mediaFileStorageService
      */
     public function __construct(
-        protected ParserRegistry        $parserRegistry,
-        protected ImportStrategyFactory $strategyFactory,
+        protected ParserRegistry          $parserRegistry,
+        protected ImportStrategyFactory   $strategyFactory,
+        protected MediaFileStorageService $mediaFileStorageService,
     ) {
     }
 
@@ -222,7 +225,7 @@ class ImportService
     ): array {
         $attachmentStoredPath = null;
         if ($mediaRootPath !== null && !empty($message['attachment_export_path'])) {
-            $attachmentStoredPath = $this->copyMediaToStorage(
+            $attachmentStoredPath = $this->mediaFileStorageService->copyForConversation(
                 $mediaRootPath,
                 $message['attachment_export_path'],
                 $conversationId
@@ -287,52 +290,6 @@ class ImportService
         ];
     }
 
-    /**
-     * Копирует файл медиа из корня архива в хранилище (conversations/{id}/media/...).
-     * Сначала ищет по точному пути из экспорта, затем по имени файла в любом подкаталоге.
-     * Возвращает относительный путь в Storage или null, если файл не найден.
-     */
-    private function copyMediaToStorage(
-        string $mediaRootPath,
-        string $attachmentExportPath,
-        int    $conversationId
-    ): ?string {
-        $root           = rtrim($mediaRootPath, DIRECTORY_SEPARATOR);
-        $sourceAbsolute = null;
-        $basename       = null;
-        foreach ($this->extractCandidateBasenames($attachmentExportPath) as $candidate) {
-            $sanitizedCandidate = FilenameSanitizer::sanitize($candidate);
-            if ($sanitizedCandidate === 'file') {
-                continue;
-            }
-            $found = $this->findFileByBasename($root, $sanitizedCandidate);
-            if ($found !== null) {
-                $sourceAbsolute = $found;
-                $basename       = $sanitizedCandidate;
-                break;
-            }
-        }
-        if ($sourceAbsolute === null) {
-            Log::debug('Import media file not found', [
-                'export_path' => $attachmentExportPath,
-                'basename'    => basename(str_replace('\\', '/', $attachmentExportPath)),
-                'root'        => $mediaRootPath,
-            ]);
-
-            return null;
-        }
-
-        $safeSegment    = $basename;
-        $storedRelative = sprintf('conversations/%d/media/%s', $conversationId, $safeSegment);
-        $content        = file_get_contents($sourceAbsolute);
-        if ($content === false) {
-            return null;
-        }
-        Storage::put($storedRelative, $content);
-
-        return $storedRelative;
-    }
-
     private function normalizeExportPath(mixed $exportRaw): ?string
     {
         if (!is_string($exportRaw)) {
@@ -347,82 +304,4 @@ class ImportService
         return $normalized;
     }
 
-    /**
-     * Старые данные могли сохранить export_path как "photos_photo_1.jpg" (без слешей).
-     * Пробуем как обычный basename, так и "хвосты" после "_" для обратной совместимости.
-     *
-     * @return array<int, string>
-     */
-    private function extractCandidateBasenames(string $attachmentExportPath): array
-    {
-        $normalized = str_replace('\\', '/', $attachmentExportPath);
-        $basename   = basename($normalized);
-        $candidates = [$basename];
-
-        if (!str_contains($normalized, '/')) {
-            $parts = explode('_', $normalized);
-            for ($i = 1; $i < count($parts); $i++) {
-                $suffix = implode('_', array_slice($parts, $i));
-                if ($suffix !== '' && str_contains($suffix, '.')) {
-                    $candidates[] = $suffix;
-                }
-            }
-        }
-
-        return array_values(array_unique($candidates));
-    }
-
-    /**
-     * Рекурсивный поиск файла по имени в каталоге.
-     * Сопоставление идёт по имени, очищенному тем же FilenameSanitizer, что и attachment_export_path,
-     * так что различия только в невидимых символах / регистре не мешают найти файл.
-     */
-    private function findFileByBasename(string $dir, string $basename): ?string
-    {
-        if (!is_dir($dir)) {
-            return null;
-        }
-
-        $target = strtolower(FilenameSanitizer::sanitize($basename));
-        if ($target === '' || $target === 'file') {
-            return null;
-        }
-
-        $items = @scandir($dir);
-        if ($items === false) {
-            return null;
-        }
-
-        $sep = DIRECTORY_SEPARATOR;
-
-        // Сначала ищем в текущем каталоге
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-            $full = $dir . $sep . $item;
-            if (is_file($full)) {
-                $sanitized = strtolower(FilenameSanitizer::sanitize($item));
-                if ($sanitized === $target) {
-                    return $full;
-                }
-            }
-        }
-
-        // Затем спускаемся в подпапки
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-            $full = $dir . $sep . $item;
-            if (is_dir($full)) {
-                $found = $this->findFileByBasename($full, $basename);
-                if ($found !== null) {
-                    return $found;
-                }
-            }
-        }
-
-        return null;
-    }
 }
