@@ -33,6 +33,81 @@ make setup
 
 После этого проект готов к запуску.
 
+---
+
+## Docker (production-образ и деплой)
+
+В проект добавлен production-ready `Dockerfile` в `docker/Dockerfile` (Laravel + собранные Vite-ассеты).
+
+### 1. Сборка образа
+
+```bash
+make docker-build
+```
+
+или напрямую:
+
+```bash
+docker build -t messsaga-app:latest -f docker/Dockerfile .
+```
+
+### 2. Запуск контейнера приложения (если БД внешняя)
+
+```bash
+make docker-up
+```
+
+или напрямую:
+
+```bash
+docker run --rm -p 8080:80 --env-file .env messsaga-app:latest
+```
+
+Если БД не в контейнере приложения, укажите в `.env` внешний `DB_HOST`.
+
+### 3. Полный стек через compose (app + queue + mysql)
+
+Быстрый запуск через Makefile:
+
+```bash
+make docker-up
+```
+
+или напрямую:
+
+```bash
+docker compose up -d --build
+```
+
+Это поднимет:
+- `app` (HTTP на порту `${SERVER_PORT}` из `.env`, по умолчанию `8080`)
+- `queue` (воркер `php artisan queue:work`)
+- `mysql` (внутри compose-сети)
+
+Важно: для deploy-стека `app` и `queue` принудительно используют MySQL (через `docker-compose.yml`), чтобы оба контейнера работали с одной очередью.
+
+### 4. Миграции внутри контейнера
+
+```bash
+docker compose exec app php artisan migrate --force
+```
+
+Остановить deploy-стек:
+
+```bash
+make docker-down
+```
+
+### 5. Тюнинг под инстанс
+
+- Порт снаружи меняется в `docker-compose.yml` (`7500:80` или другой указанный в .env).
+- Переменные окружения задаются через `.env`/`env_file`.
+- Для отдельного процесса очередей можно масштабировать `queue`:
+
+```bash
+docker compose up -d --scale queue=2
+```
+
 ### 2. Запуск приложения
 
 **Вариант А — всё в одном терминале (удобно для разработки):**
@@ -142,6 +217,9 @@ DB_PASSWORD=
 | `make queue`     | Воркер очередей (импорт чатов).                                          |
 | `make dev`       | Vite в режиме разработки (hot reload).                                   |
 | `make build`     | Сборка фронтенда для production.                                         |
+| `make docker-build` | Сборка Docker-образа приложения (`messsaga-app:latest`).             |
+| `make docker-up` | Поднять deploy-стек Docker (`app + queue + mysql`).                     |
+| `make docker-down` | Остановить deploy-стек Docker.                                        |
 | `make db-create` | Создать `database/database.sqlite` при использовании SQLite.             |
 | `make migrate`   | Выполнить миграции.                                                      |
 | `make fresh`     | Сбросить БД и заново выполнить миграции.                                 |

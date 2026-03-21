@@ -2,7 +2,7 @@
 # Makefile readme (ru): <http://linux.yaroslavl.ru/docs/prog/gnu_make_3-79_russian_manual.html>
 # Makefile readme (en): <https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents>
 
-.PHONY: serve queue dev build install setup db-init db-sqlite-create db-mysql-up db-mysql-down migrate fresh test tinker logs clear help
+.PHONY: serve queue dev build docker-build docker-up docker-down docker-restart install setup db-init db-sqlite-create db-mysql-up db-mysql-down migrate fresh test tinker logs clear help
 
 # Порт сервера (можно задать: make serve PORT=8080)
 PORT ?= 8000
@@ -56,6 +56,20 @@ dev: ## Фронтенд в dev-режиме (Vite + hot reload)
 build: ## Сборка фронтенда для production
 	npm run build
 
+shell: ## Зайти в консоль контейнера
+	docker compose exec app bash
+
+docker-build: ## Сборка Docker-образа приложения (messsaga-app:latest)
+	docker build -t messsaga-app:latest -f docker/Dockerfile .
+
+docker-up: ## Поднять deploy-стек Docker (app + queue + mysql)
+	docker compose up -d
+
+docker-down: ## Остановить deploy-стек Docker
+	docker compose down
+
+docker-restart: docker-down docker-up ## Перезапустить deploy-стек контейнер
+
 run: ## Всё в одном: сервер + очередь + логи + Vite (одна команда, один терминал)
 	composer run dev
 
@@ -95,6 +109,10 @@ help: ## Список целей
 	@echo "    make queue   — воркер очередей (обработка импорта чатов)"
 	@echo "    make dev     — Vite dev-сервер (hot reload)"
 	@echo "    make build   — сборка фронтенда для production"
+	@echo "    make docker-build — сборка Docker-образа приложения"
+	@echo "    make docker-up — поднять deploy-стек Docker"
+	@echo "    make docker-down — остановить deploy-стек Docker"
+	@echo "    make shell   — зайти в консоль контейнера app"
 	@echo "    make run     — всё в одном терминале"
 	@echo ""
 	@echo "  БД:"
