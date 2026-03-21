@@ -104,28 +104,38 @@ async function onMediaFileSelected(event) {
                         </picture>
                     </div>
                     <div v-else-if="showAsAudio(message)" class="message-thread__attachment">
-                        <audio :src="message.media.url" class="message-thread__audio" controls>
+                        <audio :src="message.media.url"
+                               class="message-thread__audio"
+                               controls
+                        >
                             Ваш браузер не поддерживает аудио.
                         </audio>
                     </div>
                     <div v-else-if="showAsVideo(message)" class="message-thread__attachment">
-                        <video :src="message.media.url" class="message-thread__video" controls>
+                        <video :src="message.media.url"
+                               class="message-thread__video"
+                               controls
+                        >
                             Ваш браузер не поддерживает видео.
                         </video>
                     </div>
                     <div v-else class="message-thread__attachment">
                         <a :href="message.media.url" class="message-thread__download" rel="noopener"
-                           target="_blank">
+                           target="_blank"
+                        >
                             Скачать вложение
                         </a>
                     </div>
                 </template>
                 <div v-else-if="message.is_media_without_file" class="message-thread__placeholder">
-                    <span class="message-thread__placeholder-text">Медиа-вложение не загружено</span>
+                    <span class="message-thread__placeholder-text">
+                        Медиа-вложение не загружено
+                    </span>
                     <span v-if="message.media?.export_path || message.media?.original_filename"
-                          class="message-thread__placeholder-filename">{{
-                            message.media?.export_path || message.media?.original_filename
-                        }}</span>
+                          class="message-thread__placeholder-filename"
+                    >
+                        {{ message.media?.export_path || message.media?.original_filename }}
+                    </span>
                 </div>
                 <div v-if="message.text" class="message-thread__text">{{ message.text }}</div>
             </div>

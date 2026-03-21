@@ -106,11 +106,9 @@ class ConversationController extends Controller
             $media         = $msg->mediaAttachment;
             $item['media'] = $media?->toApiArray($conversation->id, $msg->id);
 
-            $hasStoredFile = $media !== null
-                && $media->stored_path !== null
-                && $media->stored_path !== '';
-
-            $item['is_media_without_file'] = ($this->isMediaMessageType($msg->message_type) || $media !== null) && !$hasStoredFile;
+            $mediaStoredPath               = $media?->stored_path ?? '';
+            $hasStoredFile                 = $mediaStoredPath !== '';
+            $item['is_media_without_file'] = !empty($media) && !$hasStoredFile;
 
             return $item;
         });
@@ -119,7 +117,8 @@ class ConversationController extends Controller
             json_encode(
                 $messages,
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-            ) ?: ''
+            )
+                ?: ''
         );
 
         return response()
@@ -221,15 +220,5 @@ class ConversationController extends Controller
             'status'  => 'queued',
             'message' => 'Догрузка медиа поставлена в очередь',
         ]);
-    }
-
-    private function isMediaMessageType(?string $messageType): bool
-    {
-        if ($messageType === null || $messageType === '') {
-            return false;
-        }
-        $mediaTypes = ['photo', 'voice_message', 'video_message', 'media', 'sticker', 'document', 'gif', 'video'];
-
-        return in_array(strtolower($messageType), $mediaTypes, true);
     }
 }
