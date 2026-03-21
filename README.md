@@ -76,7 +76,7 @@ make docker-up
 или напрямую:
 
 ```bash
-docker compose -f docker-compose.deploy.yml up -d --build
+docker compose up -d --build
 ```
 
 Это поднимет:
@@ -84,12 +84,12 @@ docker compose -f docker-compose.deploy.yml up -d --build
 - `queue` (воркер `php artisan queue:work`)
 - `mysql` (внутри compose-сети)
 
-Важно: для deploy-стека `app` и `queue` принудительно используют MySQL (через `docker-compose.deploy.yml`), чтобы оба контейнера работали с одной очередью.
+Важно: для deploy-стека `app` и `queue` принудительно используют MySQL (через `docker-compose.yml`), чтобы оба контейнера работали с одной очередью.
 
 ### 4. Миграции внутри контейнера
 
 ```bash
-docker compose -f docker-compose.deploy.yml exec app php artisan migrate --force
+docker compose exec app php artisan migrate --force
 ```
 
 Остановить deploy-стек:
@@ -100,12 +100,12 @@ make docker-down
 
 ### 5. Тюнинг под инстанс
 
-- Порт снаружи меняется в `docker-compose.deploy.yml` (`8080:80`).
+- Порт снаружи меняется в `docker-compose.yml` (`7500:80` или другой указанный в .env).
 - Переменные окружения задаются через `.env`/`env_file`.
 - Для отдельного процесса очередей можно масштабировать `queue`:
 
 ```bash
-docker compose -f docker-compose.deploy.yml up -d --scale queue=2
+docker compose up -d --scale queue=2
 ```
 
 ### 2. Запуск приложения
