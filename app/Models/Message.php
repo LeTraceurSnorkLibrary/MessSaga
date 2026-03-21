@@ -33,8 +33,7 @@ abstract class Message extends Model
         'text',
         'message_type',
         'raw',
-        'attachment_export_path',
-        'attachment_stored_path',
+        'media_attachment_id',
     ];
 
     /**
@@ -56,6 +55,26 @@ abstract class Message extends Model
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);
+    }
+
+    /**
+     * @return BelongsTo
+     */
+    public function mediaAttachment(): BelongsTo
+    {
+        return $this->belongsTo(MediaAttachment::class, 'media_attachment_id');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Message $message): void {
+            if ($message->media_attachment_id !== null) {
+                MediaAttachment::query()->whereKey($message->media_attachment_id)->delete();
+            }
+        });
     }
 
     /**

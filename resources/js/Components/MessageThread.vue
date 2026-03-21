@@ -14,7 +14,7 @@ const {formatDate} = useDate();
 const mediaUploadInput = ref(null);
 
 function showAsImage(message) {
-    return !!(message.is_attachment_an_image || false);
+    return !!(message.media?.is_image || false);
 }
 
 function showAsAudio(message) {
@@ -89,29 +89,29 @@ async function onMediaFileSelected(event) {
                     <span class="message-thread__sender">{{ message.sender_name || 'Неизвестный' }}</span>
                     <time :datetime="message.sent_at">{{ formatDate(message.sent_at) }}</time>
                 </div>
-                <template v-if="message.attachment_url">
+                <template v-if="message.media?.url">
                     <div v-if="showAsImage(message)" class="message-thread__attachment">
                         <picture>
                             <img
-                                :alt="message.attachment_export_path || 'Медиа'"
-                                :src="message.attachment_url"
+                                :alt="message.media?.original_filename || message.media?.export_path || 'Медиа'"
+                                :src="message.media.url"
                                 class="message-thread__img"
                                 loading="lazy"
                             />
                         </picture>
                     </div>
                     <div v-else-if="showAsAudio(message)" class="message-thread__attachment">
-                        <audio :src="message.attachment_url" class="message-thread__audio" controls>
+                        <audio :src="message.media.url" class="message-thread__audio" controls>
                             Ваш браузер не поддерживает аудио.
                         </audio>
                     </div>
                     <div v-else-if="showAsVideo(message)" class="message-thread__attachment">
-                        <video :src="message.attachment_url" class="message-thread__video" controls>
+                        <video :src="message.media.url" class="message-thread__video" controls>
                             Ваш браузер не поддерживает видео.
                         </video>
                     </div>
                     <div v-else class="message-thread__attachment">
-                        <a :href="message.attachment_url" class="message-thread__download" rel="noopener"
+                        <a :href="message.media.url" class="message-thread__download" rel="noopener"
                            target="_blank">
                             Скачать вложение
                         </a>
@@ -119,8 +119,10 @@ async function onMediaFileSelected(event) {
                 </template>
                 <div v-else-if="message.is_media_without_file" class="message-thread__placeholder">
                     <span class="message-thread__placeholder-text">Медиа-вложение не загружено</span>
-                    <span v-if="message.attachment_export_path"
-                          class="message-thread__placeholder-filename">{{ message.attachment_export_path }}</span>
+                    <span v-if="message.media?.export_path || message.media?.original_filename"
+                          class="message-thread__placeholder-filename">{{
+                            message.media?.export_path || message.media?.original_filename
+                        }}</span>
                 </div>
                 <div v-if="message.text" class="message-thread__text">{{ message.text }}</div>
             </div>

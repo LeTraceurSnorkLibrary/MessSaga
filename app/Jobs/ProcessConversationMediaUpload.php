@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\Conversation;
+use App\Models\MediaAttachment;
 use App\Services\Parsers\ParserRegistry;
 use App\Support\FilenameSanitizer;
 use Illuminate\Bus\Queueable;
@@ -53,24 +54,39 @@ class ProcessConversationMediaUpload implements ShouldQueue
             $relation = $parser->getMessagesRelation($conversation);
             $model    = $relation->getRelated();
 
-            // Сообщения с указанным путём — ищем файл по имени/пути
-            $withPath = $relation
-                ->whereNotNull('attachment_export_path')
-                ->whereNull('attachment_stored_path')
-                ->orderBy('sent_at')
-                ->get(['id', 'attachment_export_path']);
-            foreach ($withPath as $message) {
+            $pending = MediaAttachment::query()
+                ->where('conversation_id', $conversation->id)
+                ->whereNotNull('export_path')
+                ->where(function ($q): void {
+                    $q->whereNull('stored_path')->orWhere('stored_path', '');
+                })
+                ->orderBy('id')
+                ->get();
+
+            foreach ($pending as $media) {
+                $message = $model->newQuery()
+                    ->where('media_attachment_id', $media->id)
+                    ->first(['id']);
+                if ($message === null) {
+                    continue;
+                }
+
                 $storedPath = $this->copyMediaIfFound(
                     $absoluteExtracted,
-                    $message->attachment_export_path,
+                    (string)$media->export_path,
                     $conversation->id,
-                    $message->id
+                    (int)$message->id
                 );
-                if ($storedPath !== null) {
-                    $model->newQuery()
-                        ->where('id', $message->id)
-                        ->update(['attachment_stored_path' => $storedPath]);
+                if ($storedPath === null) {
+                    continue;
                 }
+
+                $mime = Storage::mimeType($storedPath);
+                $media->update([
+                    'stored_path'       => $storedPath,
+                    'mime_type'         => $mime ?: null,
+                    'original_filename' => basename($storedPath),
+                ]);
             }
         } finally {
             Storage::deleteDirectory($extractedDir);

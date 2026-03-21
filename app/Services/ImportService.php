@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\MediaAttachment;
 use App\Models\MessengerAccount;
 use App\Services\Import\ImportStrategyFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
@@ -140,19 +141,13 @@ class ImportService
                 });
 
             /**
-             * Preparing new messages with deduplication keys
+             * Подготовка и сохранение новых сообщений (по одному — чтобы привязать MediaAttachment).
              */
-            $newMessagesToInsert = [];
+            $importedCount = 0;
             foreach ($dto->getMessages() as $message) {
-                /**
-                 * Prepare a key for deduplication
-                 */
                 if (!empty($message['external_id'])) {
                     $key = 'ID:' . $message['external_id'];
                 } else {
-                    /**
-                     * Format sent_at field
-                     */
                     $sentAt = $message['sent_at'] ?? '';
                     if ($sentAt instanceof Carbon) {
                         $sentAtFormatted = $sentAt->format('Y-m-d H:i:s');
@@ -174,27 +169,34 @@ class ImportService
                     );
                 }
 
-                /**
-                 * Skip message if already exist
-                 */
                 if ($existingMessages->has($key)) {
                     continue;
                 }
 
-                $newMessagesToInsert[] = $this->prepareMessageRowForInsert(
+                $prepared = $this->prepareMessageRowForInsert(
                     $message,
                     $conversation->id,
                     $messageModelClass,
                     $mediaRootPath,
                 );
+
+                /** @var Model $msg */
+                $msg = $messageModelClass::create($prepared['row']);
+
+                if ($prepared['media'] !== null) {
+                    $media = MediaAttachment::create(array_merge($prepared['media'], [
+                        'conversation_id' => $conversation->id,
+                    ]));
+                    $msg->update(['media_attachment_id' => $media->id]);
+                }
+
+                $importedCount++;
             }
 
-            if (count($newMessagesToInsert) > 0) {
-                $messageModelClass::insert($newMessagesToInsert);
-
+            if ($importedCount > 0) {
                 Log::info('Messages imported', [
                     'conversation_id' => $conversation->id,
-                    'count'           => count($newMessagesToInsert),
+                    'count'           => $importedCount,
                 ]);
             } else {
                 Log::info('No new messages to import', [
@@ -205,13 +207,12 @@ class ImportService
     }
 
     /**
-     * Собирает строку для insert: добавляет conversation_id, шифрует text, timestamps, кодирует array/json-поля по
-     * casts модели. При переданном $mediaRootPath копирует медиа в хранилище и заполняет attachment_stored_path.
+     * Собирает атрибуты для Model::create и опционально данные для MediaAttachment.
      *
      * @param array<string, mixed> $message
      * @param class-string<Model>  $messageModelClass
      *
-     * @return array<string, mixed>
+     * @return array{row: array<string, mixed>, media: ?array<string, mixed>}
      */
     private function prepareMessageRowForInsert(
         array   $message,
@@ -228,28 +229,31 @@ class ImportService
             );
         }
 
+        $exportRaw       = $message['attachment_export_path'] ?? null;
+        $exportSanitized = is_string($exportRaw) && $exportRaw !== ''
+            ? FilenameSanitizer::sanitize($exportRaw)
+            : null;
+        if ($exportSanitized === 'file') {
+            $exportSanitized = null;
+        }
+
+        unset($message['attachment_export_path'], $message['attachment_stored_path']);
+
         $text = $message['text'] ?? null;
 
-        // Обрабатываем sent_at
         $sentAt = $message['sent_at'] ?? null;
         if ($sentAt instanceof Carbon) {
             $sentAt = $sentAt->format('Y-m-d H:i:s');
         }
 
         $row = array_merge($message, [
-            'conversation_id'        => $conversationId,
-            'sent_at'                => $sentAt,
-            'text'                   => $text
+            'conversation_id' => $conversationId,
+            'sent_at'         => $sentAt,
+            'text'            => $text
                 ? Crypt::encryptString($text)
                 : null,
-            'attachment_stored_path' => $attachmentStoredPath ?? ($message['attachment_stored_path'] ?? null),
-            'created_at'             => now(),
-            'updated_at'             => now(),
         ]);
 
-        if (isset($row['attachment_export_path'])) {
-            $row['attachment_export_path'] = FilenameSanitizer::sanitize($row['attachment_export_path']);
-        }
         if (isset($row['media_file'])) {
             $row['media_file'] = FilenameSanitizer::sanitize($row['media_file']);
         }
@@ -258,25 +262,34 @@ class ImportService
          * @var Model $model
          */
         $model   = $messageModelClass::make();
-        $casts   = $model->getCasts();
-        $allowed = array_merge($model->getFillable(), ['created_at', 'updated_at']);
-        // Нормализуем строку: у всех строк один и тот же набор ключей в одном порядке (иначе bulk insert падает)
-        $row = array_merge(
+        $allowed = $model->getFillable();
+        $row     = array_merge(
             array_fill_keys($allowed, null),
             array_intersect_key($row, array_flip($allowed))
         );
 
-        foreach ($row as $key => $value) {
-            if (!isset($casts[$key])) {
-                continue;
+        $mediaPayload = null;
+        if ($exportSanitized !== null || $attachmentStoredPath !== null) {
+            $mime = null;
+            if ($attachmentStoredPath !== null && Storage::exists($attachmentStoredPath)) {
+                $mime = Storage::mimeType($attachmentStoredPath);
             }
-            $cast = $casts[$key];
-            if (($cast === 'array' || $cast === 'json') && is_array($value)) {
-                $row[$key] = json_encode($value);
-            }
+            $mediaPayload = [
+                'stored_path'       => $attachmentStoredPath,
+                'export_path'       => $exportSanitized,
+                'mime_type'         => $mime,
+                'original_filename' => $exportSanitized
+                    ? basename(str_replace('\\', '/', $exportSanitized))
+                    : ($attachmentStoredPath
+                        ? basename($attachmentStoredPath)
+                        : null),
+            ];
         }
 
-        return $row;
+        return [
+            'row'   => $row,
+            'media' => $mediaPayload,
+        ];
     }
 
     /**
@@ -293,14 +306,6 @@ class ImportService
 
         $root           = rtrim($mediaRootPath, DIRECTORY_SEPARATOR);
         $sourceAbsolute = $this->findFileByBasename($root, $basename);
-        Log::debug('smth smth', [
-            '$mediaRootPath'        => $mediaRootPath,
-            '$attachmentExportPath' => $attachmentExportPath,
-            '$conversationId'       => $conversationId,
-            '$basename'             => $basename,
-            '$root'                 => $root,
-            '$sourceAbsolute'       => $sourceAbsolute,
-        ]);
         if ($sourceAbsolute === null) {
             Log::debug('Import media file not found', [
                 'export_path' => $attachmentExportPath,

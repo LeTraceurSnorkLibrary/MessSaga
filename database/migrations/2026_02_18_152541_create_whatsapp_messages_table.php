@@ -13,6 +13,9 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();
 
+            // Как у остальных мессенджеров (дедупликация / будущие идентификаторы из экспорта)
+            $table->string('external_id')->nullable()->index();
+
             // Специфичные для WhatsApp поля
             $table->string('sender_name');
             $table->string('sender_external_id')->nullable();

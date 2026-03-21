@@ -55,8 +55,7 @@ class TelegramMessage extends Message
         'forwarded_from_name',
         'edited_at',
         'reactions',
-        'attachment_export_path',
-        'attachment_stored_path',
+        'media_attachment_id',
     ];
 
     /**

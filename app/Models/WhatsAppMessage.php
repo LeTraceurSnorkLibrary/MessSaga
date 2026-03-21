@@ -22,6 +22,7 @@ class WhatsAppMessage extends Message
      */
     protected $fillable = [
         'conversation_id',
+        'external_id',
         'sender_name',
         'sender_external_id',
         'sent_at',
@@ -29,8 +30,7 @@ class WhatsAppMessage extends Message
         'message_type', // text, media, system
         'media_file',
         'raw',
-        'attachment_export_path',
-        'attachment_stored_path',
+        'media_attachment_id',
     ];
 
     /**

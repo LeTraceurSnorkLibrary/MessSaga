@@ -97,37 +97,20 @@ class ConversationController extends Controller
          * Получаем сообщения через парсер
          */
         $messages = $parser->getMessagesRelation($conversation)
+            ->with('mediaAttachment')
             ->orderBy('sent_at')
-            ->get(['id', 'sender_name', 'sent_at', 'text', 'message_type', 'attachment_export_path', 'attachment_stored_path']);
+            ->get(['id', 'sender_name', 'sent_at', 'text', 'message_type', 'media_attachment_id']);
 
         $messages = $messages->map(function ($msg) use ($conversation) {
-            $item                    = $msg->toArray();
-            $message_attachment_path = is_scalar($msg->attachment_stored_path)
-                ? (string)$msg->attachment_stored_path
-                : null;
-            if ($message_attachment_path) {
-                /**
-                 * attachment_url: URL для отображения/скачивания (если файл загружен)
-                 */
-                $item['attachment_url'] = $message_attachment_path
-                    ? route('api.conversations.messages.attachment', [
-                        'conversation' => $conversation->id,
-                        'messageId'    => $msg->id,
-                    ])
-                    : null;
-                /**
-                 * is_media_without_file: true = медиа-сообщение, но файла нет
-                 * Нужно показать «Медиа-вложение не загружено» и опционально attachment_export_path (имя файла из экспорта)
-                 */
-                $item['is_media_without_file'] = $this->isMediaMessageType($msg->message_type) && !$message_attachment_path;
+            $item          = $msg->toArray();
+            $media         = $msg->mediaAttachment;
+            $item['media'] = $media?->toApiArray($conversation->id, $msg->id);
 
-                /**
-                 * MIME-тип медиа-файла
-                 */
-                $attachment_mime_type           = Storage::mimeType($message_attachment_path);
-                $item['attachment_mime_type']   = $attachment_mime_type;
-                $item['is_attachment_an_image'] = str_starts_with($attachment_mime_type, 'image');
-            }
+            $hasStoredFile = $media !== null
+                && $media->stored_path !== null
+                && $media->stored_path !== '';
+
+            $item['is_media_without_file'] = $this->isMediaMessageType($msg->message_type) && !$hasStoredFile;
 
             return $item;
         });
@@ -167,23 +150,27 @@ class ConversationController extends Controller
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
 
         $parser  = $this->parserRegistry->get($conversation->messengerAccount->type);
-        $message = $parser->getMessagesRelation($conversation)->find($messageId);
-        if (!$message || !$message->attachment_stored_path) {
+        $message = $parser->getMessagesRelation($conversation)
+            ->with('mediaAttachment')
+            ->find($messageId);
+
+        $storedPath = $message?->mediaAttachment?->stored_path;
+        if (!$message || $storedPath === null || $storedPath === '') {
             abort(Http::NOT_FOUND);
         }
 
-        if (!Storage::exists($message->attachment_stored_path)) {
+        if (!Storage::exists($storedPath)) {
             abort(Http::NOT_FOUND);
         }
 
-        $mime     = File::mimeType(Storage::path($message->attachment_stored_path));
+        $mime     = File::mimeType(Storage::path($storedPath));
         $mime     = $mime
             ?: 'application/octet-stream';
-        $filename = FilenameSanitizer::sanitize(basename($message->attachment_stored_path));
+        $filename = FilenameSanitizer::sanitize(basename($storedPath));
 
         return response()->streamDownload(
-            function () use ($message) {
-                $stream = Storage::readStream($message->attachment_stored_path);
+            function () use ($storedPath) {
+                $stream = Storage::readStream($storedPath);
                 if (is_resource($stream)) {
                     fpassthru($stream);
                     fclose($stream);
@@ -198,7 +185,7 @@ class ConversationController extends Controller
     }
 
     /**
-     * Догрузка медиа в существующую переписку: загрузка архива, сопоставление по attachment_export_path.
+     * Догрузка медиа в существующую переписку: загрузка архива, сопоставление по export_path в media_attachments.
      *
      * @param Request      $request
      * @param Conversation $conversation
