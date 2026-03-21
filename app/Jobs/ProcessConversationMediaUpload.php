@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\Conversation;
 use App\Models\MediaAttachment;
+use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
 use Illuminate\Bus\Queueable;
@@ -95,6 +96,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 $mime = Storage::mimeType($storedPath);
                 $media->update([
                     'stored_path'       => $storedPath,
+                    'media_type'        => SupportedMediaTypesEnum::detect($mime ?: null, $media->export_path)?->value,
                     'mime_type'         => $mime
                         ?: null,
                     'original_filename' => basename($storedPath),

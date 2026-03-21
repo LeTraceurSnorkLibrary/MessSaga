@@ -17,6 +17,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('stored_path', 512)->nullable();
             $table->string('export_path', 512)->nullable();
+            $table->string('media_type', 32)->nullable();
             $table->string('mime_type', 128)->nullable();
             $table->string('original_filename', 512)->nullable();
             $table->timestamps();

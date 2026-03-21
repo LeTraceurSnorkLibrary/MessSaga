@@ -22,7 +22,6 @@ return new class extends Migration {
             $table->timestamp('sent_at');
             $table->text('text')->nullable();
             $table->string('message_type')->default('text'); // text, media, system
-            $table->string('media_file')->nullable();
 
             // Оригинальные данные
             $table->json('raw')->nullable();

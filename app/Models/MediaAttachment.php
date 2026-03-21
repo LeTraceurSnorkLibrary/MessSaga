@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -16,6 +17,7 @@ class MediaAttachment extends Model
         'conversation_id',
         'stored_path',
         'export_path',
+        'media_type',
         'mime_type',
         'original_filename',
     ];
@@ -46,10 +48,11 @@ class MediaAttachment extends Model
                 ])
                 : null,
             'export_path'       => $this->export_path,
+            'media_type'        => $this->media_type,
             'mime_type'         => $this->mime_type,
             'original_filename' => $this->original_filename,
             'is_loaded'         => $hasFile,
-            'is_image'          => $this->mime_type !== null && str_starts_with($this->mime_type, 'image'),
+            'is_image'          => $this->media_type === SupportedMediaTypesEnum::IMAGE->value,
         ];
     }
 }

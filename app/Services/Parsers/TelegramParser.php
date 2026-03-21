@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Parsers;
 
 use App\DTO\ConversationImportDTO;
+use App\Models\MessageTypes\TelegramMessageTypesEnum;
 use App\Models\TelegramMessage;
 use Illuminate\Support\Arr;
 
@@ -43,13 +44,10 @@ class TelegramParser extends AbstractParser implements ParserInterface
                 continue;
             }
 
-            $messageType = Arr::get($msg, 'type', 'text');
-            if ($messageType === 'message' && isset($msg['media_type'])) {
-                $messageType = $msg['media_type'];
-            }
-            if ($messageType === 'message') {
-                $messageType = $this->inferTelegramMessageType($msg);
-            }
+            $msg_type    = Arr::get($msg, 'type');
+            $messageType = is_string($msg_type)
+                ? TelegramMessageTypesEnum::fromExportType($msg_type)->value
+                : null;
 
             $text = $msg['text'] ?? '';
             if (is_array($text)) {
@@ -70,43 +68,8 @@ class TelegramParser extends AbstractParser implements ParserInterface
                 'raw'                => $msg,
             ];
 
-            if ($messageType === 'sticker' || isset($msg['sticker'])) {
-                $messageData['sticker_id']       = Arr::get($msg, 'sticker.file_id');
-                $messageData['sticker_set_name'] = Arr::get($msg, 'sticker.set_name');
-            }
-
-            if ($messageType === 'voice_message' || (isset($msg['media_type']) && $msg['media_type'] === 'voice_message')) {
-                $messageData['voice_duration'] = Arr::get($msg, 'duration_seconds');
-                $messageData['voice_file_id']  = Arr::get($msg, 'file');
-            }
-
-            if ($messageType === 'video_message' || (isset($msg['media_type']) && $msg['media_type'] === 'video_message')) {
-                $messageData['video_file_id']  = Arr::get($msg, 'file');
-                $messageData['video_duration'] = Arr::get($msg, 'duration_seconds');
-            }
-
-            if ($messageType === 'photo' || isset($msg['photo'])) {
-                $messageData['photo_file_id'] = Arr::get($msg, 'photo');
-            }
-
-            if (isset($msg['action'])) {
-                $messageData['service_action'] = $msg['action'];
-                $messageData['service_actor']  = [
-                    'name' => $msg['from'] ?? null,
-                    'id'   => $msg['from_id'] ?? null,
-                ];
-            }
-
-            if (isset($msg['forwarded_from'])) {
-                $messageData['forwarded_from_name'] = Arr::get($msg, 'forwarded_from');
-            }
-
-            if (isset($msg['edited'])) {
-                $messageData['edited_at'] = $msg['edited'];
-            }
-
             // Путь к медиа в экспорте (для сопоставления при импорте архива и догрузке)
-            $messageData['attachment_export_path'] = $this->getTelegramAttachmentExportPath($msg, $messageType);
+            $messageData['attachment_export_path'] = $this->getTelegramAttachmentExportPath($msg);
 
             $messages[] = $messageData;
         }
@@ -119,11 +82,10 @@ class TelegramParser extends AbstractParser implements ParserInterface
      * Используется для копирования при импорте архива и при догрузке медиа.
      *
      * @param array<array-key, mixed> $msg
-     * @param string                  $messageType
      *
      * @return string|null
      */
-    private function getTelegramAttachmentExportPath(array $msg, string $messageType): ?string
+    private function getTelegramAttachmentExportPath(array $msg): ?string
     {
         $path = $msg['file'] ?? $msg['photo'] ?? null;
         if (is_string($path)) {
@@ -149,34 +111,4 @@ class TelegramParser extends AbstractParser implements ParserInterface
         return null;
     }
 
-    /**
-     * В Telegram JSON у медиа-сообщений бывает type = "message" без media_type.
-     * В этом случае определяем тип по наличию полей вложения.
-     *
-     * @param array<array-key, mixed> $msg
-     *
-     * @return string
-     */
-    private function inferTelegramMessageType(array $msg): string
-    {
-        $mediaType = $msg['media_type'] ?? null;
-
-        if (isset($msg['photo'])) {
-            return 'photo';
-        }
-        if ($mediaType === 'voice_message' || isset($msg['voice'])) {
-            return 'voice_message';
-        }
-        if (isset($msg['video']) || isset($msg['video_file']) || (isset($msg['media_type']) && str_contains((string)$msg['media_type'], 'video'))) {
-            return 'video_message';
-        }
-        if (isset($msg['sticker'])) {
-            return 'sticker';
-        }
-        if (isset($msg['file']) || isset($msg['document'])) {
-            return 'document';
-        }
-
-        return 'message';
-    }
 }

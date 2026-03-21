@@ -28,7 +28,6 @@ class WhatsAppMessage extends Message
         'sent_at',
         'text',
         'message_type', // text, media, system
-        'media_file',
         'raw',
         'media_attachment_id',
     ];

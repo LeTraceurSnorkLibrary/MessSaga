@@ -17,17 +17,15 @@ const hasPendingMedia = computed(() => {
 });
 
 function showAsImage(message) {
-    return !!(message.media?.is_image || false);
+    return message.media?.media_type === 'image';
 }
 
 function showAsAudio(message) {
-    const t = (message.message_type || '').toLowerCase();
-    return ['voice_message', 'audio', 'voice'].includes(t);
+    return message.media?.media_type === 'audio';
 }
 
 function showAsVideo(message) {
-    const t = (message.message_type || '').toLowerCase();
-    return ['video', 'video_message'].includes(t);
+    return message.media?.media_type === 'video';
 }
 
 function triggerMediaUpload() {

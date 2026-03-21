@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -71,6 +72,7 @@ return new class extends Migration
                     'conversation_id'   => $row->conversation_id,
                     'stored_path'       => $storedPath,
                     'export_path'       => $exportPath,
+                    'media_type'        => SupportedMediaTypesEnum::detect($mime, $exportPath)?->value,
                     'mime_type'         => $mime,
                     'original_filename' => $storedPath
                         ? basename((string)$storedPath)

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\MediaAttachment;
+use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Models\MessengerAccount;
 use App\Services\Import\ImportStrategyFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
-use App\Support\FilenameSanitizer;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
@@ -252,10 +252,6 @@ class ImportService
                 : null,
         ]);
 
-        if (isset($row['media_file'])) {
-            $row['media_file'] = FilenameSanitizer::sanitize($row['media_file']);
-        }
-
         /**
          * @var Model $model
          */
@@ -275,6 +271,7 @@ class ImportService
             $mediaPayload = [
                 'stored_path'       => $attachmentStoredPath,
                 'export_path'       => $exportNormalized,
+                'media_type'        => SupportedMediaTypesEnum::detect($mime, $exportNormalized)?->value,
                 'mime_type'         => $mime,
                 'original_filename' => $exportNormalized
                     ? basename(str_replace('\\', '/', $exportNormalized))

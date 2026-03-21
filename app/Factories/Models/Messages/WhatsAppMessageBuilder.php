@@ -50,7 +50,6 @@ class WhatsAppMessageBuilder
             'sender'       => $data['sender'],
             'sent_at'      => $dateTime,
             'message_type' => $messageType,
-            'media_file'   => $mediaFile,
             'text'         => null,
             'raw'          => [
                 'date'      => $data['date'],
@@ -83,7 +82,6 @@ class WhatsAppMessageBuilder
             'sent_at'            => $dateTime,
             'text'               => $data['text'],
             'message_type'       => 'system',
-            'media_file'         => null,
             'raw'                => [
                 'date' => $data['date'],
                 'time' => $data['time'],
@@ -109,22 +107,21 @@ class WhatsAppMessageBuilder
         }
 
         // Имя файла для сопоставления с медиа в архиве: из первой строки или из всего текста
-        $mediaFile = $draft['media_file'];
+        $mediaFile = null;
         if ($draft['message_type'] === WhatsAppMessageTypesEnum::MEDIA->value && $mediaFile === null) {
             $mediaFile = $this->extractFilename($fullText);
         }
 
         $out = [
-            'sender_name'        => $draft['sender'],
-            'sender_external_id' => $draft['sender'],
-            'sent_at'            => $draft['sent_at'],
-            'text'               => trim($fullText)
+            'sender_name'            => $draft['sender'],
+            'sender_external_id'     => $draft['sender'],
+            'sent_at'                => $draft['sent_at'],
+            'text'                   => trim($fullText)
                 ?: null,
-            'message_type'       => $draft['message_type'],
-            'media_file'         => $mediaFile,
-            'raw'                => json_encode($draft['raw']),
+            'message_type'           => $draft['message_type'],
+            'attachment_export_path' => $mediaFile,
+            'raw'                    => json_encode($draft['raw']),
         ];
-        $out['attachment_export_path'] = $mediaFile;
 
         return $out;
     }
@@ -144,7 +141,6 @@ class WhatsAppMessageBuilder
             'sent_at'            => $system['sent_at'],
             'text'               => $system['text'],
             'message_type'       => 'system',
-            'media_file'         => null,
             'raw'                => json_encode($system['raw']),
         ];
     }
