@@ -96,7 +96,8 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 $mime = Storage::mimeType($storedPath);
                 $media->update([
                     'stored_path'       => $storedPath,
-                    'media_type'        => SupportedMediaTypesEnum::detect($mime ?: null, $media->export_path)?->value,
+                    'media_type'        => SupportedMediaTypesEnum::detect($mime
+                        ?: null, $media->export_path)?->value,
                     'mime_type'         => $mime
                         ?: null,
                     'original_filename' => basename($storedPath),
@@ -109,5 +110,4 @@ class ProcessConversationMediaUpload implements ShouldQueue
             }
         }
     }
-
 }

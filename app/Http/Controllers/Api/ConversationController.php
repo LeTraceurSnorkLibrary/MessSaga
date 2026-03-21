@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessConversationMediaUpload;
 use App\Models\Conversation;
+use App\Models\MediaAttachment;
 use App\Services\Parsers\ParserRegistry;
 use App\Support\FilenameSanitizer;
 use Illuminate\Database\Eloquent\Builder;
@@ -102,7 +103,10 @@ class ConversationController extends Controller
             ->get(['id', 'sender_name', 'sent_at', 'text', 'message_type', 'media_attachment_id']);
 
         $messages = $messages->map(function ($msg) use ($conversation) {
-            $item          = $msg->toArray();
+            $item = $msg->toArray();
+            /**
+             * @var MediaAttachment $media
+             */
             $media         = $msg->mediaAttachment;
             $item['media'] = $media?->toApiArray($conversation->id, $msg->id);
 
