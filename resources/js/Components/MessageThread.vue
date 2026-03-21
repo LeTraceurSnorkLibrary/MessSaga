@@ -33,7 +33,9 @@ function triggerMediaUpload() {
 
 async function onMediaFileSelected(event) {
     const file = event.target.files?.[0];
-    if (!file || !props.conversationId) return;
+    if (!file || !props.conversationId) {
+        return;
+    }
     try {
         const form = new FormData();
         form.append('file', file);
