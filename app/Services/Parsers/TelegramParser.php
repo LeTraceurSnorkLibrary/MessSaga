@@ -47,6 +47,9 @@ class TelegramParser extends AbstractParser implements ParserInterface
             if ($messageType === 'message' && isset($msg['media_type'])) {
                 $messageType = $msg['media_type'];
             }
+            if ($messageType === 'message') {
+                $messageType = $this->inferTelegramMessageType($msg);
+            }
 
             $text = $msg['text'] ?? '';
             if (is_array($text)) {
@@ -114,6 +117,11 @@ class TelegramParser extends AbstractParser implements ParserInterface
     /**
      * Возвращает путь к файлу медиа в экспорте (как в архиве Telegram).
      * Используется для копирования при импорте архива и при догрузке медиа.
+     *
+     * @param array<array-key, mixed> $msg
+     * @param string                  $messageType
+     *
+     * @return string|null
      */
     private function getTelegramAttachmentExportPath(array $msg, string $messageType): ?string
     {
@@ -124,7 +132,10 @@ class TelegramParser extends AbstractParser implements ParserInterface
         if (is_array($path)) {
             // иногда photo — массив размеров; берём первый или путь
             $first = reset($path);
-            return is_string($first) ? $first : null;
+
+            return is_string($first)
+                ? $first
+                : null;
         }
         $stickerPath = Arr::get($msg, 'sticker.file_id');
         if (is_string($stickerPath)) {
@@ -134,6 +145,38 @@ class TelegramParser extends AbstractParser implements ParserInterface
         if (is_string($documentPath)) {
             return $documentPath;
         }
+
         return null;
+    }
+
+    /**
+     * В Telegram JSON у медиа-сообщений бывает type = "message" без media_type.
+     * В этом случае определяем тип по наличию полей вложения.
+     *
+     * @param array<array-key, mixed> $msg
+     *
+     * @return string
+     */
+    private function inferTelegramMessageType(array $msg): string
+    {
+        $mediaType = $msg['media_type'] ?? null;
+
+        if (isset($msg['photo'])) {
+            return 'photo';
+        }
+        if ($mediaType === 'voice_message' || isset($msg['voice'])) {
+            return 'voice_message';
+        }
+        if (isset($msg['video']) || isset($msg['video_file']) || (isset($msg['media_type']) && str_contains((string)$msg['media_type'], 'video'))) {
+            return 'video_message';
+        }
+        if (isset($msg['sticker'])) {
+            return 'sticker';
+        }
+        if (isset($msg['file']) || isset($msg['document'])) {
+            return 'document';
+        }
+
+        return 'message';
     }
 }

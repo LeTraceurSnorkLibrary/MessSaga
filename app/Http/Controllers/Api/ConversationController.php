@@ -110,7 +110,7 @@ class ConversationController extends Controller
                 && $media->stored_path !== null
                 && $media->stored_path !== '';
 
-            $item['is_media_without_file'] = $this->isMediaMessageType($msg->message_type) && !$hasStoredFile;
+            $item['is_media_without_file'] = ($this->isMediaMessageType($msg->message_type) || $media !== null) && !$hasStoredFile;
 
             return $item;
         });
@@ -197,7 +197,7 @@ class ConversationController extends Controller
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
 
         $request->validate([
-            'file' => 'required|file|mimes:zip|max:102400',
+            'file' => 'required|file|mimes:zip|max:262144',
         ]);
 
         $path = $request->file('file')->store('chat_imports');

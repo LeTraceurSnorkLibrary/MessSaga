@@ -102,9 +102,20 @@ class ProcessConversationMediaUpload implements ShouldQueue
         int    $conversationId,
         int    $messageId
     ): ?string {
-        // Используем только очищенное имя файла для поиска и сохранения.
-        $basename       = FilenameSanitizer::sanitize(basename($attachmentExportPath));
-        $sourceAbsolute = $this->findFileByBasename($mediaRoot, $basename);
+        $sourceAbsolute = null;
+        $basename       = null;
+        foreach ($this->extractCandidateBasenames($attachmentExportPath) as $candidate) {
+            $sanitizedCandidate = FilenameSanitizer::sanitize($candidate);
+            if ($sanitizedCandidate === 'file') {
+                continue;
+            }
+            $found = $this->findFileByBasename($mediaRoot, $sanitizedCandidate);
+            if ($found !== null) {
+                $sourceAbsolute = $found;
+                $basename       = $sanitizedCandidate;
+                break;
+            }
+        }
         if ($sourceAbsolute === null) {
             return null;
         }
@@ -118,6 +129,30 @@ class ProcessConversationMediaUpload implements ShouldQueue
         Storage::put($storedRelative, $content);
 
         return $storedRelative;
+    }
+
+    /**
+     * Для обратной совместимости поддерживаем "сплющенные" export_path без слешей.
+     *
+     * @return array<int, string>
+     */
+    private function extractCandidateBasenames(string $attachmentExportPath): array
+    {
+        $normalized = str_replace('\\', '/', $attachmentExportPath);
+        $basename   = basename($normalized);
+        $candidates = [$basename];
+
+        if (!str_contains($normalized, '/')) {
+            $parts = explode('_', $normalized);
+            for ($i = 1; $i < count($parts); $i++) {
+                $suffix = implode('_', array_slice($parts, $i));
+                if ($suffix !== '' && str_contains($suffix, '.')) {
+                    $candidates[] = $suffix;
+                }
+            }
+        }
+
+        return array_values(array_unique($candidates));
     }
 
     /**

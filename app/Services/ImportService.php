@@ -229,13 +229,8 @@ class ImportService
             );
         }
 
-        $exportRaw       = $message['attachment_export_path'] ?? null;
-        $exportSanitized = is_string($exportRaw) && $exportRaw !== ''
-            ? FilenameSanitizer::sanitize($exportRaw)
-            : null;
-        if ($exportSanitized === 'file') {
-            $exportSanitized = null;
-        }
+        $exportRaw        = $message['attachment_export_path'] ?? null;
+        $exportNormalized = $this->normalizeExportPath($exportRaw);
 
         unset($message['attachment_export_path'], $message['attachment_stored_path']);
 
@@ -269,17 +264,17 @@ class ImportService
         );
 
         $mediaPayload = null;
-        if ($exportSanitized !== null || $attachmentStoredPath !== null) {
+        if ($exportNormalized !== null || $attachmentStoredPath !== null) {
             $mime = null;
             if ($attachmentStoredPath !== null && Storage::exists($attachmentStoredPath)) {
                 $mime = Storage::mimeType($attachmentStoredPath);
             }
             $mediaPayload = [
                 'stored_path'       => $attachmentStoredPath,
-                'export_path'       => $exportSanitized,
+                'export_path'       => $exportNormalized,
                 'mime_type'         => $mime,
-                'original_filename' => $exportSanitized
-                    ? basename(str_replace('\\', '/', $exportSanitized))
+                'original_filename' => $exportNormalized
+                    ? basename(str_replace('\\', '/', $exportNormalized))
                     : ($attachmentStoredPath
                         ? basename($attachmentStoredPath)
                         : null),
@@ -302,14 +297,25 @@ class ImportService
         string $attachmentExportPath,
         int    $conversationId
     ): ?string {
-        $basename = FilenameSanitizer::sanitize(basename($attachmentExportPath));
-
         $root           = rtrim($mediaRootPath, DIRECTORY_SEPARATOR);
-        $sourceAbsolute = $this->findFileByBasename($root, $basename);
+        $sourceAbsolute = null;
+        $basename       = null;
+        foreach ($this->extractCandidateBasenames($attachmentExportPath) as $candidate) {
+            $sanitizedCandidate = FilenameSanitizer::sanitize($candidate);
+            if ($sanitizedCandidate === 'file') {
+                continue;
+            }
+            $found = $this->findFileByBasename($root, $sanitizedCandidate);
+            if ($found !== null) {
+                $sourceAbsolute = $found;
+                $basename       = $sanitizedCandidate;
+                break;
+            }
+        }
         if ($sourceAbsolute === null) {
             Log::debug('Import media file not found', [
                 'export_path' => $attachmentExportPath,
-                'basename'    => $basename,
+                'basename'    => basename(str_replace('\\', '/', $attachmentExportPath)),
                 'root'        => $mediaRootPath,
             ]);
 
@@ -325,6 +331,45 @@ class ImportService
         Storage::put($storedRelative, $content);
 
         return $storedRelative;
+    }
+
+    private function normalizeExportPath(mixed $exportRaw): ?string
+    {
+        if (!is_string($exportRaw)) {
+            return null;
+        }
+
+        $normalized = trim(str_replace('\\', '/', $exportRaw));
+        if ($normalized === '') {
+            return null;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Старые данные могли сохранить export_path как "photos_photo_1.jpg" (без слешей).
+     * Пробуем как обычный basename, так и "хвосты" после "_" для обратной совместимости.
+     *
+     * @return array<int, string>
+     */
+    private function extractCandidateBasenames(string $attachmentExportPath): array
+    {
+        $normalized = str_replace('\\', '/', $attachmentExportPath);
+        $basename   = basename($normalized);
+        $candidates = [$basename];
+
+        if (!str_contains($normalized, '/')) {
+            $parts = explode('_', $normalized);
+            for ($i = 1; $i < count($parts); $i++) {
+                $suffix = implode('_', array_slice($parts, $i));
+                if ($suffix !== '' && str_contains($suffix, '.')) {
+                    $candidates[] = $suffix;
+                }
+            }
+        }
+
+        return array_values(array_unique($candidates));
     }
 
     /**
