@@ -129,6 +129,10 @@ const handleImportStarted = () => {
     startPolling();
 };
 
+const handleMediaUploadStarted = () => {
+    startPolling();
+};
+
 const loadMessages = async (conversationId) => {
     if (!conversationId) {
         return;
@@ -249,7 +253,7 @@ loadConversations();
                                 :loading="loadingMessages"
                                 :messages="messages"
                                 @delete="handleConversationDelete"
-                                @media-uploaded="currentConversation && loadMessages(currentConversation.id)"
+                                @media-uploaded="handleMediaUploadStarted"
                             />
                         </div>
                     </div>
