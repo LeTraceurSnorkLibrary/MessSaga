@@ -115,7 +115,16 @@ class ConversationController extends Controller
             return $item;
         });
 
-        return response()->json($messages);
+        $messagesHash = md5(
+            json_encode(
+                $messages,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ) ?: ''
+        );
+
+        return response()
+            ->json($messages)
+            ->header('X-Messages-Hash', $messagesHash);
     }
 
     /**

@@ -24,6 +24,7 @@ const selectedConversationId = ref(null);
 
 const previousConversationsCount = ref(0);
 const previousMessagesCount = ref(0);
+const previousMessagesHash = ref('');
 
 /**
  * Опции для селектора в зависимости от мессенджера
@@ -99,9 +100,12 @@ const startPolling = () => {
                 );
 
                 const newMessagesCount = msgResponse.data.length;
-                messagesChanged = newMessagesCount !== previousMessagesCount.value;
+                const newMessagesHash = msgResponse.headers['x-messages-hash'] || '';
+                messagesChanged = newMessagesCount !== previousMessagesCount.value
+                    || (newMessagesHash !== '' && newMessagesHash !== previousMessagesHash.value);
                 messages.value = msgResponse.data;
                 previousMessagesCount.value = newMessagesCount;
+                previousMessagesHash.value = newMessagesHash;
             }
 
             if (conversationsChanged || messagesChanged) {
@@ -144,6 +148,7 @@ const loadMessages = async (conversationId) => {
         );
         previousMessagesCount.value = messages.value.length;
         messages.value = response.data;
+        previousMessagesHash.value = response.headers['x-messages-hash'] || '';
     } finally {
         loadingMessages.value = false;
     }
