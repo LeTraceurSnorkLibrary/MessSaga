@@ -1,6 +1,6 @@
 <script setup>
 import {useDate} from '@/composables/useDate';
-import {ref} from 'vue';
+import {computed, ref} from 'vue';
 
 const props = defineProps({
     messages: {type: Array, default: () => []},
@@ -12,6 +12,9 @@ const props = defineProps({
 const emit = defineEmits(['delete', 'media-uploaded']);
 const {formatDate} = useDate();
 const mediaUploadInput = ref(null);
+const hasPendingMedia = computed(() => {
+    return props.messages.some((message) => !!message.is_media_without_file);
+});
 
 function showAsImage(message) {
     return !!(message.media?.is_image || false);
@@ -54,7 +57,7 @@ async function onMediaFileSelected(event) {
         <div class="message-thread__head">
             <span class="message-thread__title">{{ conversationTitle || 'Выберите переписку' }}</span>
             <div class="message-thread__head-actions">
-                <template v-if="conversationId && conversationTitle">
+                <template v-if="conversationId && conversationTitle && hasPendingMedia">
                     <input
                         ref="mediaUploadInput"
                         accept=".zip"
