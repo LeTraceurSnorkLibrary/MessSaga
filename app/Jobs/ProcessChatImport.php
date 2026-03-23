@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Services\Import\ArchiveImportPreparationService;
+use App\Services\Import\Factories\ImportArchivePreparerFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
-use App\Services\Import\Utils\FilenameUtil;
 use App\Services\ImportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,19 +36,20 @@ class ProcessChatImport implements ShouldQueue
     }
 
     /**
-     * @param ArchiveImportPreparationService $archivePreparation
+     * @param ImportArchivePreparerFactory $archivePreparationFactory
      *
      * @return void
      */
-    public function handle(ArchiveImportPreparationService $archivePreparation): void
+    public function handle(ImportArchivePreparerFactory $archivePreparationFactory): void
     {
         $pathToUse     = $this->path;
         $mediaRootPath = null;
         $extractedDir  = null;
 
         try {
-            if (FilenameUtil::isZipPath($this->path)) {
-                $prepared      = $archivePreparation->unpackAndLocateExport($this->path, $this->messengerType);
+            $archivePreparation = $archivePreparationFactory->makeForPath($this->path);
+            if ($archivePreparation !== null) {
+                $prepared      = $archivePreparation->extract($this->path, $this->messengerType);
                 $pathToUse     = $prepared['path_to_use'];
                 $mediaRootPath = $prepared['media_root_path'];
                 $extractedDir  = $prepared['extracted_dir'];
@@ -70,8 +70,8 @@ class ProcessChatImport implements ShouldQueue
             $service->import(
                 userId: $this->userId,
                 messengerType: $this->messengerType,
-                path: $pathToUse,
                 strategy: $this->strategy,
+                path: $pathToUse,
                 mediaRootPath: $mediaRootPath
             );
         } finally {

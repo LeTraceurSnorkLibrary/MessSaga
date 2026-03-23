@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Import;
+namespace App\Services\Import\Archives;
 
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
 use Illuminate\Support\Facades\Log;
@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
 /**
- * Подготавливает ZIP-импорт: распаковывает архив и определяет export/media root.
+ * Подготавливает ZIP-архив импорта:
+ * распаковка + определение export-файла и корня медиа.
  */
-class ArchiveImportPreparationService
+class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
 {
     /**
      * @param ExportArchiveLocatorFactory $locatorFactory
@@ -23,18 +24,17 @@ class ArchiveImportPreparationService
     }
 
     /**
-     * Распаковывает архив и возвращает пути для последующего импорта.
-     *
-     * @param string $storagePath
-     * @param string $messengerType
-     *
-     * @return array{
-     *      path_to_use: ?string,
-     *      media_root_path: ?string,
-     *      extracted_dir: ?string
-     *  }
+     * @inheritdoc
      */
-    public function unpackAndLocateExport(string $storagePath, string $messengerType): array
+    public function supports(string $storagePath): bool
+    {
+        return str_ends_with(strtolower($storagePath), '.zip');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function extract(string $storagePath, string $messengerType): array
     {
         $absoluteZip = Storage::path($storagePath);
         if (!is_file($absoluteZip)) {

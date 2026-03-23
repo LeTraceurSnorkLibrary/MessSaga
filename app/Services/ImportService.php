@@ -46,8 +46,8 @@ class ImportService
     public function import(
         int                     $userId,
         string                  $messengerType,
-        string                  $path,
         ImportStrategyInterface $strategy,
+        string                  $path,
         ?string                 $mediaRootPath = null
     ): void {
         $absolutePath = Storage::path($path);
