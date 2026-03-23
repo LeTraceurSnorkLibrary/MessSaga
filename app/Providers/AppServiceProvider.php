@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Import\Archive\Factories\ArchiveExportLocatorFactory;
+use App\Services\Import\Archive\Locators\FallbackArchiveExportLocator;
+use App\Services\Import\Archive\Locators\TelegramArchiveExportLocator;
+use App\Services\Import\Archive\Locators\WhatsAppArchiveExportLocator;
 use App\Services\Parsers\ParserRegistry;
 use App\Services\Parsers\TelegramParser;
 use App\Services\Parsers\WhatsAppParser;
@@ -26,6 +30,13 @@ class AppServiceProvider extends ServiceProvider
             $registry->register('whatsapp', $app->make(WhatsAppParser::class));
 
             return $registry;
+        });
+
+        $this->app->singleton(ArchiveExportLocatorFactory::class, function ($app) {
+            return (new ArchiveExportLocatorFactory())
+                ->register('telegram', $app->make(TelegramArchiveExportLocator::class))
+                ->register('whatsapp', $app->make(WhatsAppArchiveExportLocator::class))
+                ->setFallback($app->make(FallbackArchiveExportLocator::class));
         });
     }
 
