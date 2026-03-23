@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Import\Archive\Finders;
-
-use App\Services\Import\Archive\Contracts\ArchiveExportFinderInterface;
+namespace App\Services\Import\Export\Locators\ExportFile;
 
 /**
  * Базовая реализация finder'а с общей рекурсивной навигацией по дереву файлов.
  *
  * Наследники описывают только правила фильтрации нужного export-файла.
  */
-abstract class AbstractArchiveExportFinder implements ArchiveExportFinderInterface
+abstract class AbstractExportFileLocator implements ExportFileLocatorInterface
 {
+    /**
+     * @param string $absoluteDir
+     * @param string $exactName
+     *
+     * @return string|null
+     */
     protected function findExactName(string $absoluteDir, string $exactName): ?string
     {
         return $this->findRecursive(

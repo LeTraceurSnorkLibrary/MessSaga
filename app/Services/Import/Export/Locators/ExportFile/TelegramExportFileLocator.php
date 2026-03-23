@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Import\Archive\Finders;
+namespace App\Services\Import\Export\Locators\ExportFile;
 
 /**
  * Правила поиска export-файла Telegram:
  * 1) result.json
  * 2) любой .json
  */
-class TelegramArchiveExportFinder extends AbstractArchiveExportFinder
+class TelegramExportFileLocator extends AbstractExportFileLocator implements ExportFileLocatorInterface
 {
-    public function findExportFile(string $absoluteExtractedRoot): ?string
+    public function locate(string $absoluteExtractedRoot): ?string
     {
         return $this->findExactName($absoluteExtractedRoot, 'result.json')
             ?? $this->findFirstByExtension($absoluteExtractedRoot, 'json');

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Import;
 
-use App\Services\Import\Archive\Factories\ArchiveExportLocatorFactory;
+use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
@@ -15,21 +15,11 @@ use ZipArchive;
 class ArchiveImportPreparationService
 {
     /**
-     * @param ArchiveExportLocatorFactory $locatorFactory
+     * @param ExportArchiveLocatorFactory $locatorFactory
      */
     public function __construct(
-        private readonly ArchiveExportLocatorFactory $locatorFactory,
+        private readonly ExportArchiveLocatorFactory $locatorFactory,
     ) {
-    }
-
-    /**
-     * @param string $path
-     *
-     * @return bool
-     */
-    public function isZipPath(string $path): bool
-    {
-        return str_ends_with(strtolower($path), '.zip');
     }
 
     /**
@@ -55,8 +45,8 @@ class ArchiveImportPreparationService
             ];
         }
 
-        $extractedDir      = 'chat_imports/extracted_' . uniqid('', true);
-        $absoluteExtracted = Storage::path($extractedDir);
+        $extractedDir          = 'chat_imports/extracted_' . uniqid('', true);
+        $extractedAbsolutePath = Storage::path($extractedDir);
 
         $zip = new ZipArchive();
         if ($zip->open($absoluteZip, ZipArchive::RDONLY) !== true) {
@@ -67,14 +57,14 @@ class ArchiveImportPreparationService
             ];
         }
 
-        $zip->extractTo($absoluteExtracted);
+        $zip->extractTo($extractedAbsolutePath);
         $zip->close();
 
-        $location = $this->locatorFactory
+        $archiveImportSource = $this->locatorFactory
             ->make($messengerType)
-            ->locate($absoluteExtracted);
+            ->locate($extractedAbsolutePath);
 
-        if ($location === null) {
+        if ($archiveImportSource === null) {
             Log::warning('ProcessChatImport: export file not found in archive', [
                 'path'           => $storagePath,
                 'messenger_type' => $messengerType,
@@ -89,8 +79,12 @@ class ArchiveImportPreparationService
         }
 
         return [
-            'path_to_use'     => $extractedDir . '/' . str_replace(DIRECTORY_SEPARATOR, '/', $location->relativeExportPath),
-            'media_root_path' => $location->absoluteMediaRootPath,
+            'path_to_use'     => $extractedDir . '/' . str_replace(
+                    DIRECTORY_SEPARATOR,
+                    '/',
+                    $archiveImportSource->getExportFileRelativePath()
+                ),
+            'media_root_path' => $archiveImportSource->getMediaRootAbsolutePath(),
             'extracted_dir'   => $extractedDir,
         ];
     }

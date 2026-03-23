@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Services\Import\ArchiveImportPreparationService;
 use App\Services\Import\Strategies\ImportStrategyInterface;
+use App\Services\Import\Utils\FilenameUtil;
 use App\Services\ImportService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -47,7 +48,7 @@ class ProcessChatImport implements ShouldQueue
         $extractedDir  = null;
 
         try {
-            if ($archivePreparation->isZipPath($this->path)) {
+            if (FilenameUtil::isZipPath($this->path)) {
                 $prepared      = $archivePreparation->unpackAndLocateExport($this->path, $this->messengerType);
                 $pathToUse     = $prepared['path_to_use'];
                 $mediaRootPath = $prepared['media_root_path'];

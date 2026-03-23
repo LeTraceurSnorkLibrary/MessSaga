@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Import\Archive\Contracts;
+namespace App\Services\Import\Export\Locators\ExportFile;
 
 /**
  * Контракт поиска файла экспорта в уже распакованном архиве.
  */
-interface ArchiveExportFinderInterface
+interface ExportFileLocatorInterface
 {
     /**
      * Возвращает путь к export-файлу относительно корня распаковки.
@@ -16,5 +16,5 @@ interface ArchiveExportFinderInterface
      *
      * @return string|null
      */
-    public function findExportFile(string $absoluteExtractedRoot): ?string;
+    public function locate(string $absoluteExtractedRoot): ?string;
 }
