@@ -11,8 +11,8 @@ final readonly class ArchiveExtractionResult
 {
     /**
      * @param string|null $exportFileAbsolutePath Абсолютный путь к найденному export-файлу
-     * @param string|null $mediaRootPath         Абсолютный путь к каталогу, где искать медиа
-     * @param string|null $extractedDir          Storage-relative временный каталог распаковки (для cleanup)
+     * @param string|null $mediaRootPath          Абсолютный путь к каталогу, где искать медиа
+     * @param string|null $extractedDir           Storage-relative временный каталог распаковки (для cleanup)
      */
     public function __construct(
         private ?string $exportFileAbsolutePath,
@@ -22,13 +22,11 @@ final readonly class ArchiveExtractionResult
     }
 
     /**
-     * @param string|null $extractedDir
-     *
      * @return self
      */
-    public static function notPrepared(?string $extractedDir = null): self
+    public static function notPrepared(): self
     {
-        return new self(null, null, $extractedDir);
+        return new self(null, null, null);
     }
 
     /**

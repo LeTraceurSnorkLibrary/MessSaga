@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Models\Conversation;
 use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
+use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
 use Illuminate\Bus\Queueable;
@@ -15,7 +16,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
-use ZipArchive;
 
 class ProcessConversationMediaUpload implements ShouldQueue
 {
@@ -34,32 +34,37 @@ class ProcessConversationMediaUpload implements ShouldQueue
     }
 
     /**
-     * @param ParserRegistry          $parserRegistry
-     * @param MediaFileStorageService $mediaFileStorageService
+     * @param ParserRegistry                $parserRegistry
+     * @param MediaFileStorageService       $mediaFileStorageService
+     * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
      *
      * @return void
      */
-    public function handle(ParserRegistry $parserRegistry, MediaFileStorageService $mediaFileStorageService): void
-    {
+    public function handle(
+        ParserRegistry                $parserRegistry,
+        MediaFileStorageService       $mediaFileStorageService,
+        ImportArchiveExtractorFactory $archiveExtractorsFactory
+    ): void {
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
         if (!$conversation || $conversation->messengerAccount->user_id !== $this->userId) {
             return;
         }
 
-        $absoluteZip = Storage::path($this->path);
-        if (!is_file($absoluteZip)) {
+        $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->path);
+        if ($archiveExtractor === null) {
             return;
         }
 
-        $extractedDir      = 'chat_imports/media_upload_' . uniqid('', true);
-        $absoluteExtracted = Storage::path($extractedDir);
-
-        $zip = new ZipArchive();
-        if ($zip->open($absoluteZip, ZipArchive::RDONLY) !== true) {
+        $source       = $archiveExtractor->extract($this->path, $conversation->messengerAccount->type);
+        $extractedDir = $source->getExtractedDir();
+        if ($extractedDir === null) {
             return;
         }
-        $zip->extractTo($absoluteExtracted);
-        $zip->close();
+
+        $absoluteExtracted = $source->getMediaRootPath() ?? Storage::path($extractedDir);
+        if ($absoluteExtracted === null) {
+            return;
+        }
 
         try {
             $parser   = $parserRegistry->get($conversation->messengerAccount->type);
