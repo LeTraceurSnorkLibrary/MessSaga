@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Import\Archives;
 
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
-use RuntimeException;
+use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 
 /**
  * Заглушка под будущую поддержку RAR-архивов.
@@ -25,6 +25,6 @@ class RarImportArchiveExtractor implements ImportArchiveExtractorInterface
      */
     public function extract(string $storagePath, string $messengerType): ArchiveExtractionResult
     {
-        throw new RuntimeException('RAR archives are not supported yet.');
+        throw new ArchiveExtractionFailedException('RAR archives are not supported yet.');
     }
 }

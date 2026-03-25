@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Models\Conversation;
 use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
+use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
@@ -15,6 +16,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessConversationMediaUpload implements ShouldQueue
@@ -45,28 +47,34 @@ class ProcessConversationMediaUpload implements ShouldQueue
         MediaFileStorageService       $mediaFileStorageService,
         ImportArchiveExtractorFactory $archiveExtractorsFactory
     ): void {
+        $extractedDir = null;
+
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
         if (!$conversation || $conversation->messengerAccount->user_id !== $this->userId) {
             return;
         }
 
-        $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->path);
-        if ($archiveExtractor === null) {
-            return;
-        }
-
-        $source       = $archiveExtractor->extract($this->path, $conversation->messengerAccount->type);
-        $extractedDir = $source->getExtractedDir();
-        if ($extractedDir === null) {
-            return;
-        }
-
-        $absoluteExtracted = $source->getMediaRootPath() ?? Storage::path($extractedDir);
-        if ($absoluteExtracted === null) {
-            return;
-        }
-
         try {
+            $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->path);
+            if ($archiveExtractor === null) {
+                return;
+            }
+
+            $source = $archiveExtractor->extract($this->path, $conversation->messengerAccount->type);
+            if ($source === null) {
+                return;
+            }
+
+            $extractedDir = $source->getExtractedDir();
+            if ($extractedDir === null) {
+                return;
+            }
+
+            $absoluteExtracted = $source->getMediaRootPath() ?? Storage::path($extractedDir);
+            if ($absoluteExtracted === null) {
+                return;
+            }
+
             $parser   = $parserRegistry->get($conversation->messengerAccount->type);
             $relation = $parser->getMessagesRelation($conversation);
             $model    = $relation->getRelated();
@@ -108,8 +116,17 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     'original_filename' => basename($storedPath),
                 ]);
             }
+        } catch (ArchiveExtractionFailedException $e) {
+            Log::warning('Archive extraction failed', [
+                'user_id'         => $this->userId,
+                'conversation_id' => $this->conversationId,
+                'path'            => $this->path,
+                'reason'          => $e->getMessage(),
+            ]);
         } finally {
-            Storage::deleteDirectory($extractedDir);
+            if (isset($extractedDir) && Storage::exists($extractedDir)) {
+                Storage::deleteDirectory($extractedDir);
+            }
             if (Storage::exists($this->path)) {
                 Storage::delete($this->path);
             }

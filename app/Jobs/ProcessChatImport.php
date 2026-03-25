@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
+use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\ImportService;
@@ -13,6 +14,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessChatImport implements ShouldQueue
@@ -43,10 +45,18 @@ class ProcessChatImport implements ShouldQueue
      */
     public function handle(ImportArchiveExtractorFactory $archiveExtractorsFactory): void
     {
+        $source       = null;
+        $extractedDir = null;
+
         try {
             $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->exportFileStoredPath);
             if ($archiveExtractor !== null) {
-                $source       = $archiveExtractor->extract($this->exportFileStoredPath, $this->messengerType);
+                $source = $archiveExtractor->extract($this->exportFileStoredPath, $this->messengerType);
+
+                if (!isset($source)) {
+                    return;
+                }
+
                 $extractedDir = $source->getExtractedDir();
 
                 if ($source->getExportFileAbsolutePath() === null) {
@@ -75,6 +85,13 @@ class ProcessChatImport implements ShouldQueue
                 strategy: $this->strategy,
                 extractedExportFile: $extractedExportFile
             );
+        } catch (ArchiveExtractionFailedException $e) {
+            Log::warning('Archive extraction failed', [
+                'user_id'          => $this->userId,
+                'messenger_type'   => $this->messengerType,
+                'export_file_path' => $this->exportFileStoredPath,
+                'reason'           => $e->getMessage(),
+            ]);
         } finally {
             /**
              * Delete temporary archive/export file

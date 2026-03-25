@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Import\Archives;
 
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
+use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -41,7 +42,9 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
         $extractedAbsolutePath = $unpacked->getMediaRootPath();
         $extractedDir          = $unpacked->getExtractedDir();
         if ($extractedAbsolutePath === null || $extractedDir === null) {
-            return ArchiveExtractionResult::notPrepared();
+            throw new ArchiveExtractionFailedException(
+                'ZIP extraction succeeded but extracted paths are missing'
+            );
         }
 
         $archiveImportSource = $this->locatorFactory
@@ -84,7 +87,9 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
     {
         $absoluteZip = Storage::path($storagePath);
         if (!is_file($absoluteZip)) {
-            return ArchiveExtractionResult::notPrepared();
+            throw new ArchiveExtractionFailedException(
+                'ZIP file not found'
+            );
         }
 
         $extractedDir          = 'chat_imports/extracted_' . uniqid('', true);
@@ -92,16 +97,19 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
 
         $zip = new ZipArchive();
         if ($zip->open($absoluteZip, ZipArchive::RDONLY) !== true) {
-            return ArchiveExtractionResult::notPrepared();
+            $zip->close();
+
+            throw new ArchiveExtractionFailedException(
+                'Failed to open ZIP archive'
+            );
         }
 
         if (!$this->extractSafely($zip, $extractedAbsolutePath)) {
             $zip->close();
-            Log::warning('ZipImportArchiveExtractor: unsafe archive entries detected', [
-                'path' => $storagePath,
-            ]);
 
-            return ArchiveExtractionResult::notPrepared();
+            throw new ArchiveExtractionFailedException(
+                'ZIP archive contains unsafe entries or cannot be extracted'
+            );
         }
         $zip->close();
 

@@ -22,14 +22,6 @@ final readonly class ArchiveExtractionResult
     }
 
     /**
-     * @return self
-     */
-    public static function notPrepared(): self
-    {
-        return new self(null, null, null);
-    }
-
-    /**
      * Абсолютный путь к экспорт-файлу.
      */
     public function getExportFileAbsolutePath(): ?string
