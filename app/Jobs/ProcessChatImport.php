@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Services\Import\Factories\ImportArchivePreparerFactory;
+use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
+use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\ImportService;
 use Illuminate\Bus\Queueable;
@@ -24,63 +25,64 @@ class ProcessChatImport implements ShouldQueue
     /**
      * @param int                     $userId
      * @param string                  $messengerType
-     * @param string                  $path Storage-relative path (ZIP or single export file)
+     * @param string                  $exportFileStoredPath Storage-relative path (ZIP or single export file)
      * @param ImportStrategyInterface $strategy
      */
     public function __construct(
         public int                     $userId,
         public string                  $messengerType,
-        public string                  $path,
+        public string                  $exportFileStoredPath,
         public ImportStrategyInterface $strategy
     ) {
     }
 
     /**
-     * @param ImportArchivePreparerFactory $archivePreparationFactory
+     * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
      *
      * @return void
      */
-    public function handle(ImportArchivePreparerFactory $archivePreparationFactory): void
+    public function handle(ImportArchiveExtractorFactory $archiveExtractorsFactory): void
     {
-        $pathToUse     = $this->path;
-        $mediaRootPath = null;
-        $extractedDir  = null;
-
         try {
-            $archivePreparation = $archivePreparationFactory->makeForPath($this->path);
-            if ($archivePreparation !== null) {
-                $prepared      = $archivePreparation->extract($this->path, $this->messengerType);
-                $pathToUse     = $prepared['path_to_use'];
-                $mediaRootPath = $prepared['media_root_path'];
-                $extractedDir  = $prepared['extracted_dir'];
+            $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->exportFileStoredPath);
+            if ($archiveExtractor !== null) {
+                $source       = $archiveExtractor->extract($this->exportFileStoredPath, $this->messengerType);
+                $extractedDir = $source->getExtractedDir();
 
-                if ($pathToUse === null) {
+                if ($source->getExportFileAbsolutePath() === null) {
                     return;
                 }
             }
+            $extractedExportFile = $source ?? new ArchiveExtractionResult(
+                Storage::path($this->exportFileStoredPath),
+                null,
+                null
+            );
 
             /**
              * @var ImportService $service
              */
             $service = app(ImportService::class);
 
-            // Импорт читает экспорт из pathToUse и при наличии mediaRootPath копирует
-            // все медиа из распакованной папки в постоянное хранилище (Storage).
-            // К моменту выхода из import() файлы уже лежат в conversations/{id}/media/.
+            /**
+             * Импорт читает файл экспорта из $extractedExportFile и при наличии медиа копирует их из распакованной
+             * папки в постоянное хранилище (Storage).
+             * К моменту выхода из import() файлы уже лежат в conversations/{id}/media/.
+             */
             $service->import(
                 userId: $this->userId,
                 messengerType: $this->messengerType,
                 strategy: $this->strategy,
-                path: $pathToUse,
-                mediaRootPath: $mediaRootPath
+                extractedExportFile: $extractedExportFile
             );
         } finally {
-            // Удаляем только после того, как import() уже скопировал файлы в Storage.
-            // Временная папка и архив больше не нужны.
-            if (Storage::exists($this->path)) {
-                Storage::delete($this->path);
+            /**
+             * Delete temporary archive/export file
+             */
+            if (Storage::exists($this->exportFileStoredPath)) {
+                Storage::delete($this->exportFileStoredPath);
             }
-            if ($extractedDir !== null && Storage::exists($extractedDir)) {
+            if (isset($extractedDir) && Storage::exists($extractedDir)) {
                 Storage::deleteDirectory($extractedDir);
             }
         }

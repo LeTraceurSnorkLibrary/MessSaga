@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Import\Archives;
 
+use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -34,15 +35,11 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
     /**
      * @inheritdoc
      */
-    public function extract(string $storagePath, string $messengerType): array
+    public function extract(string $storagePath, string $messengerType): ArchiveExtractionResult
     {
         $absoluteZip = Storage::path($storagePath);
         if (!is_file($absoluteZip)) {
-            return [
-                'path_to_use'     => null,
-                'media_root_path' => null,
-                'extracted_dir'   => null,
-            ];
+            return ArchiveExtractionResult::notPrepared();
         }
 
         $extractedDir          = 'chat_imports/extracted_' . uniqid('', true);
@@ -50,11 +47,7 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
 
         $zip = new ZipArchive();
         if ($zip->open($absoluteZip, ZipArchive::RDONLY) !== true) {
-            return [
-                'path_to_use'     => null,
-                'media_root_path' => null,
-                'extracted_dir'   => null,
-            ];
+            return ArchiveExtractionResult::notPrepared();
         }
 
         $zip->extractTo($extractedAbsolutePath);
@@ -71,21 +64,13 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
                 'extracted'      => $extractedDir,
             ]);
 
-            return [
-                'path_to_use'     => null,
-                'media_root_path' => null,
-                'extracted_dir'   => $extractedDir,
-            ];
+            return ArchiveExtractionResult::notPrepared($extractedDir);
         }
 
-        return [
-            'path_to_use'     => $extractedDir . '/' . str_replace(
-                    DIRECTORY_SEPARATOR,
-                    '/',
-                    $archiveImportSource->getExportFileRelativePath()
-                ),
-            'media_root_path' => $archiveImportSource->getMediaRootAbsolutePath(),
-            'extracted_dir'   => $extractedDir,
-        ];
+        return new ArchiveExtractionResult(
+            Storage::path($extractedDir . '/' . $archiveImportSource->getExportFileRelativePath()),
+            $archiveImportSource->getMediaRootAbsolutePath(),
+            $extractedDir
+        );
     }
 }

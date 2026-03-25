@@ -9,7 +9,7 @@ use App\Services\Import\Archives\ImportArchiveExtractorInterface;
 /**
  * Реестр/factory preparer-сервисов по формату архива.
  */
-class ImportArchivePreparerFactory
+class ImportArchiveExtractorFactory
 {
     /**
      * @var array<int, ImportArchiveExtractorInterface>

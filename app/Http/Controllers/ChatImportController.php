@@ -36,7 +36,7 @@ class ChatImportController extends Controller
             'target_conversation_id' => 'nullable|integer|exists:conversations,id',
         ]);
 
-        $path = $request->file('file')->store('chat_imports');
+        $exportFileStoredPath = $request->file('file')->store('chat_imports');
 
         /**
          * @var string $import_mode
@@ -58,7 +58,7 @@ class ChatImportController extends Controller
         ProcessChatImport::dispatch(
             userId: $requestUserId,
             messengerType: $data['messenger_type'],
-            path: $path,
+            exportFileStoredPath: $exportFileStoredPath,
             strategy: $strategy,
         );
 

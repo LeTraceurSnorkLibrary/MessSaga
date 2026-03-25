@@ -4,24 +4,29 @@ declare(strict_types=1);
 
 namespace App\Services\Import\Archives;
 
+use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
+
 /**
  * Контракт подготовки импортного архива конкретного формата (zip/rar/...).
  */
 interface ImportArchiveExtractorInterface
 {
     /**
-     * Возвращает true, если preparer поддерживает переданный файл.
+     * Возвращает true, если текущий Extractor может распаковать переданный файл.
+     *
+     * @param string $storagePath
+     *
+     * @return bool
      */
     public function supports(string $storagePath): bool;
 
     /**
-     * Распаковывает архив и определяет export-файл + media root.
+     * Распаковывает архив.
      *
-     * @return array{
-     *      path_to_use: ?string,
-     *      media_root_path: ?string,
-     *      extracted_dir: ?string
-     *  }
+     * @param string $storagePath
+     * @param string $messengerType
+     *
+     * @return ArchiveExtractionResult
      */
-    public function extract(string $storagePath, string $messengerType): array;
+    public function extract(string $storagePath, string $messengerType): ArchiveExtractionResult;
 }

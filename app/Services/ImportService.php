@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Models\MessengerAccount;
+use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\ImportStrategyFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\Media\MediaFileStorageService;
@@ -37,29 +38,30 @@ class ImportService
     /**
      * @param int                     $userId
      * @param string                  $messengerType
-     * @param string                  $path
      * @param ImportStrategyInterface $strategy
-     * @param string|null             $mediaRootPath Абсолютный путь к корню распакованного архива с медиа (если импорт
-     *                                               из ZIP)
-     *
+     * @param ArchiveExtractionResult $extractedExportFile
      */
     public function import(
         int                     $userId,
         string                  $messengerType,
         ImportStrategyInterface $strategy,
-        string                  $path,
-        ?string                 $mediaRootPath = null
+        ArchiveExtractionResult $extractedExportFile
     ): void {
-        $absolutePath = Storage::path($path);
+        $exportFilePath = $extractedExportFile->getExportFileAbsolutePath();
+        $mediaRootPath  = $extractedExportFile->getMediaRootPath();
+
+        if ($exportFilePath === null) {
+            return;
+        }
 
         try {
-            $parser = $this->parserRegistry->get($messengerType);
-            $dto    = $parser->parse($absolutePath);
+            $parser               = $this->parserRegistry->get($messengerType);
+            $importedConversation = $parser->parse($exportFilePath);
         } catch (Throwable $e) {
             Log::error('Import parsing failed', [
                 'user_id'        => $userId,
                 'messenger_type' => $messengerType,
-                'path'           => $path,
+                'path'           => $exportFilePath,
                 'error'          => $e->getMessage(),
                 'trace'          => $e->getTraceAsString(),
             ]);
@@ -67,7 +69,7 @@ class ImportService
             return;
         }
 
-        if (!$dto->hasConversation()) {
+        if (!$importedConversation->hasConversation()) {
             Log::notice('Import skipped - no conversation data', [
                 'user_id'        => $userId,
                 'messenger_type' => $messengerType,
@@ -81,13 +83,13 @@ class ImportService
         DB::transaction(function () use (
             $userId,
             $messengerType,
-            $dto,
+            $importedConversation,
             $messageModelClass,
             $parser,
             $strategy,
             $mediaRootPath,
         ) {
-            $conversationData = $dto->getConversationData();
+            $conversationData = $importedConversation->getConversationData();
 
             $account = MessengerAccount::firstOrCreate(
                 [
@@ -147,7 +149,7 @@ class ImportService
              * Подготовка и сохранение новых сообщений (по одному — чтобы привязать MediaAttachment).
              */
             $importedCount = 0;
-            foreach ($dto->getMessages() as $message) {
+            foreach ($importedConversation->getMessages() as $message) {
                 if (!empty($message['external_id'])) {
                     $key = 'ID:' . $message['external_id'];
                 } else {
@@ -300,5 +302,4 @@ class ImportService
 
         return $normalized;
     }
-
 }
