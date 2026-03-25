@@ -27,9 +27,9 @@ class WhatsAppMessageBuilder
     /**
      * Creates message draft from raw data
      *
-     * @param array $data
+     * @param array<string, string> $data
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function createDraftFromMessageData(array $data): array
     {
@@ -63,9 +63,9 @@ class WhatsAppMessageBuilder
     /**
      * Creates system message
      *
-     * @param array $data
+     * @param array<string, string> $data
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function createSystemMessage(array $data): array
     {
@@ -96,7 +96,7 @@ class WhatsAppMessageBuilder
      * @param array $draft
      * @param array $messageLines
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function finalizeDraft(array $draft, array $messageLines): array
     {
@@ -112,7 +112,7 @@ class WhatsAppMessageBuilder
             $mediaFile = $this->extractFilename($fullText);
         }
 
-        $out = [
+        return [
             'sender_name'            => $draft['sender'],
             'sender_external_id'     => $draft['sender'],
             'sent_at'                => $draft['sent_at'],
@@ -122,16 +122,14 @@ class WhatsAppMessageBuilder
             'attachment_export_path' => $mediaFile,
             'raw'                    => json_encode($draft['raw']),
         ];
-
-        return $out;
     }
 
     /**
      * Преобразует системное сообщение в формат для вставки
      *
-     * @param array $system
+     * @param array<string, mixed> $system
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function finalizeSystem(array $system): array
     {

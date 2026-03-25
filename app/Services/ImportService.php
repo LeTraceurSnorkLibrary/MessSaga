@@ -40,6 +40,8 @@ class ImportService
      * @param string                  $messengerType
      * @param ImportStrategyInterface $strategy
      * @param ArchiveExtractionResult $extractedExportFile
+     *
+     * @return void
      */
     public function import(
         int                     $userId,
@@ -289,6 +291,11 @@ class ImportService
         ];
     }
 
+    /**
+     * @param mixed $exportRaw
+     *
+     * @return string|null
+     */
     private function normalizeExportPath(mixed $exportRaw): ?string
     {
         if (!is_string($exportRaw)) {

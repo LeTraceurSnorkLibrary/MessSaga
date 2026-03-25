@@ -32,7 +32,7 @@ class WhatsAppContentParser
     /**
      * @param string $line
      *
-     * @return array|null
+     * @return array<string, string>|null
      */
     public function parseMessageLine(string $line): ?array
     {
@@ -53,7 +53,7 @@ class WhatsAppContentParser
      *
      * @param string $line
      *
-     * @return array|null
+     * @return array<string, string>|null
      */
     public function parseSystemLine(string $line): ?array
     {
