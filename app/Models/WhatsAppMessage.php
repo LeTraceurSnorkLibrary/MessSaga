@@ -27,6 +27,7 @@ class WhatsAppMessage extends Message
         'sender_external_id',
         'sent_at',
         'text',
+        'dedup_hash',
         'message_type', // text, media, system
         'raw',
         'media_attachment_id',

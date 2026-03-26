@@ -25,12 +25,14 @@ return new class extends Migration {
             $table->string('sender_external_id')->nullable();
             $table->timestamp('sent_at')->nullable()->index();
             $table->text('text')->nullable();
+            $table->string('dedup_hash', 64)->nullable();
             $table->string('message_type')->default('message'); // type из Telegram export: message/service/...
             $table->json('raw')->nullable();
 
             $table->timestamps();
             $table->index(['conversation_id', 'sent_at']);
-            $table->index(['conversation_id', 'external_id']);
+            $table->unique(['conversation_id', 'external_id']);
+            $table->unique(['conversation_id', 'dedup_hash']);
             $table->index('message_type');
         });
     }

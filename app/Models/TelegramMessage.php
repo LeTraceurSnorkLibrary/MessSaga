@@ -24,6 +24,7 @@ class TelegramMessage extends Message
         'sender_external_id',
         'sent_at',
         'text',
+        'dedup_hash',
         'message_type',
         'raw',
         'media_attachment_id',
