@@ -5,34 +5,30 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\MediaAttachment;
-use App\Models\MediaTypes\SupportedMediaTypesEnum;
-use App\Models\Message;
 use App\Models\MessengerAccount;
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
-use App\Services\Import\DTO\MessageCreateResult;
 use App\Services\Import\DTO\PreparedMessageRowResult;
+use App\Services\Import\MessageInsertService;
+use App\Services\Import\MessagePreparationService;
 use App\Services\Import\Strategies\ImportStrategyInterface;
-use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
-use Carbon\Carbon;
-use Exception;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Throwable;
 
 class ImportService
 {
     /**
      * @param ParserRegistry          $parserRegistry
-     * @param MediaFileStorageService $mediaFileStorageService
+     * @param MessagePreparationService $messagePreparationService
+     * @param MessageInsertService      $messageInsertService
      */
     public function __construct(
         protected ParserRegistry          $parserRegistry,
-        protected MediaFileStorageService $mediaFileStorageService,
+        protected MessagePreparationService $messagePreparationService,
+        protected MessageInsertService      $messageInsertService,
     ) {
     }
 
@@ -61,7 +57,7 @@ class ImportService
         try {
             $parser               = $this->parserRegistry->get($messengerType);
             $importedConversation = $parser->parse($exportFilePath);
-        } catch (Throwable $e) {
+        } catch (RuntimeException $e) {
             Log::error('Import parsing failed', [
                 'user_id'        => $userId,
                 'messenger_type' => $messengerType,
@@ -132,8 +128,8 @@ class ImportService
         $copiedMediaPaths  = [];
         $messageModelClass = $parser->getMessageModelClass();
         foreach ($importedConversation->getMessages() as $message) {
-            $externalId = $this->normalizeExternalId($message['external_id'] ?? null);
-            $dedupHash  = $this->buildDeduplicationHash($message);
+            $externalId = $this->messagePreparationService->normalizeExternalId($message['external_id'] ?? null);
+            $dedupHash  = $this->messagePreparationService->buildDeduplicationHash($message);
 
             if ($externalId !== null && $existingExternalIds->has($externalId)) {
                 continue;
@@ -147,21 +143,18 @@ class ImportService
             }
             $existingDedupHashes->put($dedupHash, true);
 
-            $attachmentStoredPath = null;
-            if ($mediaRootPath !== null && !empty($message['attachment_export_path'])) {
-                $attachmentStoredPath = $this->mediaFileStorageService->copyForConversation(
-                    $mediaRootPath,
-                    (string)$message['attachment_export_path'],
-                    $conversation->id
-                );
-                if ($attachmentStoredPath !== null) {
-                    $copiedMediaPaths[$attachmentStoredPath] = true;
-                }
+            $attachmentStoredPath = $this->messagePreparationService->copyAttachmentForMessage(
+                $mediaRootPath,
+                $message,
+                $conversation->id
+            );
+            if ($attachmentStoredPath !== null) {
+                $copiedMediaPaths[$attachmentStoredPath] = true;
             }
 
             $message['dedup_hash'] = $dedupHash;
 
-            $preparedMessages[] = $this->prepareMessageRowForInsert(
+            $preparedMessages[] = $this->messagePreparationService->prepareMessageRowForInsert(
                 $message,
                 $conversation->id,
                 $messageModelClass,
@@ -176,9 +169,8 @@ class ImportService
                  * @var PreparedMessageRowResult $prepared
                  */
                 foreach ($preparedMessages as $prepared) {
-                    $insertResult = $this->createMessageSafely($messageModelClass, $prepared->getRow());
-                    $msg          = $insertResult->getMessage();
-                    if (!$insertResult->isCreated()) {
+                    $msg = $this->messageInsertService->createMessageSafely($messageModelClass, $prepared->getRow());
+                    if ($msg === null) {
                         continue;
                     }
 
@@ -213,193 +205,5 @@ class ImportService
                 'conversation_id' => $conversation->id,
             ]);
         }
-    }
-
-    /**
-     * Собирает атрибуты для Model::create и опционально данные для MediaAttachment.
-     *
-     * @param array<string, mixed>  $message
-     * @param int                   $conversationId
-     * @param class-string<Message> $messageModelClass
-     * @param string|null           $attachmentStoredPath
-     *
-     * @return PreparedMessageRowResult
-     */
-    private function prepareMessageRowForInsert(
-        array   $message,
-        int     $conversationId,
-        string  $messageModelClass,
-        ?string $attachmentStoredPath = null
-    ): PreparedMessageRowResult {
-        $exportRaw        = $message['attachment_export_path'] ?? null;
-        $exportNormalized = $this->normalizeExportPath($exportRaw);
-
-        unset($message['attachment_export_path'], $message['attachment_stored_path']);
-
-        $text = $message['text'] ?? null;
-
-        $sentAt = $message['sent_at'] ?? null;
-        if ($sentAt instanceof Carbon) {
-            $sentAt = $sentAt->format('Y-m-d H:i:s');
-        }
-
-        $row = array_merge($message, [
-            'conversation_id' => $conversationId,
-            'sent_at'         => $sentAt,
-            'text'            => $text
-                ? Crypt::encryptString($text)
-                : null,
-        ]);
-
-        /**
-         * @var Model $model
-         */
-        $model   = $messageModelClass::make();
-        $allowed = $model->getFillable();
-        $row     = array_merge(
-            array_fill_keys($allowed, null),
-            array_intersect_key($row, array_flip($allowed))
-        );
-
-        $mediaPayload = null;
-        if ($exportNormalized !== null || $attachmentStoredPath !== null) {
-            $mime = null;
-            if ($attachmentStoredPath !== null && Storage::exists($attachmentStoredPath)) {
-                $mime = Storage::mimeType($attachmentStoredPath);
-            }
-            $mediaPayload = [
-                'stored_path'       => $attachmentStoredPath,
-                'export_path'       => $exportNormalized,
-                'media_type'        => SupportedMediaTypesEnum::detect($mime, $exportNormalized)?->value,
-                'mime_type'         => $mime,
-                'original_filename' => $exportNormalized
-                    ? basename(str_replace('\\', '/', $exportNormalized))
-                    : ($attachmentStoredPath
-                        ? basename($attachmentStoredPath)
-                        : null),
-            ];
-        }
-
-        return new PreparedMessageRowResult($row, $mediaPayload);
-    }
-
-    /**
-     * @param class-string<Message> $messageModelClass
-     * @param array<string, mixed>  $row
-     *
-     * @throws QueryException
-     * @return MessageCreateResult
-     */
-    private function createMessageSafely(string $messageModelClass, array $row): MessageCreateResult
-    {
-        try {
-            /** @var Model $message */
-            $message = $messageModelClass::create($row);
-
-            return new MessageCreateResult($message, true);
-        } catch (QueryException $e) {
-            if (!$this->isUniqueConstraintViolation($e)) {
-                throw $e;
-            }
-
-            /** @var Model|null $existing */
-            $existing = $messageModelClass::query()
-                ->where('conversation_id', $row['conversation_id'] ?? null)
-                ->where(function ($q) use ($row): void {
-                    $externalId = $this->normalizeExternalId($row['external_id'] ?? null);
-                    if ($externalId !== null) {
-                        $q->where('external_id', $externalId);
-                    } else {
-                        $q->where('dedup_hash', $row['dedup_hash'] ?? null);
-                    }
-                })
-                ->first();
-
-            if ($existing === null) {
-                throw $e;
-            }
-
-            return new MessageCreateResult($existing, false);
-        }
-    }
-
-    /**
-     * @param QueryException $e
-     *
-     * @return bool
-     */
-    private function isUniqueConstraintViolation(QueryException $e): bool
-    {
-        $message = strtolower($e->getMessage());
-
-        return str_contains($message, 'duplicate')
-            || str_contains($message, 'unique constraint')
-            || str_contains($message, 'unique violation');
-    }
-
-    /**
-     * @param mixed $externalId
-     *
-     * @return string|null
-     */
-    private function normalizeExternalId(mixed $externalId): ?string
-    {
-        if (!is_scalar($externalId)) {
-            return null;
-        }
-
-        $normalized = trim((string)$externalId);
-
-        return $normalized !== ''
-            ? $normalized
-            : null;
-    }
-
-    /**
-     * @param array<string, mixed> $message
-     *
-     * @return string
-     */
-    private function buildDeduplicationHash(array $message): string
-    {
-        $sentAt = $message['sent_at'] ?? '';
-        if ($sentAt instanceof Carbon) {
-            $sentAtFormatted = $sentAt->format('Y-m-d H:i:s');
-        } elseif (is_string($sentAt)) {
-            try {
-                $sentAtFormatted = Carbon::parse($sentAt)->format('Y-m-d H:i:s');
-            } catch (Exception) {
-                $sentAtFormatted = $sentAt;
-            }
-        } else {
-            $sentAtFormatted = (string)$sentAt;
-        }
-
-        return hash(
-            'sha256',
-            $sentAtFormatted .
-            ($message['text'] ?? '') .
-            ($message['sender_name'] ?? '') .
-            ($message['sender_external_id'] ?? '')
-        );
-    }
-
-    /**
-     * @param mixed $exportRaw
-     *
-     * @return string|null
-     */
-    private function normalizeExportPath(mixed $exportRaw): ?string
-    {
-        if (!is_string($exportRaw)) {
-            return null;
-        }
-
-        $normalized = trim(str_replace('\\', '/', $exportRaw));
-        if ($normalized === '') {
-            return null;
-        }
-
-        return $normalized;
     }
 }

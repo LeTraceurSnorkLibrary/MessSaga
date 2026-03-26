@@ -33,6 +33,7 @@ final class ParserRegistry
     /**
      * @param string $messengerType
      *
+     * @throws RuntimeException
      * @return ParserInterface
      */
     public function get(string $messengerType): ParserInterface
