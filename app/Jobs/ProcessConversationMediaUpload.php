@@ -60,20 +60,14 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 return;
             }
 
-            $source = $archiveExtractor->extract($this->path, $conversation->messengerAccount->type);
-            if ($source === null) {
-                return;
-            }
-
+            $source       = $archiveExtractor->extract($this->path, $conversation->messengerAccount->type);
             $extractedDir = $source->getExtractedDir();
             if ($extractedDir === null) {
                 return;
             }
 
-            $absoluteExtracted = $source->getMediaRootPath() ?? Storage::path($extractedDir);
-            if ($absoluteExtracted === null) {
-                return;
-            }
+            // Для догрузки медиа нужен весь распакованный архив, а не messenger-specific media root.
+            $absoluteExtracted = Storage::path($extractedDir);
 
             $parser   = $parserRegistry->get($conversation->messengerAccount->type);
             $relation = $parser->getMessagesRelation($conversation);
