@@ -11,11 +11,26 @@ use Illuminate\Support\Facades\Storage;
 class MediaFileStorageService
 {
     /**
-     * @param string $mediaRootPath
-     * @param string $attachmentExportPath
-     * @param int    $conversationId
+     * Кэш индексов файлов по корню распакованного экспорта:
+     * [rootPath => [sanitizedLowerBasename => [absolutePath1, absolutePath2...]]]
      *
-     * @return string|null
+     * @var array<string, array<string, array<int, string>>>
+     */
+    private array $basenameIndexCache = [];
+
+    /**
+     * Копирует медиа-файл из временно распакованного экспорта
+     * в постоянное хранилище переписки (без привязки к конкретному сообщению).
+     *
+     * @see self::resolveSource() Логика безопасного резолва исходного файла.
+     *
+     * @param string $attachmentExportPath Путь к вложению из export-данных сообщения.
+     * @param int    $conversationId       Идентификатор переписки.
+     *
+     * @param string $mediaRootPath        Абсолютный путь до корня распакованного экспорта.
+     *
+     * @return string|null Относительный путь в Storage при успехе, иначе null.
+     *
      */
     public function copyForConversation(
         string $mediaRootPath,
@@ -36,12 +51,18 @@ class MediaFileStorageService
     }
 
     /**
-     * @param string $mediaRootPath
-     * @param string $attachmentExportPath
-     * @param int    $conversationId
-     * @param int    $messageId
+     * Копирует медиа-файл из временно распакованного экспорта
+     * в постоянное хранилище переписки с привязкой к конкретному сообщению.
      *
-     * @return string|null
+     * @see self::resolveSource() Логика безопасного резолва исходного файла.
+     *
+     * @param string $attachmentExportPath Путь к вложению из export-данных сообщения.
+     * @param int    $conversationId       Идентификатор переписки.
+     * @param int    $messageId            Идентификатор сообщения.
+     *
+     * @param string $mediaRootPath        Абсолютный путь до корня распакованного экспорта.
+     *
+     * @return string|null Относительный путь в Storage при успехе, иначе null.
      */
     public function copyForMessage(
         string $mediaRootPath,
@@ -63,8 +84,12 @@ class MediaFileStorageService
     }
 
     /**
-     * @param string $mediaRootPath
-     * @param string $attachmentExportPath
+     * Разрешает исходный файл вложения в распакованном экспорте.
+     * Сначала пытается найти файл по точному export_path,
+     * затем использует fallback по basename для legacy-экспортов.
+     *
+     * @param string $mediaRootPath        Абсолютный путь до корня распакованного экспорта.
+     * @param string $attachmentExportPath Путь к вложению из export-данных сообщения.
      *
      * @return array{
      *     source: string,
@@ -75,15 +100,12 @@ class MediaFileStorageService
     {
         $root = rtrim($mediaRootPath, DIRECTORY_SEPARATOR);
 
-        $normalizedExportPath = $this->normalizeExportPath($attachmentExportPath);
-        if ($normalizedExportPath !== null) {
-            $exactPath = $this->findFileByRelativePath($root, $normalizedExportPath);
-            if ($exactPath !== null) {
-                return [
-                    'source'   => $exactPath,
-                    'basename' => FilenameSanitizer::sanitize(basename($normalizedExportPath)),
-                ];
-            }
+        $exactPath = $this->tryResolveByExportPath($root, $attachmentExportPath);
+        if ($exactPath !== null) {
+            return [
+                'source'   => $exactPath,
+                'basename' => FilenameSanitizer::sanitize(basename(str_replace('\\', '/', $attachmentExportPath))),
+            ];
         }
 
         foreach ($this->extractCandidateBasenames($attachmentExportPath) as $candidate) {
@@ -109,33 +131,26 @@ class MediaFileStorageService
         return null;
     }
 
-    private function storeStream(string $sourcePath, string $storedRelative): bool
+    /**
+     * Пытается разрешить вложение по точному пути из export-данных.
+     * Выполняет базовые проверки безопасности пути и гарантирует,
+     * что итоговый файл расположен внутри корня распакованного экспорта.
+     *
+     * @param string $root                 Абсолютный путь до корня распакованного экспорта.
+     * @param string $attachmentExportPath Путь к вложению из export-данных сообщения.
+     *
+     * @return string|null Абсолютный путь к найденному файлу или null.
+     */
+    private function tryResolveByExportPath(string $root, string $attachmentExportPath): ?string
     {
-        $stream = @fopen($sourcePath, 'rb');
-        if (!is_resource($stream)) {
-            return false;
-        }
-
-        try {
-            return Storage::put($storedRelative, $stream) === true;
-        } finally {
-            fclose($stream);
-        }
-    }
-
-    private function normalizeExportPath(string $attachmentExportPath): ?string
-    {
-        $normalized = trim(str_replace('\\', '/', $attachmentExportPath));
-        if ($normalized === '') {
+        $relativePath = trim(str_replace('\\', '/', $attachmentExportPath));
+        if ($relativePath === '' || str_contains($relativePath, "\0")) {
             return null;
         }
 
-        return ltrim($normalized, '/');
-    }
-
-    private function findFileByRelativePath(string $root, string $relativePath): ?string
-    {
-        if (!$this->isSafeRelativePath($relativePath)) {
+        $relativePath = ltrim($relativePath, '/');
+        $parts        = explode('/', $relativePath);
+        if (in_array('..', $parts, true)) {
             return null;
         }
 
@@ -150,41 +165,47 @@ class MediaFileStorageService
             return null;
         }
 
-        return $this->isPathInsideRoot($candidateReal, $rootReal)
+        if ($candidateReal === $rootReal) {
+            return $candidateReal;
+        }
+
+        $prefix = rtrim($rootReal, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+        return str_starts_with($candidateReal . DIRECTORY_SEPARATOR, $prefix)
             ? $candidateReal
             : null;
     }
 
-    private function isSafeRelativePath(string $relativePath): bool
+    /**
+     * Потоково записывает исходный файл в Storage по целевому относительному пути.
+     * Используется вместо загрузки всего файла в память.
+     *
+     * @param string $sourcePath     Абсолютный путь к исходному файлу на диске.
+     * @param string $storedRelative Относительный путь назначения в Storage.
+     *
+     * @return bool true, если файл успешно записан.
+     */
+    private function storeStream(string $sourcePath, string $storedRelative): bool
     {
-        if ($relativePath === '' || str_contains($relativePath, "\0")) {
+        $stream = @fopen($sourcePath, 'rb');
+        if (!is_resource($stream)) {
             return false;
         }
 
-        if (str_starts_with($relativePath, '/')) {
-            return false;
+        try {
+            return Storage::put($storedRelative, $stream) === true;
+        } finally {
+            fclose($stream);
         }
-
-        $parts = explode('/', str_replace('\\', '/', $relativePath));
-
-        return !in_array('..', $parts, true);
-    }
-
-    private function isPathInsideRoot(string $candidatePath, string $rootPath): bool
-    {
-        if ($candidatePath === $rootPath) {
-            return true;
-        }
-
-        $prefix = rtrim($rootPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-
-        return str_starts_with($candidatePath . DIRECTORY_SEPARATOR, $prefix);
     }
 
     /**
-     * Поддержка legacy export_path без слешей.
+     * Формирует список кандидатов basename для legacy export_path без слешей.
+     * Например, из "001_ABC_photo.jpg" дополнительно извлекается "ABC_photo.jpg" и "photo.jpg".
      *
-     * @return array<int, string>
+     * @param string $attachmentExportPath Путь к вложению из export-данных сообщения.
+     *
+     * @return array<int, string> Уникальный список кандидатов basename в порядке приоритета.
      */
     private function extractCandidateBasenames(string $attachmentExportPath): array
     {
@@ -206,10 +227,14 @@ class MediaFileStorageService
     }
 
     /**
-     * @param string $dir
-     * @param string $basename
+     * Ищет файл по basename рекурсивно в директории и возвращает путь,
+     * только если найдено ровно одно совпадение.
+     * При нескольких совпадениях возвращает null и пишет warning в лог.
      *
-     * @return string|null
+     * @param string $dir      Абсолютный путь до корневой директории поиска.
+     * @param string $basename Искомое имя файла (или candidate из legacy-правила).
+     *
+     * @return string|null Абсолютный путь к единственному найденному файлу или null.
      */
     private function findUniqueFileByBasename(string $dir, string $basename): ?string
     {
@@ -222,8 +247,9 @@ class MediaFileStorageService
             return null;
         }
 
-        $matches = [];
-        $this->collectMatchesByBasename($dir, $target, $matches, 2);
+        $index = $this->getBasenameIndex($dir);
+        $matches = $index[$target] ?? [];
+
         if (count($matches) === 1) {
             return $matches[0];
         }
@@ -239,45 +265,64 @@ class MediaFileStorageService
     }
 
     /**
-     * @param array<int, string> $matches
+     * Строит (и кэширует) индекс файлов по basename.
+     *
+     * @param string $root
+     *
+     * @return array<string, array<int, string>>
      */
-    private function collectMatchesByBasename(string $dir, string $target, array &$matches, int $limit): void
+    private function getBasenameIndex(string $root): array
     {
-        if (count($matches) >= $limit) {
-            return;
+        if (isset($this->basenameIndexCache[$root])) {
+            return $this->basenameIndexCache[$root];
         }
 
-        $items = @scandir($dir);
-        if ($items === false) {
-            return;
+        if (!is_dir($root)) {
+            $this->basenameIndexCache[$root] = [];
+
+            return $this->basenameIndexCache[$root];
         }
 
-        $sep = DIRECTORY_SEPARATOR;
+        $index = [];
+        $stack = [$root];
 
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
+        while ($stack !== []) {
+            $scanDir = array_pop($stack);
+            if (!is_string($scanDir)) {
                 continue;
             }
-            $full = $dir . $sep . $item;
-            if (is_file($full)) {
-                $sanitized = strtolower(FilenameSanitizer::sanitize($item));
-                if ($sanitized === $target) {
-                    $matches[] = $full;
-                    if (count($matches) >= $limit) {
-                        return;
-                    }
+
+            $items = @scandir($scanDir);
+            if ($items === false) {
+                continue;
+            }
+
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..') {
+                    continue;
                 }
+
+                $fullPath = $scanDir . DIRECTORY_SEPARATOR . $item;
+                if (is_dir($fullPath)) {
+                    $stack[] = $fullPath;
+                    continue;
+                }
+
+                if (!is_file($fullPath)) {
+                    continue;
+                }
+
+                $sanitized = strtolower(FilenameSanitizer::sanitize($item));
+                if ($sanitized === '' || $sanitized === 'file') {
+                    continue;
+                }
+
+                $index[$sanitized][] = $fullPath;
             }
         }
 
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-            $full = $dir . $sep . $item;
-            if (is_dir($full)) {
-                $this->collectMatchesByBasename($full, $target, $matches, $limit);
-            }
-        }
+        $this->basenameIndexCache[$root] = $index;
+
+        return $this->basenameIndexCache[$root];
     }
 }

@@ -82,11 +82,13 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 ->orderBy('id')
                 ->get();
 
+            $messageIdByAttachmentId = $model->newQuery()
+                ->whereIn('media_attachment_id', $pending->pluck('id')->all())
+                ->pluck('id', 'media_attachment_id');
+
             foreach ($pending as $media) {
-                $message = $model->newQuery()
-                    ->where('media_attachment_id', $media->id)
-                    ->first(['id']);
-                if ($message === null) {
+                $messageId = $messageIdByAttachmentId->get($media->id);
+                if ($messageId === null) {
                     continue;
                 }
 
@@ -94,7 +96,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     $absoluteExtracted,
                     (string)$media->export_path,
                     $conversation->id,
-                    (int)$message->id
+                    (int)$messageId
                 );
                 if ($storedPath === null) {
                     continue;
