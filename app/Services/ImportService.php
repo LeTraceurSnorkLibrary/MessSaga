@@ -164,13 +164,28 @@ class ImportService
 
         $importedCount = 0;
         try {
-            DB::transaction(function () use ($messageModelClass, $preparedMessages, $conversation, &$importedCount) {
+            DB::transaction(function () use (
+                $messageModelClass,
+                $preparedMessages,
+                $conversation,
+                &$importedCount,
+                &$copiedMediaPaths
+            ) {
                 /**
                  * @var PreparedMessageRowResult $prepared
                  */
                 foreach ($preparedMessages as $prepared) {
                     $msg = $this->messageInsertService->createMessageSafely($messageModelClass, $prepared->getRow());
                     if ($msg === null) {
+                        $preparedMedia = $prepared->getMedia();
+                        $preparedPath  = is_array($preparedMedia)
+                            ? ($preparedMedia['stored_path'] ?? null)
+                            : null;
+                        if (is_string($preparedPath) && $preparedPath !== '' && Storage::exists($preparedPath)) {
+                            Storage::delete($preparedPath);
+                            unset($copiedMediaPaths[$preparedPath]);
+                        }
+
                         continue;
                     }
 
