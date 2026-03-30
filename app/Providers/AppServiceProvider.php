@@ -38,13 +38,11 @@ class AppServiceProvider extends ServiceProvider
 
         Validator::extend('phone', function ($attribute, $value, $parameters, $validator) {
             try {
-                PhoneNumber::make(
-                    $value,
+                return new PhoneNumber(
+                    (string)$value,
                     $parameters
                         ?: ['RU']
-                );
-
-                return true;
+                )->isValid();
             } catch (Exception $e) {
                 return false;
             }
