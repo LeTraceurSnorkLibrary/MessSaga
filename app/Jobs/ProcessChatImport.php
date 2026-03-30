@@ -59,10 +59,6 @@ class ProcessChatImport implements ShouldQueue
             if ($archiveExtractor !== null) {
                 $source = $archiveExtractor->extract($this->exportFileStoredPath, $this->messengerType);
 
-                if (!isset($source)) {
-                    return;
-                }
-
                 $extractedDir = $source->getExtractedDir();
 
                 if ($source->getExportFileAbsolutePath() === null) {
