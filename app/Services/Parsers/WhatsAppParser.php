@@ -40,7 +40,7 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
         }
 
         $lines = explode("\n", $content);
-        if (empty($lines)) {
+        if (count($lines) === 0) {
             return new ConversationImportDTO([], []);
         }
 
