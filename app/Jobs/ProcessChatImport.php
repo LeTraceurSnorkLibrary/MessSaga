@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ProcessChatImport implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * @param int                     $userId

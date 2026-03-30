@@ -15,7 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 abstract class Message extends Model
 {
-    use HasFactory, HasEncryptedAttributes;
+    use HasFactory;
+    use HasEncryptedAttributes;
 
     /**
      * @inheritdoc

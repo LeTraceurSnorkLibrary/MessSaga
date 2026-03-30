@@ -6,6 +6,6 @@ namespace App\Models\MessageTypes;
 
 enum WhatsAppMessageTypesEnum: string
 {
-    case TEXT = 'text';
+    case TEXT  = 'text';
     case MEDIA = 'media';
 }
