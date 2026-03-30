@@ -105,7 +105,7 @@ class ConversationController extends Controller
         $messages = $messages->map(function ($msg) use ($conversation) {
             $item = $msg->toArray();
             /**
-             * @var MediaAttachment $media
+             * @var MediaAttachment|null $media
              */
             $media         = $msg->mediaAttachment;
             $item['media'] = $media?->toApiArray($conversation->id, $msg->id);
