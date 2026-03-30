@@ -54,6 +54,7 @@
         "phpunit": "@php ./vendor/bin/phpunit --no-coverage",
         "phpunit-coverage-text": "@php -d xdebug.mode=coverage ./vendor/bin/phpunit --coverage-text",
         "phpunit-coverage-file": "@php -d xdebug.mode=coverage ./vendor/bin/phpunit",
+        "phpunit-clover": "@php -d xdebug.mode=coverage ./vendor/bin/phpunit ./tests --no-coverage --color=always --coverage-clover tests/clover/report.xml",
         "setup": [
             "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",

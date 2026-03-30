@@ -1,5 +1,7 @@
 # MessSaga
 
+[![Coverage Status](https://coveralls.io/repos/github/LeTraceurSnorkLibrary/MessSaga/badge.svg)](https://coveralls.io/github/LeTraceurSnorkLibrary/MessSaga)
+
 Веб-приложение для импорта и просмотра переписок из мессенджеров (Telegram, WhatsApp, Viber). Laravel + Inertia + Vue.
 
 ---
