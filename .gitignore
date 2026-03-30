@@ -1,24 +1,33 @@
-*.log
-.DS_Store
-.env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
+# IDEs
 /.fleet
 /.idea
 /.nova
-/.phpunit.cache
 /.vscode
 /.zed
-/auth.json
+
+# Cache, logs, reports, etc.
+*.log
+/storage/*.key
+/storage/pail
+/tests/report
+/.phpunit.cache
+.phpunit.result.cache
+
+# Environment
+.env
+.env.backup
+.env.production
+
+# Vendors
 /node_modules
+/vendor
+
+.DS_Store
+.phpactor.json
+/auth.json
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
-/storage/pail
-/vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
