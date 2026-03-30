@@ -2,12 +2,6 @@
     "name": "letraceursnork/messaga",
     "type": "project",
     "description": "MessSaga web-service project",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/LeTraceurSnorkLibrary/MessSaga"
-        }
-    ],
     "authors": [
         {
             "name": "LeTraceurSnork",
