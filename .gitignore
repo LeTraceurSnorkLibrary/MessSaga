@@ -9,6 +9,7 @@
 *.log
 /storage/*.key
 /storage/pail
+/tests/clover
 /tests/report
 *.cache
 
