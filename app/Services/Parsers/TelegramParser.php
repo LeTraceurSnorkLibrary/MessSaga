@@ -51,7 +51,7 @@ class TelegramParser extends AbstractParser implements ParserInterface
             $text = $msg['text'] ?? '';
             if (is_array($text)) {
                 $text = collect($text)
-                    ->map(fn ($part) => is_array($part)
+                    ->map(fn($part) => is_array($part)
                         ? ($part['text'] ?? '')
                         : $part)
                     ->join('');

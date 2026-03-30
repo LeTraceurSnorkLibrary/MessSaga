@@ -63,7 +63,7 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
         $groups = $this->groupLinesByType($lines);
 
         return array_map(
-            fn (array $group) => $this->processGroup($group),
+            fn(array $group) => $this->processGroup($group),
             $groups
         );
     }

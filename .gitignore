@@ -10,8 +10,7 @@
 /storage/*.key
 /storage/pail
 /tests/report
-/.phpunit.cache
-.phpunit.result.cache
+*.cache
 
 # Environment
 .env

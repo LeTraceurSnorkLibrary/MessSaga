@@ -16,6 +16,6 @@ class PhoneFormatter
      */
     public static function international(string $phone, string $country = 'RU'): string
     {
-        return (new PhoneNumber($phone, $country))->formatInternational();
+        return new PhoneNumber($phone, $country)->formatInternational();
     }
 }

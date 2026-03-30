@@ -60,7 +60,7 @@ class SelectImportStrategy extends AbstractImportStrategy implements ImportStrat
 
         $userId       = $importMode->getUserId();
         $conversation = Conversation::where('id', $targetConversationId)
-            ->whereHas('messengerAccount', fn ($q) => $q->where('user_id', $userId))
+            ->whereHas('messengerAccount', fn($q) => $q->where('user_id', $userId))
             ->first();
 
         if (!$conversation) {

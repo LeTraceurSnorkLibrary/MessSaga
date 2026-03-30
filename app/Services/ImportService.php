@@ -128,11 +128,11 @@ class ImportService
                      * Deduplicaton key: combination of sent_at + text + sender
                      */
                     return 'hash:' . md5(
-                            ($msg->sent_at?->format('Y-m-d H:i:s') ?? '') .
-                            ($msg->text ?? '') .
-                            ($msg->sender_name ?? '') .
-                            ($msg->sender_external_id ?? '')
-                        );
+                        ($msg->sent_at?->format('Y-m-d H:i:s') ?? '')
+                            . ($msg->text ?? '')
+                            . ($msg->sender_name ?? '')
+                            . ($msg->sender_external_id ?? '')
+                    );
                 });
 
             /**
@@ -163,11 +163,11 @@ class ImportService
                     }
 
                     $key = 'hash:' . md5(
-                            $sentAtFormatted .
-                            ($message['text'] ?? '') .
-                            ($message['sender_name'] ?? '') .
-                            ($message['sender_external_id'] ?? '')
-                        );
+                        $sentAtFormatted
+                            . ($message['text'] ?? '')
+                            . ($message['sender_name'] ?? '')
+                            . ($message['sender_external_id'] ?? '')
+                    );
                 }
 
                 /**
