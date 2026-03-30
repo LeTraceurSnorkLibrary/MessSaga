@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,10 +25,45 @@ jobs:
         run: |
           composer install --prefer-dist --no-progress
 
-      - name: Run PHPUnit with coverage
+      - name: Run PHPUnit tests with coverage
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
-        run: composer phpunit-clover
+        run: composer phpunit-unit-clover
+
+  feature:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: pcov
+          tools: composer
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install PHP dependencies
+        run: |
+          composer install --prefer-dist --no-progress
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Run PHPUnit Feature tests with coverage
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+        run: composer phpunit-feature-clover
 
       - name: Upload coverage results to Coveralls
         env:
