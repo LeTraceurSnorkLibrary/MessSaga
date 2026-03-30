@@ -23,6 +23,14 @@ class SelectImportStrategy extends AbstractImportStrategy implements ImportStrat
     protected ImportModeDTO $importMode;
 
     /**
+     * @return ImportModeDTO|null
+     */
+    public function getImportMode(): ?ImportModeDTO
+    {
+        return $this->importMode ?? null;
+    }
+
+    /**
      * @param ImportModeDTO $importMode
      *
      * @return $this

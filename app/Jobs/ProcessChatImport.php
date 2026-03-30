@@ -8,7 +8,10 @@ use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Import\Strategies\ImportStrategyInterface;
+use App\Services\Import\Strategies\SelectImportStrategy;
 use App\Services\ImportService;
+use App\Services\Media\MediaFileStorageService;
+use App\Services\Parsers\ParserRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -43,8 +46,11 @@ class ProcessChatImport implements ShouldQueue
      *
      * @return void
      */
-    public function handle(ImportArchiveExtractorFactory $archiveExtractorsFactory): void
-    {
+    public function handle(
+        ImportArchiveExtractorFactory $archiveExtractorsFactory,
+        ParserRegistry                $parserRegistry,
+        MediaFileStorageService       $mediaFileStorageService
+    ): void {
         $source       = null;
         $extractedDir = null;
 
@@ -60,6 +66,12 @@ class ProcessChatImport implements ShouldQueue
                 $extractedDir = $source->getExtractedDir();
 
                 if ($source->getExportFileAbsolutePath() === null) {
+                    $this->runMediaOnlyFallback(
+                        archiveExtractorsFactory: $archiveExtractorsFactory,
+                        parserRegistry: $parserRegistry,
+                        mediaFileStorageService: $mediaFileStorageService
+                    );
+
                     return;
                 }
             }
@@ -103,5 +115,45 @@ class ProcessChatImport implements ShouldQueue
                 Storage::deleteDirectory($extractedDir);
             }
         }
+    }
+
+    /**
+     * Fallback for "Import to selected conversation" option when archive has additional media files that should be
+     * merged into selected conversation
+     *
+     * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
+     * @param ParserRegistry                $parserRegistry
+     * @param MediaFileStorageService       $mediaFileStorageService
+     *
+     * @return void
+     */
+    private function runMediaOnlyFallback(
+        ImportArchiveExtractorFactory $archiveExtractorsFactory,
+        ParserRegistry                $parserRegistry,
+        MediaFileStorageService       $mediaFileStorageService
+    ): void {
+        /**
+         * This fallback is only for "Import to selected conversation" scenario
+         */
+        if (!$this->strategy instanceof SelectImportStrategy) {
+            return;
+        }
+
+        $targetConversationId = $this->strategy->getImportMode()?->getTargetConversationId();
+        if (!isset($targetConversationId)) {
+            return;
+        }
+
+        $mediaUploadJob = new ProcessConversationMediaUpload(
+            userId: $this->userId,
+            conversationId: $targetConversationId,
+            path: $this->exportFileStoredPath
+        );
+
+        $mediaUploadJob->handle(
+            parserRegistry: $parserRegistry,
+            mediaFileStorageService: $mediaFileStorageService,
+            archiveExtractorsFactory: $archiveExtractorsFactory
+        );
     }
 }
