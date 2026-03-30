@@ -183,7 +183,7 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
      */
     private function extractSafely(ZipArchive $zip, string $destinationAbsolutePath): bool
     {
-        if (!is_dir($destinationAbsolutePath) && !mkdir($destinationAbsolutePath, 0775, true) && !is_dir($destinationAbsolutePath)) {
+        if (!is_dir($destinationAbsolutePath) && !mkdir($destinationAbsolutePath, 0o775, true) && !is_dir($destinationAbsolutePath)) {
             return false;
         }
 
@@ -214,7 +214,7 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
                 ? $targetPath
                 : dirname($targetPath);
 
-            if (!is_dir($parentPath) && !mkdir($parentPath, 0775, true) && !is_dir($parentPath)) {
+            if (!is_dir($parentPath) && !mkdir($parentPath, 0o775, true) && !is_dir($parentPath)) {
                 return false;
             }
 

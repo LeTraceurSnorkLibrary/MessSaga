@@ -21,7 +21,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ProcessConversationMediaUpload implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * @param int    $userId

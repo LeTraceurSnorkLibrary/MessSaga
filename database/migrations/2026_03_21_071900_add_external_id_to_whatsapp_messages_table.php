@@ -10,8 +10,7 @@ use Illuminate\Support\Facades\Schema;
  * Ранее whatsapp_messages создавалась без external_id, хотя в модели было значение по умолчанию —
  * при insert Laravel пытался записать несуществующую колонку.
  */
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         if (Schema::hasTable('whatsapp_messages') && !Schema::hasColumn('whatsapp_messages', 'external_id')) {

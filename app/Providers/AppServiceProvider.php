@@ -35,13 +35,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ExportArchiveLocatorFactory::class, function ($app) {
-            return (new ExportArchiveLocatorFactory())
+            return new ExportArchiveLocatorFactory()
                 ->register('telegram', $app->make(TelegramExportArchiveLocator::class))
                 ->register('whatsapp', $app->make(WhatsAppExportArchiveLocator::class));
         });
 
         $this->app->singleton(ImportArchiveExtractorFactory::class, function ($app) {
-            return (new ImportArchiveExtractorFactory())
+            return new ImportArchiveExtractorFactory()
                 ->register($app->make(ZipImportArchiveExtractor::class))
                 ->register($app->make(RarImportArchiveExtractor::class));
         });

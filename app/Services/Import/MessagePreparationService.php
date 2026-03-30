@@ -64,10 +64,10 @@ class MessagePreparationService
 
         return hash(
             'sha256',
-            $sentAtFormatted .
-            ($message['text'] ?? '') .
-            ($message['sender_name'] ?? '') .
-            ($message['sender_external_id'] ?? '')
+            $sentAtFormatted
+            . ($message['text'] ?? '')
+            . ($message['sender_name'] ?? '')
+            . ($message['sender_external_id'] ?? '')
         );
     }
 
@@ -179,4 +179,3 @@ class MessagePreparationService
         return $normalized;
     }
 }
-

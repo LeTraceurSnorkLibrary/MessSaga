@@ -32,4 +32,3 @@ final readonly class PreparedMessageRowResult
         return $this->media;
     }
 }
-

@@ -6,10 +6,10 @@ namespace App\Models\MessageTypes;
 
 enum TelegramMessageTypesEnum: string
 {
-    case MESSAGE = 'message';
-    case SERVICE = 'service';
+    case MESSAGE     = 'message';
+    case SERVICE     = 'service';
     case BOT_SERVICE = 'bot_service';
-    case UNKNOWN = 'unknown';
+    case UNKNOWN     = 'unknown';
 
     /**
      * @param string $value

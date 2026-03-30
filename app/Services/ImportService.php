@@ -117,12 +117,12 @@ class ImportService
         $existingExternalIds = $messagesRelation
             ->whereNotNull('external_id')
             ->pluck('external_id')
-            ->map(static fn ($id): string => (string)$id)
+            ->map(static fn($id): string => (string)$id)
             ->flip();
         $existingDedupHashes = $messagesRelation
             ->whereNotNull('dedup_hash')
             ->pluck('dedup_hash')
-            ->map(static fn ($hash): string => (string)$hash)
+            ->map(static fn($hash): string => (string)$hash)
             ->flip();
 
         $preparedMessages  = [];

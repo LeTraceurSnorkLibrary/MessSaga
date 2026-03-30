@@ -22,7 +22,7 @@ abstract class AbstractExportFileLocator implements ExportFileLocatorInterface
         return $this->findRecursive(
             $absoluteDir,
             '',
-            static fn (string $name): bool => strcasecmp($name, $exactName) === 0
+            static fn(string $name): bool => strcasecmp($name, $exactName) === 0
         );
     }
 
@@ -33,7 +33,7 @@ abstract class AbstractExportFileLocator implements ExportFileLocatorInterface
         return $this->findRecursive(
             $absoluteDir,
             '',
-            static fn (string $name): bool => str_ends_with(strtolower($name), $normalizedExtension)
+            static fn(string $name): bool => str_ends_with(strtolower($name), $normalizedExtension)
         );
     }
 

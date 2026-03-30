@@ -247,7 +247,7 @@ class MediaFileStorageService
             return null;
         }
 
-        $index = $this->getBasenameIndex($dir);
+        $index   = $this->getBasenameIndex($dir);
         $matches = $index[$target] ?? [];
 
         if (count($matches) === 1) {

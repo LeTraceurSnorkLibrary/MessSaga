@@ -8,8 +8,7 @@ use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         $tables = ['telegram_messages', 'whatsapp_messages', 'viber_messages'];

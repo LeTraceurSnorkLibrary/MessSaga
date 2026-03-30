@@ -62,4 +62,3 @@ class MessageInsertService
             || str_contains($message, 'unique violation');
     }
 }
-
