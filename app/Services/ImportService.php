@@ -12,11 +12,12 @@ use App\Services\Import\MessageInsertService;
 use App\Services\Import\MessagePreparationService;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\Parsers\ParserRegistry;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 use RuntimeException;
-use Throwable;
 
 class ImportService
 {
@@ -38,7 +39,7 @@ class ImportService
      * @param ImportStrategyInterface $strategy
      * @param ArchiveExtractionResult $extractedExportFile
      *
-     * @throws Throwable
+     * @throws QueryException
      * @return void
      */
     public function import(
@@ -57,7 +58,7 @@ class ImportService
         try {
             $parser               = $this->parserRegistry->get($messengerType);
             $importedConversation = $parser->parse($exportFilePath);
-        } catch (RuntimeException $e) {
+        } catch (RuntimeException|InvalidArgumentException $e) {
             Log::error('Import parsing failed', [
                 'user_id'        => $userId,
                 'messenger_type' => $messengerType,
@@ -200,7 +201,7 @@ class ImportService
                     $importedCount++;
                 }
             });
-        } catch (Throwable $e) {
+        } catch (QueryException $e) {
             foreach (array_keys($copiedMediaPaths) as $path) {
                 if (Storage::exists($path)) {
                     Storage::delete($path);

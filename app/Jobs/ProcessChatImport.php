@@ -14,6 +14,7 @@ use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -43,6 +44,8 @@ class ProcessChatImport implements ShouldQueue
 
     /**
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
+     * @param ParserRegistry                $parserRegistry
+     * @param MediaFileStorageService       $mediaFileStorageService
      *
      * @return void
      */
@@ -100,6 +103,16 @@ class ProcessChatImport implements ShouldQueue
                 'export_file_path' => $this->exportFileStoredPath,
                 'reason'           => $e->getMessage(),
             ]);
+        } catch (QueryException $e) {
+            Log::error('Import failed due to database query error', [
+                'user_id'          => $this->userId,
+                'messenger_type'   => $this->messengerType,
+                'export_file_path' => $this->exportFileStoredPath,
+                'strategy'         => $this->strategy->getName(),
+                'error'            => $e->getMessage(),
+            ]);
+
+            throw $e;
         } finally {
             /**
              * Delete temporary archive/export file
