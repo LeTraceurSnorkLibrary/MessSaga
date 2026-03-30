@@ -7,7 +7,6 @@ namespace App\Services\Import\Archives;
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
@@ -67,12 +66,6 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
             ->locate($extractedAbsolutePath);
 
         if ($archiveImportSource === null) {
-            Log::warning('ZipImportArchiveExtractor: export file not found in archive', [
-                'path'           => $storagePath,
-                'messenger_type' => $messengerType,
-                'extracted'      => $extractedDir,
-            ]);
-
             /**
              * ZIP может быть "медиа-архивом" без текстового export-файла.
              * В этом случае отдадим хотя бы каталог для последующего сопоставления медиа
