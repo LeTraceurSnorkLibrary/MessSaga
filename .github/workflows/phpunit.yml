@@ -70,4 +70,4 @@ jobs:
       - name: Run PHPUnit Feature tests
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
-        run: composer phpunit-feature-clover
+        run: composer phpunit-feature
