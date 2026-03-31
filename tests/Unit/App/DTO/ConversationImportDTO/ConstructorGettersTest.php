@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversMethod(ConversationImportDTO::class, '__construct')]
 #[CoversMethod(ConversationImportDTO::class, 'getConversationData')]
 #[CoversMethod(ConversationImportDTO::class, 'getMessages')]
+#[CoversMethod(ConversationImportDTO::class, 'hasConversation')]
 class ConstructorGettersTest extends TestCase
 {
     public function test_it_returns_conversation_data_and_messages_from_constructor(): void
