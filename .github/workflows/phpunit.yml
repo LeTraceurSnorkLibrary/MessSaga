@@ -1,4 +1,4 @@
-name: PHPUnit Tests with Coverage
+name: PHPUnit
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  unit:
+  Unit_tests_with_coverage:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +37,7 @@ jobs:
           composer global require php-coveralls/php-coveralls
           php-coveralls --coverage_clover=tests/clover/report.xml --json_path=tests/coveralls-upload.json -v
 
-  feature:
+  Feature_tests:
     runs-on: ubuntu-latest
 
     steps:
