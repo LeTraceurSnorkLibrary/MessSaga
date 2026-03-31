@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\DTO\ConversationImportDTO;
+namespace Tests\Unit\App\DTO\ConversationImportDTO;
 
 use App\DTO\ConversationImportDTO;
 use PHPUnit\Framework\Attributes\CoversMethod;
