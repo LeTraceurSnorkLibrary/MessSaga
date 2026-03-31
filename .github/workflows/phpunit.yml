@@ -30,6 +30,13 @@ jobs:
           APP_KEY: ${{ secrets.APP_KEY }}
         run: composer phpunit-unit-clover
 
+      - name: Upload coverage results to Coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        run: |
+          composer global require php-coveralls/php-coveralls
+          php-coveralls --coverage_clover=tests/clover/report.xml --json_path=tests/coveralls-upload.json -v
+
   feature:
     runs-on: ubuntu-latest
 
@@ -60,14 +67,7 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
-      - name: Run PHPUnit Feature tests with coverage
+      - name: Run PHPUnit Feature tests
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
         run: composer phpunit-feature-clover
-
-      - name: Upload coverage results to Coveralls
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        run: |
-          composer global require php-coveralls/php-coveralls
-          php-coveralls --coverage_clover=tests/clover/report.xml --json_path=tests/coveralls-upload.json -v
