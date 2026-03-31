@@ -21,10 +21,10 @@ final class FindRecursiveTest extends TestCase
             }
         };
 
-        $method = (new ReflectionClass($proxy))->getMethod('findRecursive');
+        $method = new ReflectionClass($proxy)->getMethod('findRecursive');
         $method->setAccessible(true);
 
-        $result = $method->invoke($proxy, '/root/that/does/not/exist', '', static fn (): bool => true);
+        $result = $method->invoke($proxy, '/root/that/does/not/exist', '', static fn(): bool => true);
 
         $this->assertNull($result);
     }

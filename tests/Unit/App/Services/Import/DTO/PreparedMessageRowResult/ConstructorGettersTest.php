@@ -26,7 +26,7 @@ final class ConstructorGettersTest extends TestCase
     {
         $media = [
             'stored_path' => 'conversations/1/media/file.jpg',
-            'mime_type' => 'image/jpeg',
+            'mime_type'   => 'image/jpeg',
         ];
         $dto = new PreparedMessageRowResult(['id' => 1], $media);
 
