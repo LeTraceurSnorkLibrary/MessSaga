@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit;
+namespace Tests\Unit\DTO\ConversationImportDTO;
 
 use App\DTO\ConversationImportDTO;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ConversationImportDTO::class)]
-class ConversationImportDTOTest extends TestCase
+#[CoversMethod(ConversationImportDTO::class, '__construct')]
+#[CoversMethod(ConversationImportDTO::class, 'getConversationData')]
+#[CoversMethod(ConversationImportDTO::class, 'getMessages')]
+class ConstructorGettersTest extends TestCase
 {
     public function test_it_returns_conversation_data_and_messages_from_constructor(): void
     {
