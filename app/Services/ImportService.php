@@ -48,6 +48,7 @@ class ImportService
         ImportStrategyInterface $strategy,
         ArchiveExtractionResult $extractedExportFile
     ): void {
+        $mediaDisk = Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')));
         $exportFilePath = $extractedExportFile->getExportFileAbsolutePath();
         $mediaRootPath  = $extractedExportFile->getMediaRootPath();
 
@@ -182,8 +183,8 @@ class ImportService
                         $preparedPath  = is_array($preparedMedia)
                             ? ($preparedMedia['stored_path'] ?? null)
                             : null;
-                        if (is_string($preparedPath) && $preparedPath !== '' && Storage::exists($preparedPath)) {
-                            Storage::delete($preparedPath);
+                        if (is_string($preparedPath) && $preparedPath !== '' && $mediaDisk->exists($preparedPath)) {
+                            $mediaDisk->delete($preparedPath);
                             unset($copiedMediaPaths[$preparedPath]);
                         }
 
@@ -203,8 +204,8 @@ class ImportService
             });
         } catch (QueryException $e) {
             foreach (array_keys($copiedMediaPaths) as $path) {
-                if (Storage::exists($path)) {
-                    Storage::delete($path);
+                if ($mediaDisk->exists($path)) {
+                    $mediaDisk->delete($path);
                 }
             }
 

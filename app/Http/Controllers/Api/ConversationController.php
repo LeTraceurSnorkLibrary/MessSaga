@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Teapot\StatusCode\Http;
@@ -160,6 +159,7 @@ class ConversationController extends Controller
     public function attachment(Request $request, Conversation $conversation, int $messageId): Response|StreamedResponse
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
+        $mediaDisk = Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')));
 
         $parser  = $this->parserRegistry->get($conversation->messengerAccount->type);
         $message = $parser->getMessagesRelation($conversation)
@@ -171,18 +171,21 @@ class ConversationController extends Controller
             abort(Http::NOT_FOUND);
         }
 
-        if (!Storage::exists($storedPath)) {
+        if (!$mediaDisk->exists($storedPath)) {
             abort(Http::NOT_FOUND);
         }
 
-        $mime     = File::mimeType(Storage::path($storedPath));
+        $mime = $message?->mediaAttachment?->mime_type;
+        if (!is_string($mime) || $mime === '') {
+            $mime = $mediaDisk->mimeType($storedPath);
+        }
         $mime     = $mime
             ?: 'application/octet-stream';
         $filename = FilenameSanitizer::sanitize(basename($storedPath));
 
         return response()->streamDownload(
-            function () use ($storedPath) {
-                $stream = Storage::readStream($storedPath);
+            function () use ($storedPath, $mediaDisk) {
+                $stream = $mediaDisk->readStream($storedPath);
                 if (is_resource($stream)) {
                     fpassthru($stream);
                     fclose($stream);

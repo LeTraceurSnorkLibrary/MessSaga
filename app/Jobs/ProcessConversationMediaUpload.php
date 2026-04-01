@@ -51,6 +51,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
         ImportArchiveExtractorFactory $archiveExtractorsFactory
     ): void {
         $extractedDir = null;
+        $mediaDisk = Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')));
 
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
         if (!$conversation || $conversation->messengerAccount->user_id !== $this->userId) {
@@ -105,7 +106,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     continue;
                 }
 
-                $mime = Storage::mimeType($storedPath);
+                $mime = $mediaDisk->mimeType($storedPath);
                 $media->update([
                     'stored_path'       => $storedPath,
                     'media_type'        => SupportedMediaTypesEnum::detect($mime

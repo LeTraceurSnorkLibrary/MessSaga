@@ -193,7 +193,8 @@ class MediaFileStorageService
         }
 
         try {
-            return Storage::put($storedRelative, $stream) === true;
+            return Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')))
+                ->put($storedRelative, $stream) === true;
         } finally {
             fclose($stream);
         }

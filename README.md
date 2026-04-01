@@ -209,6 +209,35 @@ DB_PASSWORD=
 
 ---
 
+## Хранение медиа (S3 / MinIO)
+
+Медиа-вложения можно хранить не локально, а в S3-совместимом хранилище.
+
+1. В `.env` задайте:
+
+```env
+MEDIA_DISK=s3
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_DEFAULT_REGION=ru-central1
+AWS_BUCKET=messsaga-media
+AWS_ENDPOINT=http://127.0.0.1:9000
+AWS_URL=http://127.0.0.1:9000/messsaga-media
+AWS_USE_PATH_STYLE_ENDPOINT=true
+```
+
+2. Поднимите MinIO в dev-профиле compose:
+
+```bash
+docker compose --profile dev up -d minio minio-init
+```
+
+После этого приложение продолжит отдавать вложения через защищённый API-роут, но сами файлы будут храниться в S3-совместимом бакете.
+
+Для продакшна с Яндекс Object Storage используются те же переменные `AWS_*` (endpoint/region/bucket/credentials), обычно с `MEDIA_DISK=s3`.
+
+---
+
 ## Полезные команды (Makefile)
 
 | Команда          | Описание                                                                 |

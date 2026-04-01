@@ -140,9 +140,10 @@ class MessagePreparationService
 
         $mediaPayload = null;
         if ($exportNormalized !== null || $attachmentStoredPath !== null) {
+            $mediaDisk = Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')));
             $mime = null;
-            if ($attachmentStoredPath !== null && Storage::exists($attachmentStoredPath)) {
-                $mime = Storage::mimeType($attachmentStoredPath);
+            if ($attachmentStoredPath !== null && $mediaDisk->exists($attachmentStoredPath)) {
+                $mime = $mediaDisk->mimeType($attachmentStoredPath);
             }
             $mediaPayload = [
                 'stored_path'       => $attachmentStoredPath,

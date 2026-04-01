@@ -19,6 +19,7 @@
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.56",
         "laravel/sanctum": "^4.3",
+        "league/flysystem-aws-s3-v3": "^3.32",
         "letraceursnork/copyright-year-range": "1.0.0",
         "propaganistas/laravel-phone": "6.0.2",
         "teapot/status-code": "2.5.0",
