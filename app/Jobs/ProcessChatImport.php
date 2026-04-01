@@ -31,7 +31,7 @@ class ProcessChatImport implements ShouldQueue
     /**
      * @param int                     $userId
      * @param string                  $messengerType
-     * @param string                  $exportFileStoredPath Storage-relative path (ZIP or single export file)
+     * @param string                  $exportFileStoredPath Storage-relative path (archive or single export file)
      * @param ImportStrategyInterface $strategy
      */
     public function __construct(
