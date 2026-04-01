@@ -54,8 +54,9 @@ class ProcessChatImport implements ShouldQueue
         ParserRegistry                $parserRegistry,
         MediaFileStorageService       $mediaFileStorageService
     ): void {
-        $source       = null;
-        $extractedDir = null;
+        $source             = null;
+        $extractedDir       = null;
+        $shouldDeleteSource = true;
 
         try {
             $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->exportFileStoredPath);
@@ -112,14 +113,19 @@ class ProcessChatImport implements ShouldQueue
                 'error'            => $e->getMessage(),
             ]);
 
+            $shouldDeleteSource = false;
             throw $e;
         } finally {
             /**
              * Delete temporary archive/export file
              */
-            if (Storage::exists($this->exportFileStoredPath)) {
+            if ($shouldDeleteSource && Storage::exists($this->exportFileStoredPath)) {
                 Storage::delete($this->exportFileStoredPath);
             }
+
+            /**
+             * Delete extraction directory
+             */
             if (isset($extractedDir) && Storage::exists($extractedDir)) {
                 Storage::deleteDirectory($extractedDir);
             }
