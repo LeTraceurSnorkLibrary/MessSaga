@@ -4,55 +4,65 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\MediaAttachment;
 use App\Models\MessengerAccount;
-use App\Services\Import\ImportStrategyFactory;
+use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
+use App\Services\Import\DTO\PreparedMessageRowResult;
+use App\Services\Import\MessageInsertService;
+use App\Services\Import\MessagePreparationService;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\Parsers\ParserRegistry;
-use Carbon\Carbon;
-use Exception;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Throwable;
+use InvalidArgumentException;
+use RuntimeException;
 
 class ImportService
 {
     /**
-     * @param ParserRegistry        $parserRegistry
-     * @param ImportStrategyFactory $strategyFactory
+     * @param ParserRegistry          $parserRegistry
+     * @param MessagePreparationService $messagePreparationService
+     * @param MessageInsertService      $messageInsertService
      */
     public function __construct(
-        protected ParserRegistry        $parserRegistry,
-        protected ImportStrategyFactory $strategyFactory,
+        protected ParserRegistry          $parserRegistry,
+        protected MessagePreparationService $messagePreparationService,
+        protected MessageInsertService      $messageInsertService,
     ) {
     }
 
     /**
      * @param int                     $userId
      * @param string                  $messengerType
-     * @param string                  $path
      * @param ImportStrategyInterface $strategy
+     * @param ArchiveExtractionResult $extractedExportFile
      *
-     * @throws Throwable
+     * @throws QueryException
+     * @return void
      */
     public function import(
         int                     $userId,
         string                  $messengerType,
-        string                  $path,
-        ImportStrategyInterface $strategy
+        ImportStrategyInterface $strategy,
+        ArchiveExtractionResult $extractedExportFile
     ): void {
-        $absolutePath = Storage::path($path);
+        $exportFilePath = $extractedExportFile->getExportFileAbsolutePath();
+        $mediaRootPath  = $extractedExportFile->getMediaRootPath();
+
+        if ($exportFilePath === null) {
+            return;
+        }
 
         try {
-            $parser = $this->parserRegistry->get($messengerType);
-            $dto    = $parser->parse($absolutePath);
-        } catch (Throwable $e) {
+            $parser               = $this->parserRegistry->get($messengerType);
+            $importedConversation = $parser->parse($exportFilePath);
+        } catch (RuntimeException|InvalidArgumentException $e) {
             Log::error('Import parsing failed', [
                 'user_id'        => $userId,
                 'messenger_type' => $messengerType,
-                'path'           => $path,
+                'path'           => $exportFilePath,
                 'error'          => $e->getMessage(),
                 'trace'          => $e->getTraceAsString(),
             ]);
@@ -60,7 +70,7 @@ class ImportService
             return;
         }
 
-        if (!$dto->hasConversation()) {
+        if (!$importedConversation->hasConversation()) {
             Log::notice('Import skipped - no conversation data', [
                 'user_id'        => $userId,
                 'messenger_type' => $messengerType,
@@ -69,17 +79,13 @@ class ImportService
             return;
         }
 
-        $messageModelClass = $parser->getMessageModelClass();
-
-        DB::transaction(function () use (
+        $conversation = DB::transaction(function () use (
             $userId,
             $messengerType,
-            $dto,
-            $messageModelClass,
-            $parser,
-            $strategy,
+            $importedConversation,
+            $strategy
         ) {
-            $conversationData = $dto->getConversationData();
+            $conversationData = $importedConversation->getConversationData();
 
             $account = MessengerAccount::firstOrCreate(
                 [
@@ -92,164 +98,128 @@ class ImportService
                 ],
             );
 
-            $conversation = $strategy->resolveConversation(
+            return $strategy->resolveConversation(
                 account: $account,
                 conversationData: $conversationData
             );
-
-            if (!$conversation) {
-                Log::warning('Import aborted - no conversation target', [
-                    'mode'    => $strategy->getName(),
-                    'user_id' => $userId,
-                ]);
-
-                return;
-            }
-
-            /**
-             * Используем relation из парсера, а не из модели
-             */
-            $messagesRelation = $parser->getMessagesRelation($conversation);
-
-            /**
-             * Load existing messages for deduplication
-             */
-            $existingMessages = $messagesRelation
-                ->get(['external_id', 'sent_at', 'text', 'sender_name', 'sender_external_id'])
-                ->keyBy(function ($msg) {
-                    /**
-                     * Deduplicaton key: external_id, if present
-                     */
-                    if ($msg->external_id) {
-                        return 'ID:' . $msg->external_id;
-                    }
-
-                    /**
-                     * Deduplicaton key: combination of sent_at + text + sender
-                     */
-                    return 'hash:' . md5(
-                        ($msg->sent_at?->format('Y-m-d H:i:s') ?? '')
-                            . ($msg->text ?? '')
-                            . ($msg->sender_name ?? '')
-                            . ($msg->sender_external_id ?? '')
-                    );
-                });
-
-            /**
-             * Preparing new messages with deduplication keys
-             */
-            $newMessagesToInsert = [];
-            foreach ($dto->getMessages() as $message) {
-                /**
-                 * Prepare a key for deduplication
-                 */
-                if (!empty($message['external_id'])) {
-                    $key = 'ID:' . $message['external_id'];
-                } else {
-                    /**
-                     * Format sent_at field
-                     */
-                    $sentAt = $message['sent_at'] ?? '';
-                    if ($sentAt instanceof Carbon) {
-                        $sentAtFormatted = $sentAt->format('Y-m-d H:i:s');
-                    } elseif (is_string($sentAt)) {
-                        try {
-                            $sentAtFormatted = Carbon::parse($sentAt)->format('Y-m-d H:i:s');
-                        } catch (Exception $e) {
-                            $sentAtFormatted = $sentAt;
-                        }
-                    } else {
-                        $sentAtFormatted = (string)$sentAt;
-                    }
-
-                    $key = 'hash:' . md5(
-                        $sentAtFormatted
-                            . ($message['text'] ?? '')
-                            . ($message['sender_name'] ?? '')
-                            . ($message['sender_external_id'] ?? '')
-                    );
-                }
-
-                /**
-                 * Skip message if already exist
-                 */
-                if ($existingMessages->has($key)) {
-                    continue;
-                }
-
-                $newMessagesToInsert[] = $this->prepareMessageRowForInsert(
-                    $message,
-                    $conversation->id,
-                    $messageModelClass
-                );
-            }
-
-            if (count($newMessagesToInsert) > 0) {
-                $messageModelClass::insert($newMessagesToInsert);
-
-                Log::info('Messages imported', [
-                    'conversation_id' => $conversation->id,
-                    'count'           => count($newMessagesToInsert),
-                ]);
-            } else {
-                Log::info('No new messages to import', [
-                    'conversation_id' => $conversation->id,
-                ]);
-            }
         });
-    }
 
-    /**
-     * Собирает строку для insert: добавляет conversation_id, шифрует text, timestamps, кодирует array/json-поля по
-     * casts модели.
-     *
-     * @param array<string, mixed> $message
-     * @param class-string<Model>  $messageModelClass
-     *
-     * @return array<string, mixed>
-     */
-    private function prepareMessageRowForInsert(array $message, int $conversationId, string $messageModelClass): array
-    {
-        $text = $message['text'] ?? null;
+        if (!$conversation) {
+            Log::warning('Import aborted - no conversation target', [
+                'mode'    => $strategy->getName(),
+                'user_id' => $userId,
+            ]);
 
-        // Обрабатываем sent_at
-        $sentAt = $message['sent_at'] ?? null;
-        if ($sentAt instanceof Carbon) {
-            $sentAt = $sentAt->format('Y-m-d H:i:s');
+            return;
         }
 
-        $row = array_merge($message, [
-            'conversation_id' => $conversationId,
-            'sent_at'         => $sentAt,
-            'text'            => $text
-                ? Crypt::encryptString($text)
-                : null,
-            'created_at'      => now(),
-            'updated_at'      => now(),
-        ]);
+        $messagesRelation    = $parser->getMessagesRelation($conversation);
+        $existingExternalIds = $messagesRelation
+            ->whereNotNull('external_id')
+            ->pluck('external_id')
+            ->map(static fn($id): string => (string)$id)
+            ->flip();
+        $existingDedupHashes = $messagesRelation
+            ->whereNotNull('dedup_hash')
+            ->pluck('dedup_hash')
+            ->map(static fn($hash): string => (string)$hash)
+            ->flip();
 
-        /**
-         * @var Model $model
-         */
-        $model   = $messageModelClass::make();
-        $casts   = $model->getCasts();
-        $allowed = array_merge($model->getFillable(), ['created_at', 'updated_at']);
-        // Нормализуем строку: у всех строк один и тот же набор ключей в одном порядке (иначе bulk insert падает)
-        $row = array_merge(
-            array_fill_keys($allowed, null),
-            array_intersect_key($row, array_flip($allowed))
-        );
+        $preparedMessages  = [];
+        $copiedMediaPaths  = [];
+        $messageModelClass = $parser->getMessageModelClass();
+        foreach ($importedConversation->getMessages() as $message) {
+            $externalId = $this->messagePreparationService->normalizeExternalId($message['external_id'] ?? null);
+            $dedupHash  = $this->messagePreparationService->buildDeduplicationHash($message);
 
-        foreach ($row as $key => $value) {
-            if (!isset($casts[$key])) {
+            if ($externalId !== null && $existingExternalIds->has($externalId)) {
                 continue;
             }
-            $cast = $casts[$key];
-            if (($cast === 'array' || $cast === 'json') && is_array($value)) {
-                $row[$key] = json_encode($value);
+            if ($existingDedupHashes->has($dedupHash)) {
+                continue;
             }
+
+            if ($externalId !== null) {
+                $existingExternalIds->put($externalId, true);
+            }
+            $existingDedupHashes->put($dedupHash, true);
+
+            $attachmentStoredPath = $this->messagePreparationService->copyAttachmentForMessage(
+                $mediaRootPath,
+                $message,
+                $conversation->id
+            );
+            if ($attachmentStoredPath !== null) {
+                $copiedMediaPaths[$attachmentStoredPath] = true;
+            }
+
+            $message['dedup_hash'] = $dedupHash;
+
+            $preparedMessages[] = $this->messagePreparationService->prepareMessageRowForInsert(
+                $message,
+                $conversation->id,
+                $messageModelClass,
+                $attachmentStoredPath,
+            );
         }
 
-        return $row;
+        $importedCount = 0;
+        try {
+            DB::transaction(function () use (
+                $messageModelClass,
+                $preparedMessages,
+                $conversation,
+                &$importedCount,
+                &$copiedMediaPaths
+            ) {
+                /**
+                 * @var PreparedMessageRowResult $prepared
+                 */
+                foreach ($preparedMessages as $prepared) {
+                    $msg = $this->messageInsertService->createMessageSafely($messageModelClass, $prepared->getRow());
+                    if ($msg === null) {
+                        $preparedMedia = $prepared->getMedia();
+                        $preparedPath  = is_array($preparedMedia)
+                            ? ($preparedMedia['stored_path'] ?? null)
+                            : null;
+                        if (is_string($preparedPath) && $preparedPath !== '' && Storage::exists($preparedPath)) {
+                            Storage::delete($preparedPath);
+                            unset($copiedMediaPaths[$preparedPath]);
+                        }
+
+                        continue;
+                    }
+
+                    $media = $prepared->getMedia();
+                    if (isset($media)) {
+                        $media = MediaAttachment::create(array_merge($media, [
+                            'conversation_id' => $conversation->id,
+                        ]));
+                        $msg->update(['media_attachment_id' => $media->id]);
+                    }
+
+                    $importedCount++;
+                }
+            });
+        } catch (QueryException $e) {
+            foreach (array_keys($copiedMediaPaths) as $path) {
+                if (Storage::exists($path)) {
+                    Storage::delete($path);
+                }
+            }
+
+            throw $e;
+        }
+
+        if ($importedCount > 0) {
+            Log::info('Messages imported', [
+                'conversation_id' => $conversation->id,
+                'count'           => $importedCount,
+            ]);
+        } else {
+            Log::info('No new messages to import', [
+                'conversation_id' => $conversation->id,
+            ]);
+        }
     }
 }

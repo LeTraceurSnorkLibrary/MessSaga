@@ -26,6 +26,7 @@ return new class extends Migration {
             $table->string('sender_external_id')->nullable();
             $table->timestamp('sent_at')->nullable()->index();
             $table->text('text')->nullable(); // Зашифрованное поле
+            $table->string('dedup_hash', 64)->nullable();
 
             // Тип сообщения Viber
             $table->string('message_type')->default('text'); // text, picture, video, file, location, contact, sticker, etc.
@@ -60,7 +61,8 @@ return new class extends Migration {
 
             // Индексы для производительности
             $table->index(['conversation_id', 'sent_at']);
-            $table->index(['conversation_id', 'external_id']);
+            $table->unique(['conversation_id', 'external_id']);
+            $table->unique(['conversation_id', 'dedup_hash']);
             $table->index('message_type');
         });
     }

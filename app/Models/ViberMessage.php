@@ -28,6 +28,7 @@ class ViberMessage extends Message
         'sender_external_id',
         'sent_at',
         'text',
+        'dedup_hash',
         'message_type',
         'raw',
 
@@ -43,6 +44,7 @@ class ViberMessage extends Message
         'contact_data',
         'sticker_id',
         'urls',
+        'media_attachment_id',
     ];
 
     /**

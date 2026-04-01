@@ -13,13 +13,16 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();
 
+            // Как у остальных мессенджеров (дедупликация / будущие идентификаторы из экспорта)
+            $table->string('external_id')->nullable()->index();
+
             // Специфичные для WhatsApp поля
             $table->string('sender_name');
             $table->string('sender_external_id')->nullable();
             $table->timestamp('sent_at');
             $table->text('text')->nullable();
+            $table->string('dedup_hash', 64)->nullable();
             $table->string('message_type')->default('text'); // text, media, system
-            $table->string('media_file')->nullable();
 
             // Оригинальные данные
             $table->json('raw')->nullable();
@@ -29,6 +32,8 @@ return new class extends Migration {
             // Индексы
             $table->index('sent_at');
             $table->index('sender_name');
+            $table->unique(['conversation_id', 'external_id']);
+            $table->unique(['conversation_id', 'dedup_hash']);
         });
     }
 

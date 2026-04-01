@@ -22,13 +22,15 @@ class WhatsAppMessage extends Message
      */
     protected $fillable = [
         'conversation_id',
+        'external_id',
         'sender_name',
         'sender_external_id',
         'sent_at',
         'text',
+        'dedup_hash',
         'message_type', // text, media, system
-        'media_file',
         'raw',
+        'media_attachment_id',
     ];
 
     /**

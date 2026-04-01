@@ -84,7 +84,9 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
             $trimmedLine = rtrim($line, "\r");
             $type        = $this->contentParser->detectLineType($trimmedLine);
 
-            // Начинаем новую группу, если строка начинает сообщение
+            /**
+             * Начинаем новую группу, если строка начинает сообщение
+             */
             if ($type->isNewMessage()) {
                 if ($currentGroup !== null) {
                     $groups[] = $currentGroup;
@@ -95,7 +97,9 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
                     'lines' => [$trimmedLine],
                 ];
             } elseif ($currentGroup !== null) {
-                // Продолжение текущей группы
+                /**
+                 * Продолжение текущей группы
+                 */
                 $currentGroup['lines'][] = $trimmedLine;
             }
         }
@@ -128,7 +132,7 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
      *
      * @param string[] $lines
      *
-     * @return array
+     * @return array<string, mixed>
      */
     private function processSystemGroup(array $lines): array
     {

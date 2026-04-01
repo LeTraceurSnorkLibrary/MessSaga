@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Import\Archives\RarImportArchiveExtractor;
+use App\Services\Import\Archives\ZipImportArchiveExtractor;
+use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
+use App\Services\Import\Export\Locators\Archive\TelegramExportArchiveLocator;
+use App\Services\Import\Export\Locators\Archive\WhatsAppExportArchiveLocator;
+use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Parsers\ParserRegistry;
 use App\Services\Parsers\TelegramParser;
 use App\Services\Parsers\WhatsAppParser;
@@ -26,6 +32,18 @@ class AppServiceProvider extends ServiceProvider
             $registry->register('whatsapp', $app->make(WhatsAppParser::class));
 
             return $registry;
+        });
+
+        $this->app->singleton(ExportArchiveLocatorFactory::class, function ($app) {
+            return new ExportArchiveLocatorFactory()
+                ->register('telegram', $app->make(TelegramExportArchiveLocator::class))
+                ->register('whatsapp', $app->make(WhatsAppExportArchiveLocator::class));
+        });
+
+        $this->app->singleton(ImportArchiveExtractorFactory::class, function ($app) {
+            return new ImportArchiveExtractorFactory()
+                ->register($app->make(ZipImportArchiveExtractor::class))
+                ->register($app->make(RarImportArchiveExtractor::class));
         });
     }
 

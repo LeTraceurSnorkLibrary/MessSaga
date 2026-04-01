@@ -29,7 +29,7 @@ const submit = async () => {
     }
 
     if (props.mode === 'select' && !props.selectedConversationId) {
-        message.value = 'В режиме "Выбрать" необходимо выбрать переписку из списка.';
+        message.value = 'В режиме "В указанную переписку" необходимо выбрать переписку из списка.';
         return;
     }
 
@@ -49,16 +49,16 @@ const submit = async () => {
             headers: {'Content-Type': 'multipart/form-data'},
         });
 
-        message.value =
-            'Импорт поставлен в очередь. Переписка будет автоматически определена по ID из файла.';
+        message.value = 'Импорт поставлен в очередь. Переписка будет автоматически определена по ID из файла.';
 
         file.value = null;
-        if (fileInputRef.value) fileInputRef.value.value = '';
+        if (fileInputRef.value) {
+            fileInputRef.value.value = '';
+        }
 
         emit('imported');
     } catch (error) {
-        message.value =
-            'Не удалось запустить импорт. Проверьте файл и попробуйте ещё раз.';
+        message.value = 'Не удалось запустить импорт. Проверьте файл и попробуйте ещё раз.';
         console.error(error);
     } finally {
         loading.value = false;

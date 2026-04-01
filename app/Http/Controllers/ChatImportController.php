@@ -31,12 +31,12 @@ class ChatImportController extends Controller
     {
         $data = $request->validate([
             'messenger_type'         => 'required|string|in:telegram,whatsapp,viber',
-            'file'                   => 'required|file|max:102400',
+            'file'                   => 'required|file|max:262144',
             'import_mode'            => 'required|string|in:auto,new,select',
             'target_conversation_id' => 'nullable|integer|exists:conversations,id',
         ]);
 
-        $path = $request->file('file')->store('chat_imports');
+        $exportFileStoredPath = $request->file('file')->store('chat_imports');
 
         /**
          * @var string $import_mode
@@ -58,7 +58,7 @@ class ChatImportController extends Controller
         ProcessChatImport::dispatch(
             userId: $requestUserId,
             messengerType: $data['messenger_type'],
-            path: $path,
+            exportFileStoredPath: $exportFileStoredPath,
             strategy: $strategy,
         );
 

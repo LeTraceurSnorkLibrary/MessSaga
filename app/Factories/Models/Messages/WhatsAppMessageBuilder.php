@@ -27,9 +27,9 @@ class WhatsAppMessageBuilder
     /**
      * Creates message draft from raw data
      *
-     * @param array $data
+     * @param array<string, string> $data
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function createDraftFromMessageData(array $data): array
     {
@@ -50,7 +50,6 @@ class WhatsAppMessageBuilder
             'sender'       => $data['sender'],
             'sent_at'      => $dateTime,
             'message_type' => $messageType,
-            'media_file'   => $mediaFile,
             'text'         => null,
             'raw'          => [
                 'date'      => $data['date'],
@@ -64,9 +63,9 @@ class WhatsAppMessageBuilder
     /**
      * Creates system message
      *
-     * @param array $data
+     * @param array<string, string> $data
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function createSystemMessage(array $data): array
     {
@@ -83,7 +82,6 @@ class WhatsAppMessageBuilder
             'sent_at'            => $dateTime,
             'text'               => $data['text'],
             'message_type'       => 'system',
-            'media_file'         => null,
             'raw'                => [
                 'date' => $data['date'],
                 'time' => $data['time'],
@@ -98,7 +96,7 @@ class WhatsAppMessageBuilder
      * @param array $draft
      * @param array $messageLines
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function finalizeDraft(array $draft, array $messageLines): array
     {
@@ -108,24 +106,30 @@ class WhatsAppMessageBuilder
             $fullText = $this->cleanMediaText($fullText);
         }
 
+        // Имя файла для сопоставления с медиа в архиве: из первой строки или из всего текста
+        $mediaFile = null;
+        if ($draft['message_type'] === WhatsAppMessageTypesEnum::MEDIA->value && $mediaFile === null) {
+            $mediaFile = $this->extractFilename($fullText);
+        }
+
         return [
-            'sender_name'        => $draft['sender'],
-            'sender_external_id' => $draft['sender'],
-            'sent_at'            => $draft['sent_at'],
-            'text'               => trim($fullText)
+            'sender_name'            => $draft['sender'],
+            'sender_external_id'     => $draft['sender'],
+            'sent_at'                => $draft['sent_at'],
+            'text'                   => trim($fullText)
                 ?: null,
-            'message_type'       => $draft['message_type'],
-            'media_file'         => $draft['media_file'],
-            'raw'                => json_encode($draft['raw']),
+            'message_type'           => $draft['message_type'],
+            'attachment_export_path' => $mediaFile,
+            'raw'                    => json_encode($draft['raw']),
         ];
     }
 
     /**
      * Преобразует системное сообщение в формат для вставки
      *
-     * @param array $system
+     * @param array<string, mixed> $system
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function finalizeSystem(array $system): array
     {
@@ -135,7 +139,6 @@ class WhatsAppMessageBuilder
             'sent_at'            => $system['sent_at'],
             'text'               => $system['text'],
             'message_type'       => 'system',
-            'media_file'         => null,
             'raw'                => json_encode($system['raw']),
         ];
     }

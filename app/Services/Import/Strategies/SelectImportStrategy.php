@@ -6,33 +6,15 @@ namespace App\Services\Import\Strategies;
 
 use App\Models\Conversation;
 use App\Models\MessengerAccount;
-use App\Services\Import\DTO\ImportModeDTO;
 use App\Services\Import\DTO\ImportModeEnum;
 use Illuminate\Support\Facades\Log;
 
-class SelectImportStrategy extends AbstractImportStrategy implements ImportStrategyInterface
+class SelectImportStrategy extends AbstractImportStrategy implements ImportStrategyInterface, ImportOnlyMediaFilesStrategyInterface
 {
     /**
      * @inheritdoc
      */
     public const IMPORT_STRATEGY_NAME = ImportModeEnum::SELECT->value;
-
-    /**
-     * @var ImportModeDTO
-     */
-    protected ImportModeDTO $importMode;
-
-    /**
-     * @param ImportModeDTO $importMode
-     *
-     * @return $this
-     */
-    public function setImportMode(ImportModeDTO $importMode): static
-    {
-        $this->importMode = $importMode;
-
-        return $this;
-    }
 
     /**
      * @param MessengerAccount $account

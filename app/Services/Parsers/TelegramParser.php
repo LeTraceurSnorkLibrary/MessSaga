@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Parsers;
 
 use App\DTO\ConversationImportDTO;
+use App\Models\MessageTypes\TelegramMessageTypesEnum;
 use App\Models\TelegramMessage;
 use Illuminate\Support\Arr;
 
@@ -43,10 +44,10 @@ class TelegramParser extends AbstractParser implements ParserInterface
                 continue;
             }
 
-            $messageType = Arr::get($msg, 'type', 'text');
-            if ($messageType === 'message' && isset($msg['media_type'])) {
-                $messageType = $msg['media_type'];
-            }
+            $msg_type    = Arr::get($msg, 'type');
+            $messageType = is_string($msg_type)
+                ? TelegramMessageTypesEnum::fromExportType($msg_type)->value
+                : null;
 
             $text = $msg['text'] ?? '';
             if (is_array($text)) {
@@ -67,44 +68,47 @@ class TelegramParser extends AbstractParser implements ParserInterface
                 'raw'                => $msg,
             ];
 
-            if ($messageType === 'sticker' || isset($msg['sticker'])) {
-                $messageData['sticker_id']       = Arr::get($msg, 'sticker.file_id');
-                $messageData['sticker_set_name'] = Arr::get($msg, 'sticker.set_name');
-            }
-
-            if ($messageType === 'voice_message' || (isset($msg['media_type']) && $msg['media_type'] === 'voice_message')) {
-                $messageData['voice_duration'] = Arr::get($msg, 'duration_seconds');
-                $messageData['voice_file_id']  = Arr::get($msg, 'file');
-            }
-
-            if ($messageType === 'video_message' || (isset($msg['media_type']) && $msg['media_type'] === 'video_message')) {
-                $messageData['video_file_id']  = Arr::get($msg, 'file');
-                $messageData['video_duration'] = Arr::get($msg, 'duration_seconds');
-            }
-
-            if ($messageType === 'photo' || isset($msg['photo'])) {
-                $messageData['photo_file_id'] = Arr::get($msg, 'photo');
-            }
-
-            if (isset($msg['action'])) {
-                $messageData['service_action'] = $msg['action'];
-                $messageData['service_actor']  = [
-                    'name' => $msg['from'] ?? null,
-                    'id'   => $msg['from_id'] ?? null,
-                ];
-            }
-
-            if (isset($msg['forwarded_from'])) {
-                $messageData['forwarded_from_name'] = Arr::get($msg, 'forwarded_from');
-            }
-
-            if (isset($msg['edited'])) {
-                $messageData['edited_at'] = $msg['edited'];
-            }
+            // Путь к медиа в экспорте (для сопоставления при импорте архива и догрузке)
+            $messageData['attachment_export_path'] = $this->getTelegramAttachmentExportPath($msg);
 
             $messages[] = $messageData;
         }
 
         return new ConversationImportDTO($conversationData, $messages);
     }
+
+    /**
+     * Возвращает путь к файлу медиа в экспорте (как в архиве Telegram).
+     * Используется для копирования при импорте архива и при догрузке медиа.
+     *
+     * @param array<array-key, mixed> $msg
+     *
+     * @return string|null
+     */
+    private function getTelegramAttachmentExportPath(array $msg): ?string
+    {
+        $path = $msg['file'] ?? $msg['photo'] ?? null;
+        if (is_string($path)) {
+            return $path;
+        }
+        if (is_array($path)) {
+            // иногда photo — массив размеров; берём первый или путь
+            $first = reset($path);
+
+            return is_string($first)
+                ? $first
+                : null;
+        }
+        $stickerPath = Arr::get($msg, 'sticker.file_id');
+        if (is_string($stickerPath)) {
+            return $stickerPath;
+        }
+        $documentPath = $msg['document'] ?? Arr::get($msg, 'document_file_id');
+        if (is_string($documentPath)) {
+            return $documentPath;
+        }
+
+        return null;
+    }
+
 }

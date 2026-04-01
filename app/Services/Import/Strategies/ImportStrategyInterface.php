@@ -6,9 +6,15 @@ namespace App\Services\Import\Strategies;
 
 use App\Models\Conversation;
 use App\Models\MessengerAccount;
+use App\Services\Import\DTO\ImportModeDTO;
 
 interface ImportStrategyInterface
 {
+    /**
+     * @return ImportModeDTO|null
+     */
+    public function getImportMode(): ?ImportModeDTO;
+
     /**
      * Determine import strategy depending on import mode
      *
