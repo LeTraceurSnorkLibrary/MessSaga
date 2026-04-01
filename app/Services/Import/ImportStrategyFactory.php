@@ -51,10 +51,7 @@ class ImportStrategyFactory
         }
 
         $strategy = clone $this->strategies[$mode];
-
-        if ($strategy instanceof SelectImportStrategy) {
-            $strategy->setImportMode($modeDTO);
-        }
+        $strategy->setImportMode($modeDTO);
 
         return $strategy;
     }

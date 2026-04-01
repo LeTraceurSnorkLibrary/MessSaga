@@ -7,8 +7,8 @@ namespace App\Jobs;
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
+use App\Services\Import\Strategies\ImportOnlyMediaFilesStrategyInterface;
 use App\Services\Import\Strategies\ImportStrategyInterface;
-use App\Services\Import\Strategies\SelectImportStrategy;
 use App\Services\ImportService;
 use App\Services\Media\MediaFileStorageService;
 use App\Services\Parsers\ParserRegistry;
@@ -65,7 +65,14 @@ class ProcessChatImport implements ShouldQueue
 
                 $extractedDir = $source->getExtractedDir();
 
+                /**
+                 * If export file (e.g. result.json) is not presented - we cannot perform import
+                 */
                 if ($source->getExportFileAbsolutePath() === null) {
+                    /**
+                     * Though, if import mode is 'To selected conversation' - we can try to import media to already
+                     * existing conversation
+                     */
                     $this->runMediaOnlyFallback(
                         archiveExtractorsFactory: $archiveExtractorsFactory,
                         parserRegistry: $parserRegistry,
@@ -150,7 +157,7 @@ class ProcessChatImport implements ShouldQueue
         /**
          * This fallback is only for "Import to selected conversation" scenario
          */
-        if (!$this->strategy instanceof SelectImportStrategy) {
+        if (!$this->strategy instanceof ImportOnlyMediaFilesStrategyInterface) {
             return;
         }
 
