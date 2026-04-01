@@ -13,8 +13,9 @@ return [
     |
     */
 
-    'default'    => env('FILESYSTEM_DISK', 'local'),
-    'media_disk' => env('MEDIA_DISK', env('FILESYSTEM_DISK', 'local')),
+    'default'          => env('FILESYSTEM_DISK', 'local'),
+    'media_disk'       => env('MEDIA_DISK', env('FILESYSTEM_DISK', 'local')),
+    'imports_tmp_disk' => env('IMPORTS_TMP_DISK', 'imports_tmp'),
 
     /*
     |--------------------------------------------------------------------------
@@ -46,6 +47,13 @@ return [
             'visibility' => 'public',
             'throw'      => false,
             'report'     => false,
+        ],
+
+        'imports_tmp' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/imports_tmp'),
+            'throw'  => false,
+            'report' => false,
         ],
 
         's3' => [

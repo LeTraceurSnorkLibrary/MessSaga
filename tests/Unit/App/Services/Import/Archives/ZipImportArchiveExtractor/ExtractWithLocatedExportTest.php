@@ -25,8 +25,9 @@ final class ExtractWithLocatedExportTest extends TestCase
      */
     public function test_extract_returns_export_and_media_paths_when_locator_finds_export(): void
     {
-        $zipRelativePath = 'imports/zip-with-export.zip';
-        $absoluteZipPath = Storage::path($zipRelativePath);
+        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $zipRelativePath    = 'imports/zip-with-export.zip';
+        $absoluteZipPath    = Storage::path($zipRelativePath);
         $this->createZipFile($absoluteZipPath, [
             'result.json' => '{"messages":[]}',
             'media/a.jpg' => 'binary',
@@ -51,7 +52,7 @@ final class ExtractWithLocatedExportTest extends TestCase
         $this->assertStringEndsWith(DIRECTORY_SEPARATOR . 'result.json', $result->getExportFileAbsolutePath());
         $this->assertStringEndsWith(DIRECTORY_SEPARATOR . 'media', $result->getMediaRootPath());
 
-        $this->cleanupArtifacts($zipRelativePath, $result->getExtractedDir());
+        $this->cleanupArtifacts($zipRelativePath, $result->getExtractedDir(), $importsTmpDiskName);
     }
 
     /**
@@ -72,11 +73,18 @@ final class ExtractWithLocatedExportTest extends TestCase
         $zip->close();
     }
 
-    private function cleanupArtifacts(string $zipRelativePath, ?string $extractedDir): void
+    /**
+     * @param string      $zipRelativePath
+     * @param string|null $extractedDir
+     * @param string      $importsTmpDiskName
+     *
+     * @return void
+     */
+    private function cleanupArtifacts(string $zipRelativePath, ?string $extractedDir, string $importsTmpDiskName): void
     {
         Storage::delete($zipRelativePath);
         if (is_string($extractedDir) && $extractedDir !== '') {
-            Storage::deleteDirectory($extractedDir);
+            Storage::disk($importsTmpDiskName)->deleteDirectory($extractedDir);
         }
     }
 }

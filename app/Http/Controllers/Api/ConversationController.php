@@ -216,7 +216,8 @@ class ConversationController extends Controller
             'file' => 'required|file|mimes:zip|max:262144',
         ]);
 
-        $path = $request->file('file')->store('chat_imports');
+        $importsTmpDisk = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $path           = $request->file('file')->store('chat_imports', $importsTmpDisk);
 
         ProcessConversationMediaUpload::dispatch(
             userId: $request->user()->id,

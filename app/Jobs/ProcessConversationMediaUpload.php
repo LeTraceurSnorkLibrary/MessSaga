@@ -53,6 +53,8 @@ class ProcessConversationMediaUpload implements ShouldQueue
         MediaStorageInterface         $mediaStorage,
         ImportArchiveExtractorFactory $archiveExtractorsFactory
     ): void {
+        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDisk     = Storage::disk($importsTmpDiskName);
         $extractedDir = null;
 
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
@@ -73,7 +75,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
             }
 
             // Для догрузки медиа нужен весь распакованный архив, а не messenger-specific media root.
-            $absoluteExtracted = Storage::path($extractedDir);
+            $absoluteExtracted = $importsTmpDisk->path($extractedDir);
 
             $parser   = $parserRegistry->get($conversation->messengerAccount->type);
             $relation = $parser->getMessagesRelation($conversation);
@@ -126,11 +128,11 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 'reason'          => $e->getMessage(),
             ]);
         } finally {
-            if (isset($extractedDir) && Storage::exists($extractedDir)) {
-                Storage::deleteDirectory($extractedDir);
+            if (isset($extractedDir) && $importsTmpDisk->exists($extractedDir)) {
+                $importsTmpDisk->deleteDirectory($extractedDir);
             }
-            if (Storage::exists($this->path)) {
-                Storage::delete($this->path);
+            if ($importsTmpDisk->exists($this->path)) {
+                $importsTmpDisk->delete($this->path);
             }
         }
     }

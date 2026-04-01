@@ -36,7 +36,8 @@ class ChatImportController extends Controller
             'target_conversation_id' => 'nullable|integer|exists:conversations,id',
         ]);
 
-        $exportFileStoredPath = $request->file('file')->store('chat_imports');
+        $importsTmpDisk       = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $exportFileStoredPath = $request->file('file')->store('chat_imports', $importsTmpDisk);
 
         /**
          * @var string $import_mode

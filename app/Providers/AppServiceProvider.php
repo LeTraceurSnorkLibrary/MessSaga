@@ -43,6 +43,17 @@ class AppServiceProvider extends ServiceProvider
                 ->register('whatsapp', $app->make(WhatsAppExportArchiveLocator::class));
         });
 
+        $this->app->singleton(ZipImportArchiveExtractor::class, function ($app) {
+            $importsTmpDisk = Storage::disk((string)config('filesystems.imports_tmp_disk', 'imports_tmp'));
+            $sourceDisk     = Storage::disk((string)config('filesystems.default', 'local'));
+
+            return new ZipImportArchiveExtractor(
+                locatorFactory: $app->make(ExportArchiveLocatorFactory::class),
+                importsTmpDisk: $importsTmpDisk,
+                sourceDisk: $sourceDisk
+            );
+        });
+
         $this->app->singleton(ImportArchiveExtractorFactory::class, function ($app) {
             return new ImportArchiveExtractorFactory()
                 ->register($app->make(ZipImportArchiveExtractor::class))

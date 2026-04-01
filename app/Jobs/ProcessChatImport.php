@@ -57,6 +57,8 @@ class ProcessChatImport implements ShouldQueue
         ImportedMediaResolverService  $importedMediaResolverService,
         MediaStorageInterface         $mediaStorage
     ): void {
+        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDisk     = Storage::disk($importsTmpDiskName);
         $source             = null;
         $extractedDir       = null;
         $shouldDeleteSource = true;
@@ -87,7 +89,7 @@ class ProcessChatImport implements ShouldQueue
                 }
             }
             $extractedExportFile = $source ?? new ArchiveExtractionResult(
-                Storage::path($this->exportFileStoredPath),
+                $importsTmpDisk->path($this->exportFileStoredPath),
                 null,
                 null
             );
@@ -130,15 +132,15 @@ class ProcessChatImport implements ShouldQueue
             /**
              * Delete temporary archive/export file
              */
-            if ($shouldDeleteSource && Storage::exists($this->exportFileStoredPath)) {
-                Storage::delete($this->exportFileStoredPath);
+            if ($shouldDeleteSource && $importsTmpDisk->exists($this->exportFileStoredPath)) {
+                $importsTmpDisk->delete($this->exportFileStoredPath);
             }
 
             /**
              * Delete extraction directory
              */
-            if (isset($extractedDir) && Storage::exists($extractedDir)) {
-                Storage::deleteDirectory($extractedDir);
+            if (isset($extractedDir) && $importsTmpDisk->exists($extractedDir)) {
+                $importsTmpDisk->deleteDirectory($extractedDir);
             }
         }
     }

@@ -21,8 +21,10 @@ final class ExtractWithoutLocatedExportTest extends TestCase
      */
     public function test_extract_returns_media_only_result_when_locator_returns_null(): void
     {
-        $zipRelativePath = 'imports/zip-media-only.zip';
-        $absoluteZipPath = Storage::path($zipRelativePath);
+        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDisk     = Storage::disk($importsTmpDiskName);
+        $zipRelativePath    = 'imports/zip-media-only.zip';
+        $absoluteZipPath    = Storage::path($zipRelativePath);
         $this->createZipFile($absoluteZipPath, [
             'media/a.jpg' => 'binary',
         ]);
@@ -41,9 +43,9 @@ final class ExtractWithoutLocatedExportTest extends TestCase
         $this->assertNotNull($result->getMediaRootPath());
         $this->assertNotNull($result->getExtractedDir());
         $this->assertDirectoryExists($result->getMediaRootPath());
-        $this->assertSame(Storage::path($result->getExtractedDir()), $result->getMediaRootPath());
+        $this->assertSame($importsTmpDisk->path($result->getExtractedDir()), $result->getMediaRootPath());
 
-        $this->cleanupArtifacts($zipRelativePath, $result->getExtractedDir());
+        $this->cleanupArtifacts($zipRelativePath, $result->getExtractedDir(), $importsTmpDiskName);
     }
 
     /**
@@ -64,11 +66,18 @@ final class ExtractWithoutLocatedExportTest extends TestCase
         $zip->close();
     }
 
-    private function cleanupArtifacts(string $zipRelativePath, ?string $extractedDir): void
+    /**
+     * @param string      $zipRelativePath
+     * @param string|null $extractedDir
+     * @param string      $importsTmpDiskName
+     *
+     * @return void
+     */
+    private function cleanupArtifacts(string $zipRelativePath, ?string $extractedDir, string $importsTmpDiskName): void
     {
         Storage::delete($zipRelativePath);
         if (is_string($extractedDir) && $extractedDir !== '') {
-            Storage::deleteDirectory($extractedDir);
+            Storage::disk($importsTmpDiskName)->deleteDirectory($extractedDir);
         }
     }
 }
