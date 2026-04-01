@@ -8,23 +8,25 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ProcessConversationMediaUpload;
 use App\Models\Conversation;
 use App\Models\MediaAttachment;
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use App\Support\FilenameSanitizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Teapot\StatusCode\Http;
 
 class ConversationController extends Controller
 {
     /**
-     * @param ParserRegistry $parserRegistry
+     * @param ParserRegistry       $parserRegistry
+     * @param MediaStorageInterface $mediaStorage
      */
     public function __construct(
-        private readonly ParserRegistry $parserRegistry
+        private readonly ParserRegistry $parserRegistry,
+        private readonly MediaStorageInterface $mediaStorage
     ) {
     }
 
@@ -159,7 +161,6 @@ class ConversationController extends Controller
     public function attachment(Request $request, Conversation $conversation, int $messageId): Response|StreamedResponse
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
-        $mediaDisk = Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')));
 
         $parser  = $this->parserRegistry->get($conversation->messengerAccount->type);
         $message = $parser->getMessagesRelation($conversation)
@@ -171,21 +172,21 @@ class ConversationController extends Controller
             abort(Http::NOT_FOUND);
         }
 
-        if (!$mediaDisk->exists($storedPath)) {
+        if (!$this->mediaStorage->exists($storedPath)) {
             abort(Http::NOT_FOUND);
         }
 
         $mime = $message?->mediaAttachment?->mime_type;
         if (!is_string($mime) || $mime === '') {
-            $mime = $mediaDisk->mimeType($storedPath);
+            $mime = $this->mediaStorage->mimeType($storedPath);
         }
         $mime     = $mime
             ?: 'application/octet-stream';
         $filename = FilenameSanitizer::sanitize(basename($storedPath));
 
         return response()->streamDownload(
-            function () use ($storedPath, $mediaDisk) {
-                $stream = $mediaDisk->readStream($storedPath);
+            function () use ($storedPath) {
+                $stream = $this->mediaStorage->readStream($storedPath);
                 if (is_resource($stream)) {
                     fpassthru($stream);
                     fclose($stream);

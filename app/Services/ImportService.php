@@ -11,11 +11,11 @@ use App\Services\Import\DTO\PreparedMessageRowResult;
 use App\Services\Import\MessageInsertService;
 use App\Services\Import\MessagePreparationService;
 use App\Services\Import\Strategies\ImportStrategyInterface;
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -25,11 +25,13 @@ class ImportService
      * @param ParserRegistry          $parserRegistry
      * @param MessagePreparationService $messagePreparationService
      * @param MessageInsertService      $messageInsertService
+     * @param MediaStorageInterface     $mediaStorage
      */
     public function __construct(
         protected ParserRegistry          $parserRegistry,
         protected MessagePreparationService $messagePreparationService,
         protected MessageInsertService      $messageInsertService,
+        protected MediaStorageInterface     $mediaStorage,
     ) {
     }
 
@@ -48,7 +50,6 @@ class ImportService
         ImportStrategyInterface $strategy,
         ArchiveExtractionResult $extractedExportFile
     ): void {
-        $mediaDisk = Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')));
         $exportFilePath = $extractedExportFile->getExportFileAbsolutePath();
         $mediaRootPath  = $extractedExportFile->getMediaRootPath();
 
@@ -183,8 +184,8 @@ class ImportService
                         $preparedPath  = is_array($preparedMedia)
                             ? ($preparedMedia['stored_path'] ?? null)
                             : null;
-                        if (is_string($preparedPath) && $preparedPath !== '' && $mediaDisk->exists($preparedPath)) {
-                            $mediaDisk->delete($preparedPath);
+                        if (is_string($preparedPath) && $preparedPath !== '' && $this->mediaStorage->exists($preparedPath)) {
+                            $this->mediaStorage->delete($preparedPath);
                             unset($copiedMediaPaths[$preparedPath]);
                         }
 
@@ -204,8 +205,8 @@ class ImportService
             });
         } catch (QueryException $e) {
             foreach (array_keys($copiedMediaPaths) as $path) {
-                if ($mediaDisk->exists($path)) {
-                    $mediaDisk->delete($path);
+                if ($this->mediaStorage->exists($path)) {
+                    $this->mediaStorage->delete($path);
                 }
             }
 

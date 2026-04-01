@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Services\Media\MediaFileStorageService;
 
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\LaravelMediaStorage;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use Tests\TestCase;
 
-#[CoversMethod(MediaFileStorageService::class, 'copyForConversation')]
-#[CoversMethod(MediaFileStorageService::class, 'resolveSource')]
-#[CoversMethod(MediaFileStorageService::class, 'tryResolveByExportPath')]
-#[CoversMethod(MediaFileStorageService::class, 'storeStream')]
+#[CoversMethod(ImportedMediaResolverService::class, 'copyForConversation')]
+#[CoversMethod(ImportedMediaResolverService::class, 'resolveSource')]
+#[CoversMethod(ImportedMediaResolverService::class, 'tryResolveByExportPath')]
+#[CoversMethod(ImportedMediaResolverService::class, 'storeStream')]
 final class CopyForConversationTest extends TestCase
 {
     private string $rootDir;
@@ -37,7 +38,7 @@ final class CopyForConversationTest extends TestCase
         mkdir($sourceDir, 0o775, true);
         file_put_contents($sourceDir . '/a.jpg', 'img-bytes');
 
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService(new LaravelMediaStorage(Storage::disk('local')));
         $stored  = $service->copyForConversation($this->rootDir, 'nested/a.jpg', 101);
 
         $this->assertSame('conversations/101/media/a.jpg', $stored);
@@ -47,7 +48,7 @@ final class CopyForConversationTest extends TestCase
 
     public function test_returns_null_when_source_not_found(): void
     {
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService(new LaravelMediaStorage(Storage::disk('local')));
 
         $stored = $service->copyForConversation($this->rootDir, 'missing/file.jpg', 101);
 

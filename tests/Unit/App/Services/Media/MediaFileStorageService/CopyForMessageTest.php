@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Services\Media\MediaFileStorageService;
 
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\LaravelMediaStorage;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use Tests\TestCase;
 
-#[CoversMethod(MediaFileStorageService::class, 'copyForMessage')]
-#[CoversMethod(MediaFileStorageService::class, 'resolveSource')]
-#[CoversMethod(MediaFileStorageService::class, 'extractCandidateBasenames')]
-#[CoversMethod(MediaFileStorageService::class, 'findUniqueFileByBasename')]
-#[CoversMethod(MediaFileStorageService::class, 'getBasenameIndex')]
+#[CoversMethod(ImportedMediaResolverService::class, 'copyForMessage')]
+#[CoversMethod(ImportedMediaResolverService::class, 'resolveSource')]
+#[CoversMethod(ImportedMediaResolverService::class, 'extractCandidateBasenames')]
+#[CoversMethod(ImportedMediaResolverService::class, 'findUniqueFileByBasename')]
+#[CoversMethod(ImportedMediaResolverService::class, 'getBasenameIndex')]
 final class CopyForMessageTest extends TestCase
 {
     private string $rootDir;
@@ -38,7 +39,7 @@ final class CopyForMessageTest extends TestCase
         mkdir($mediaDir, 0o775, true);
         file_put_contents($mediaDir . '/photo.jpg', 'img-bytes');
 
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService(new LaravelMediaStorage(Storage::disk('local')));
         $stored  = $service->copyForMessage($this->rootDir, '001_ABC_photo.jpg', 202, 7);
 
         $this->assertSame('conversations/202/media/7/photo.jpg', $stored);
@@ -53,7 +54,7 @@ final class CopyForMessageTest extends TestCase
         file_put_contents($this->rootDir . '/a/photo.jpg', 'img-a');
         file_put_contents($this->rootDir . '/b/photo.jpg', 'img-b');
 
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService(new LaravelMediaStorage(Storage::disk('local')));
         $stored  = $service->copyForMessage($this->rootDir, '001_photo.jpg', 202, 7);
 
         $this->assertNull($stored);

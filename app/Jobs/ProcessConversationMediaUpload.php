@@ -9,7 +9,8 @@ use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,18 +41,19 @@ class ProcessConversationMediaUpload implements ShouldQueue
 
     /**
      * @param ParserRegistry                $parserRegistry
-     * @param MediaFileStorageService       $mediaFileStorageService
+     * @param ImportedMediaResolverService  $importedMediaResolverService
+     * @param MediaStorageInterface         $mediaStorage
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
      *
      * @return void
      */
     public function handle(
         ParserRegistry                $parserRegistry,
-        MediaFileStorageService       $mediaFileStorageService,
+        ImportedMediaResolverService  $importedMediaResolverService,
+        MediaStorageInterface         $mediaStorage,
         ImportArchiveExtractorFactory $archiveExtractorsFactory
     ): void {
         $extractedDir = null;
-        $mediaDisk = Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')));
 
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
         if (!$conversation || $conversation->messengerAccount->user_id !== $this->userId) {
@@ -96,7 +98,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     continue;
                 }
 
-                $storedPath = $mediaFileStorageService->copyForMessage(
+                $storedPath = $importedMediaResolverService->copyForMessage(
                     $absoluteExtracted,
                     (string)$media->export_path,
                     $conversation->id,
@@ -106,7 +108,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     continue;
                 }
 
-                $mime = $mediaDisk->mimeType($storedPath);
+                $mime = $mediaStorage->mimeType($storedPath);
                 $media->update([
                     'stored_path'       => $storedPath,
                     'media_type'        => SupportedMediaTypesEnum::detect($mime

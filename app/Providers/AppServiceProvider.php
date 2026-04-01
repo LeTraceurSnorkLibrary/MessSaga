@@ -10,10 +10,13 @@ use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
 use App\Services\Import\Export\Locators\Archive\TelegramExportArchiveLocator;
 use App\Services\Import\Export\Locators\Archive\WhatsAppExportArchiveLocator;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
+use App\Services\Media\Storage\LaravelMediaStorage;
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use App\Services\Parsers\TelegramParser;
 use App\Services\Parsers\WhatsAppParser;
 use Exception;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -44,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
             return new ImportArchiveExtractorFactory()
                 ->register($app->make(ZipImportArchiveExtractor::class))
                 ->register($app->make(RarImportArchiveExtractor::class));
+        });
+
+        $this->app->singleton(MediaStorageInterface::class, function () {
+            $mediaDisk = (string)config('filesystems.media_disk', config('filesystems.default'));
+
+            return new LaravelMediaStorage(Storage::disk($mediaDisk));
         });
     }
 

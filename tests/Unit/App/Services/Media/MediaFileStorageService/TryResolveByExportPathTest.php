@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Services\Media\MediaFileStorageService;
 
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use PHPUnit\Framework\Attributes\CoversMethod;
+use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
 
-#[CoversMethod(MediaFileStorageService::class, 'tryResolveByExportPath')]
+#[CoversMethod(ImportedMediaResolverService::class, 'tryResolveByExportPath')]
 final class TryResolveByExportPathTest extends TestCase
 {
     private string $rootDir;
 
     /**
+     * @throws Exception
      * @throws ReflectionException
      */
     public function test_resolves_valid_relative_path_inside_root(): void
@@ -24,7 +27,7 @@ final class TryResolveByExportPathTest extends TestCase
         $file = $this->rootDir . '/x/a.jpg';
         file_put_contents($file, 'img');
 
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService($this->createStub(MediaStorageInterface::class));
         $method  = new ReflectionClass($service)->getMethod('tryResolveByExportPath');
         $method->setAccessible(true);
 
@@ -34,11 +37,12 @@ final class TryResolveByExportPathTest extends TestCase
     }
 
     /**
+     * @throws Exception
      * @throws ReflectionException
      */
     public function test_returns_null_for_traversal_or_invalid_or_missing_paths(): void
     {
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService($this->createStub(MediaStorageInterface::class));
         $method  = new ReflectionClass($service)->getMethod('tryResolveByExportPath');
         $method->setAccessible(true);
 

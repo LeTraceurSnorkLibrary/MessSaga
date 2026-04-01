@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Media;
 
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Support\FilenameSanitizer;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
-class MediaFileStorageService
+class ImportedMediaResolverService
 {
     /**
      * Кэш индексов файлов по корню распакованного экспорта:
@@ -17,6 +17,14 @@ class MediaFileStorageService
      * @var array<string, array<string, array<int, string>>>
      */
     private array $basenameIndexCache = [];
+
+    /**
+     * @param MediaStorageInterface $mediaStorage
+     */
+    public function __construct(
+        private readonly MediaStorageInterface $mediaStorage
+    ) {
+    }
 
     /**
      * Копирует медиа-файл из временно распакованного экспорта
@@ -30,12 +38,11 @@ class MediaFileStorageService
      * @param string $mediaRootPath        Абсолютный путь до корня распакованного экспорта.
      *
      * @return string|null Относительный путь в Storage при успехе, иначе null.
-     *
      */
     public function copyForConversation(
         string $mediaRootPath,
         string $attachmentExportPath,
-        int    $conversationId,
+        int $conversationId,
     ): ?string {
         $resolved = $this->resolveSource($mediaRootPath, $attachmentExportPath);
         if ($resolved === null) {
@@ -67,8 +74,8 @@ class MediaFileStorageService
     public function copyForMessage(
         string $mediaRootPath,
         string $attachmentExportPath,
-        int    $conversationId,
-        int    $messageId
+        int $conversationId,
+        int $messageId
     ): ?string {
         $resolved = $this->resolveSource($mediaRootPath, $attachmentExportPath);
         if ($resolved === null) {
@@ -103,7 +110,7 @@ class MediaFileStorageService
         $exactPath = $this->tryResolveByExportPath($root, $attachmentExportPath);
         if ($exactPath !== null) {
             return [
-                'source'   => $exactPath,
+                'source' => $exactPath,
                 'basename' => FilenameSanitizer::sanitize(basename(str_replace('\\', '/', $attachmentExportPath))),
             ];
         }
@@ -116,7 +123,7 @@ class MediaFileStorageService
             $found = $this->findUniqueFileByBasename($root, $sanitizedCandidate);
             if ($found !== null) {
                 return [
-                    'source'   => $found,
+                    'source' => $found,
                     'basename' => $sanitizedCandidate,
                 ];
             }
@@ -124,8 +131,8 @@ class MediaFileStorageService
 
         Log::debug('Import media file not found', [
             'export_path' => $attachmentExportPath,
-            'basename'    => basename(str_replace('\\', '/', $attachmentExportPath)),
-            'root'        => $mediaRootPath,
+            'basename' => basename(str_replace('\\', '/', $attachmentExportPath)),
+            'root' => $mediaRootPath,
         ]);
 
         return null;
@@ -149,7 +156,7 @@ class MediaFileStorageService
         }
 
         $relativePath = ltrim($relativePath, '/');
-        $parts        = explode('/', $relativePath);
+        $parts = explode('/', $relativePath);
         if (in_array('..', $parts, true)) {
             return null;
         }
@@ -160,7 +167,7 @@ class MediaFileStorageService
         }
 
         $candidateReal = realpath($candidate);
-        $rootReal      = realpath($root);
+        $rootReal = realpath($root);
         if ($candidateReal === false || $rootReal === false) {
             return null;
         }
@@ -193,8 +200,7 @@ class MediaFileStorageService
         }
 
         try {
-            return Storage::disk((string)config('filesystems.media_disk', config('filesystems.default')))
-                ->put($storedRelative, $stream) === true;
+            return $this->mediaStorage->putStream($storedRelative, $stream);
         } finally {
             fclose($stream);
         }
@@ -211,7 +217,7 @@ class MediaFileStorageService
     private function extractCandidateBasenames(string $attachmentExportPath): array
     {
         $normalized = str_replace('\\', '/', $attachmentExportPath);
-        $basename   = basename($normalized);
+        $basename = basename($normalized);
         $candidates = [$basename];
 
         if (!str_contains($normalized, '/')) {
@@ -248,7 +254,7 @@ class MediaFileStorageService
             return null;
         }
 
-        $index   = $this->getBasenameIndex($dir);
+        $index = $this->getBasenameIndex($dir);
         $matches = $index[$target] ?? [];
 
         if (count($matches) === 1) {
@@ -257,8 +263,8 @@ class MediaFileStorageService
         if (count($matches) > 1) {
             Log::warning('Import media file match is ambiguous', [
                 'basename' => $basename,
-                'root'     => $dir,
-                'count'    => count($matches),
+                'root' => $dir,
+                'count' => count($matches),
             ]);
         }
 

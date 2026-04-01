@@ -10,7 +10,8 @@ use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Import\Strategies\ImportOnlyMediaFilesStrategyInterface;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\ImportService;
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,14 +46,16 @@ class ProcessChatImport implements ShouldQueue
     /**
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
      * @param ParserRegistry                $parserRegistry
-     * @param MediaFileStorageService       $mediaFileStorageService
+     * @param ImportedMediaResolverService  $importedMediaResolverService
+     * @param MediaStorageInterface         $mediaStorage
      *
      * @return void
      */
     public function handle(
         ImportArchiveExtractorFactory $archiveExtractorsFactory,
         ParserRegistry                $parserRegistry,
-        MediaFileStorageService       $mediaFileStorageService
+        ImportedMediaResolverService  $importedMediaResolverService,
+        MediaStorageInterface         $mediaStorage
     ): void {
         $source             = null;
         $extractedDir       = null;
@@ -76,7 +79,8 @@ class ProcessChatImport implements ShouldQueue
                     $this->runMediaOnlyFallback(
                         archiveExtractorsFactory: $archiveExtractorsFactory,
                         parserRegistry: $parserRegistry,
-                        mediaFileStorageService: $mediaFileStorageService
+                        importedMediaResolverService: $importedMediaResolverService,
+                        mediaStorage: $mediaStorage
                     );
 
                     return;
@@ -145,14 +149,16 @@ class ProcessChatImport implements ShouldQueue
      *
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
      * @param ParserRegistry                $parserRegistry
-     * @param MediaFileStorageService       $mediaFileStorageService
+     * @param ImportedMediaResolverService  $importedMediaResolverService
+     * @param MediaStorageInterface         $mediaStorage
      *
      * @return void
      */
     private function runMediaOnlyFallback(
         ImportArchiveExtractorFactory $archiveExtractorsFactory,
         ParserRegistry                $parserRegistry,
-        MediaFileStorageService       $mediaFileStorageService
+        ImportedMediaResolverService  $importedMediaResolverService,
+        MediaStorageInterface         $mediaStorage
     ): void {
         /**
          * This fallback is only for "Import to selected conversation" scenario
@@ -174,7 +180,8 @@ class ProcessChatImport implements ShouldQueue
 
         $mediaUploadJob->handle(
             parserRegistry: $parserRegistry,
-            mediaFileStorageService: $mediaFileStorageService,
+            importedMediaResolverService: $importedMediaResolverService,
+            mediaStorage: $mediaStorage,
             archiveExtractorsFactory: $archiveExtractorsFactory
         );
     }
