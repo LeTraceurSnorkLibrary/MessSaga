@@ -89,6 +89,7 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
      *
      * @param string $storagePath
      *
+     * @throws ArchiveExtractionFailedException
      * @return ArchiveExtractionResult
      */
     private function extractArchiveOnly(string $storagePath): ArchiveExtractionResult
