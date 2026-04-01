@@ -83,13 +83,13 @@ migrate: ## Выполнить миграции (алиас для db-init)
 	php artisan migrate
 
 minio-init: ## Инициализировать Minio начально
-	docker compose up -d minio-init
+	docker compose --profile dev up -d minio-init
 
 minio-up: ## Поднять локально Minio как S3
-	docker compose up -d minio
+	docker compose --profile dev up -d minio
 
 minio-down: ## Выключить локальный S3 в виде Minio
-	docker compose down minio
+	docker compose --profile dev down minio minio-init
 
 fresh: ## Сброс БД и повторный прогон миграций
 	php artisan migrate:fresh
