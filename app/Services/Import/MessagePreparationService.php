@@ -7,20 +7,22 @@ namespace App\Services\Import;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Models\Message;
 use App\Services\Import\DTO\PreparedMessageRowResult;
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Storage;
 
 class MessagePreparationService
 {
     /**
-     * @param MediaFileStorageService $mediaFileStorageService
+     * @param ImportedMediaResolverService $importedMediaResolverService
+     * @param MediaStorageInterface        $mediaStorage
      */
     public function __construct(
-        private readonly MediaFileStorageService $mediaFileStorageService
+        private readonly ImportedMediaResolverService $importedMediaResolverService,
+        private readonly MediaStorageInterface $mediaStorage
     ) {
     }
 
@@ -87,7 +89,7 @@ class MessagePreparationService
             return null;
         }
 
-        return $this->mediaFileStorageService->copyForConversation(
+        return $this->importedMediaResolverService->copyForConversation(
             $mediaRootPath,
             (string)$message['attachment_export_path'],
             $conversationId
@@ -141,8 +143,8 @@ class MessagePreparationService
         $mediaPayload = null;
         if ($exportNormalized !== null || $attachmentStoredPath !== null) {
             $mime = null;
-            if ($attachmentStoredPath !== null && Storage::exists($attachmentStoredPath)) {
-                $mime = Storage::mimeType($attachmentStoredPath);
+            if ($attachmentStoredPath !== null && $this->mediaStorage->exists($attachmentStoredPath)) {
+                $mime = $this->mediaStorage->mimeType($attachmentStoredPath);
             }
             $mediaPayload = [
                 'stored_path'       => $attachmentStoredPath,

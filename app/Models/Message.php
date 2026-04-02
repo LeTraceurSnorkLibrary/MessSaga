@@ -73,7 +73,10 @@ abstract class Message extends Model
     {
         static::deleting(function (Message $message): void {
             if ($message->media_attachment_id !== null) {
-                MediaAttachment::query()->whereKey($message->media_attachment_id)->delete();
+                MediaAttachment::query()
+                    ->whereKey($message->media_attachment_id)
+                    ->first()
+                    ?->delete();
             }
         });
     }

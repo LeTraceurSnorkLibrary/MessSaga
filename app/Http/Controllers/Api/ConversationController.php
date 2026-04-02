@@ -8,24 +8,25 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ProcessConversationMediaUpload;
 use App\Models\Conversation;
 use App\Models\MediaAttachment;
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use App\Support\FilenameSanitizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Teapot\StatusCode\Http;
 
 class ConversationController extends Controller
 {
     /**
-     * @param ParserRegistry $parserRegistry
+     * @param ParserRegistry       $parserRegistry
+     * @param MediaStorageInterface $mediaStorage
      */
     public function __construct(
-        private readonly ParserRegistry $parserRegistry
+        private readonly ParserRegistry $parserRegistry,
+        private readonly MediaStorageInterface $mediaStorage
     ) {
     }
 
@@ -171,18 +172,21 @@ class ConversationController extends Controller
             abort(Http::NOT_FOUND);
         }
 
-        if (!Storage::exists($storedPath)) {
+        if (!$this->mediaStorage->exists($storedPath)) {
             abort(Http::NOT_FOUND);
         }
 
-        $mime     = File::mimeType(Storage::path($storedPath));
+        $mime = $message?->mediaAttachment?->mime_type;
+        if (!is_string($mime) || $mime === '') {
+            $mime = $this->mediaStorage->mimeType($storedPath);
+        }
         $mime     = $mime
             ?: 'application/octet-stream';
         $filename = FilenameSanitizer::sanitize(basename($storedPath));
 
         return response()->streamDownload(
             function () use ($storedPath) {
-                $stream = Storage::readStream($storedPath);
+                $stream = $this->mediaStorage->readStream($storedPath);
                 if (is_resource($stream)) {
                     fpassthru($stream);
                     fclose($stream);
@@ -212,7 +216,8 @@ class ConversationController extends Controller
             'file' => 'required|file|mimes:zip|max:262144',
         ]);
 
-        $path = $request->file('file')->store('chat_imports');
+        $importsTmpDisk = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $path           = $request->file('file')->store('chat_imports', $importsTmpDisk);
 
         ProcessConversationMediaUpload::dispatch(
             userId: $request->user()->id,

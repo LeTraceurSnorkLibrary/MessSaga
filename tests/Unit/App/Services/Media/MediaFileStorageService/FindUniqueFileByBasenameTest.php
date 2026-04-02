@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Services\Media\MediaFileStorageService;
 
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use PHPUnit\Framework\Attributes\CoversMethod;
+use PHPUnit\Framework\MockObject\Exception;
 use ReflectionClass;
 use ReflectionException;
 use Tests\TestCase;
 
-#[CoversMethod(MediaFileStorageService::class, 'findUniqueFileByBasename')]
-#[CoversMethod(MediaFileStorageService::class, 'getBasenameIndex')]
+#[CoversMethod(ImportedMediaResolverService::class, 'findUniqueFileByBasename')]
+#[CoversMethod(ImportedMediaResolverService::class, 'getBasenameIndex')]
 final class FindUniqueFileByBasenameTest extends TestCase
 {
     private string $rootDir;
 
     /**
+     * @throws Exception
      * @throws ReflectionException
      */
     public function test_returns_unique_match_when_found_once(): void
@@ -25,7 +28,7 @@ final class FindUniqueFileByBasenameTest extends TestCase
         $file = $this->rootDir . '/x/A B.jpg';
         file_put_contents($file, 'img');
 
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService($this->createStub(MediaStorageInterface::class));
         $method  = new ReflectionClass($service)->getMethod('findUniqueFileByBasename');
         $method->setAccessible(true);
 
@@ -35,6 +38,7 @@ final class FindUniqueFileByBasenameTest extends TestCase
     }
 
     /**
+     * @throws Exception
      * @throws ReflectionException
      */
     public function test_returns_null_for_ambiguous_invalid_or_missing_directory(): void
@@ -44,7 +48,7 @@ final class FindUniqueFileByBasenameTest extends TestCase
         file_put_contents($this->rootDir . '/a/photo.jpg', '1');
         file_put_contents($this->rootDir . '/b/photo.jpg', '2');
 
-        $service = new MediaFileStorageService();
+        $service = new ImportedMediaResolverService($this->createStub(MediaStorageInterface::class));
         $method  = new ReflectionClass($service)->getMethod('findUniqueFileByBasename');
         $method->setAccessible(true);
 

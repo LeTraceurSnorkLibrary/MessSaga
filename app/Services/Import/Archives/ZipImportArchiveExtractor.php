@@ -7,6 +7,7 @@ namespace App\Services\Import\Archives;
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
@@ -32,11 +33,27 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
     private const MAX_TOTAL_UNCOMPRESSED_BYTES = 1024 * 1024 * 1024; // 1 GB
 
     /**
+     * @var FilesystemAdapter
+     */
+    private readonly FilesystemAdapter $importsTmpDisk;
+
+    /**
+     * @var FilesystemAdapter
+     */
+    private readonly FilesystemAdapter $sourceDisk;
+
+    /**
      * @param ExportArchiveLocatorFactory $locatorFactory
+     * @param FilesystemAdapter|null      $importsTmpDisk
+     * @param FilesystemAdapter|null      $sourceDisk
      */
     public function __construct(
         private readonly ExportArchiveLocatorFactory $locatorFactory,
+        ?FilesystemAdapter                           $importsTmpDisk = null,
+        ?FilesystemAdapter                           $sourceDisk = null,
     ) {
+        $this->importsTmpDisk = $importsTmpDisk ?? Storage::disk('imports_tmp');
+        $this->sourceDisk     = $sourceDisk ?? Storage::disk('local');
     }
 
     /**
@@ -59,7 +76,7 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
                 'ZIP extraction succeeded but extracted directory is missing'
             );
         }
-        $extractedAbsolutePath = Storage::path($extractedDir);
+        $extractedAbsolutePath = $this->importsTmpDisk->path($extractedDir);
 
         $archiveImportSource = $this->locatorFactory
             ->make($messengerType)
@@ -78,7 +95,7 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
         }
 
         return new ArchiveExtractionResult(
-            Storage::path($extractedDir . '/' . $archiveImportSource->getExportFileRelativePath()),
+            $this->importsTmpDisk->path($extractedDir . '/' . $archiveImportSource->getExportFileRelativePath()),
             $archiveImportSource->getMediaRootAbsolutePath(),
             $extractedDir
         );
@@ -94,7 +111,10 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
      */
     private function extractArchiveOnly(string $storagePath): ArchiveExtractionResult
     {
-        $absoluteZip = Storage::path($storagePath);
+        $absoluteZip = $this->importsTmpDisk->path($storagePath);
+        if (!is_file($absoluteZip)) {
+            $absoluteZip = $this->sourceDisk->path($storagePath);
+        }
         if (!is_file($absoluteZip)) {
             throw new ArchiveExtractionFailedException(
                 'ZIP file not found'
@@ -102,7 +122,7 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
         }
 
         $extractedDir          = 'chat_imports/extracted_' . uniqid('', true);
-        $extractedAbsolutePath = Storage::path($extractedDir);
+        $extractedAbsolutePath = $this->importsTmpDisk->path($extractedDir);
 
         $zip = new ZipArchive();
         if ($zip->open($absoluteZip, ZipArchive::RDONLY) !== true) {
@@ -120,8 +140,8 @@ class ZipImportArchiveExtractor implements ImportArchiveExtractorInterface
                 );
             }
         } catch (ArchiveExtractionFailedException $e) {
-            if (Storage::exists($extractedDir)) {
-                Storage::deleteDirectory($extractedDir);
+            if ($this->importsTmpDisk->exists($extractedDir)) {
+                $this->importsTmpDisk->deleteDirectory($extractedDir);
             }
 
             throw $e;

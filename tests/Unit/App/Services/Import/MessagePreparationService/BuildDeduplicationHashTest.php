@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\App\Services\Import\MessagePreparationService;
 
 use App\Services\Import\MessagePreparationService;
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use Carbon\Carbon;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\MockObject\Exception;
@@ -20,7 +21,10 @@ final class BuildDeduplicationHashTest extends TestCase
      */
     public function test_builds_expected_hash_with_carbon_date(): void
     {
-        $service = new MessagePreparationService($this->createStub(MediaFileStorageService::class));
+        $service = new MessagePreparationService(
+            $this->createStub(ImportedMediaResolverService::class),
+            $this->createStub(MediaStorageInterface::class)
+        );
         $message = [
             'sent_at'            => Carbon::parse('2026-01-02 03:04:05'),
             'text'               => 'hello',
@@ -38,7 +42,10 @@ final class BuildDeduplicationHashTest extends TestCase
      */
     public function test_uses_raw_string_when_sent_at_is_unparseable(): void
     {
-        $service = new MessagePreparationService($this->createStub(MediaFileStorageService::class));
+        $service = new MessagePreparationService(
+            $this->createStub(ImportedMediaResolverService::class),
+            $this->createStub(MediaStorageInterface::class)
+        );
         $message = [
             'sent_at'            => 'not-a-date',
             'text'               => 't',

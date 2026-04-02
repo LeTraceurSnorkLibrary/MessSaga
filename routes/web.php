@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\ChatImportController;
+use App\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use LeTraceurSnork\CopyrightYearRange\CopyrightHelper;
@@ -19,6 +20,11 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/health/liveness', [HealthCheckController::class, 'liveness'])
+    ->name('health.liveness');
+Route::get('/health/readiness', [HealthCheckController::class, 'readiness'])
+    ->name('health.readiness');
 
 Route::middleware('auth')->group(function () {
     Route::post('/api/import/chats', [ChatImportController::class, 'store'])

@@ -9,7 +9,8 @@ use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,16 +41,20 @@ class ProcessConversationMediaUpload implements ShouldQueue
 
     /**
      * @param ParserRegistry                $parserRegistry
-     * @param MediaFileStorageService       $mediaFileStorageService
+     * @param ImportedMediaResolverService  $importedMediaResolverService
+     * @param MediaStorageInterface         $mediaStorage
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
      *
      * @return void
      */
     public function handle(
         ParserRegistry                $parserRegistry,
-        MediaFileStorageService       $mediaFileStorageService,
+        ImportedMediaResolverService  $importedMediaResolverService,
+        MediaStorageInterface         $mediaStorage,
         ImportArchiveExtractorFactory $archiveExtractorsFactory
     ): void {
+        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDisk     = Storage::disk($importsTmpDiskName);
         $extractedDir = null;
 
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
@@ -70,7 +75,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
             }
 
             // Для догрузки медиа нужен весь распакованный архив, а не messenger-specific media root.
-            $absoluteExtracted = Storage::path($extractedDir);
+            $absoluteExtracted = $importsTmpDisk->path($extractedDir);
 
             $parser   = $parserRegistry->get($conversation->messengerAccount->type);
             $relation = $parser->getMessagesRelation($conversation);
@@ -95,7 +100,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     continue;
                 }
 
-                $storedPath = $mediaFileStorageService->copyForMessage(
+                $storedPath = $importedMediaResolverService->copyForMessage(
                     $absoluteExtracted,
                     (string)$media->export_path,
                     $conversation->id,
@@ -105,7 +110,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     continue;
                 }
 
-                $mime = Storage::mimeType($storedPath);
+                $mime = $mediaStorage->mimeType($storedPath);
                 $media->update([
                     'stored_path'       => $storedPath,
                     'media_type'        => SupportedMediaTypesEnum::detect($mime
@@ -123,11 +128,11 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 'reason'          => $e->getMessage(),
             ]);
         } finally {
-            if (isset($extractedDir) && Storage::exists($extractedDir)) {
-                Storage::deleteDirectory($extractedDir);
+            if (isset($extractedDir) && $importsTmpDisk->exists($extractedDir)) {
+                $importsTmpDisk->deleteDirectory($extractedDir);
             }
-            if (Storage::exists($this->path)) {
-                Storage::delete($this->path);
+            if ($importsTmpDisk->exists($this->path)) {
+                $importsTmpDisk->delete($this->path);
             }
         }
     }

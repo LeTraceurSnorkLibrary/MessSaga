@@ -7,10 +7,10 @@ namespace Tests\Unit\App\Services\Import\MessagePreparationService;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Models\Message;
 use App\Services\Import\MessagePreparationService;
-use App\Services\Media\MediaFileStorageService;
+use App\Services\Media\ImportedMediaResolverService;
+use App\Services\Media\Storage\MediaStorageInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\MockObject\Exception;
 use Tests\TestCase;
@@ -25,7 +25,10 @@ final class PrepareMessageRowForInsertTest extends TestCase
      */
     public function test_prepares_row_filters_fillable_and_encrypts_text(): void
     {
-        $service = new MessagePreparationService($this->createStub(MediaFileStorageService::class));
+        $service = new MessagePreparationService(
+            $this->createStub(ImportedMediaResolverService::class),
+            $this->createStub(MediaStorageInterface::class)
+        );
         $message = [
             'external_id'            => 'ext-1',
             'sender_name'            => 'alice',
@@ -59,10 +62,18 @@ final class PrepareMessageRowForInsertTest extends TestCase
      */
     public function test_builds_media_payload_with_normalized_export_path_and_mime_type(): void
     {
-        Storage::shouldReceive('exists')->once()->with('conversations/1/media/file.mp3')->andReturn(true);
-        Storage::shouldReceive('mimeType')->once()->with('conversations/1/media/file.mp3')->andReturn('audio/mpeg');
+        $mediaStorage = $this->createMock(MediaStorageInterface::class);
+        $mediaStorage->expects($this->once())->method('exists')
+            ->with('conversations/1/media/file.mp3')
+            ->willReturn(true);
+        $mediaStorage->expects($this->once())->method('mimeType')
+            ->with('conversations/1/media/file.mp3')
+            ->willReturn('audio/mpeg');
 
-        $service = new MessagePreparationService($this->createStub(MediaFileStorageService::class));
+        $service = new MessagePreparationService(
+            $this->createStub(ImportedMediaResolverService::class),
+            $mediaStorage
+        );
         $result  = $service->prepareMessageRowForInsert(
             [
                 'external_id'            => 'x',
