@@ -2,7 +2,6 @@
 import MessengerCard from '../base/MessengerCard.vue';
 import TelegramIcon from '@/Components/particles/icons/Messengers/TelegramIcon.vue';
 import WhatsAppIcon from '@/Components/particles/icons/Messengers/WhatsAppIcon.vue';
-import VkIcon from '@/Components/particles/icons/Messengers/VkIcon.vue';
 </script>
 <template>
     <div class="mockup">
@@ -39,13 +38,9 @@ import VkIcon from '@/Components/particles/icons/Messengers/VkIcon.vue';
                         </MessengerCard>
                     </div>
                     <div class="mockup__grid-item">
-                        <MessengerCard name="ВКонтакте"
-                                       subtitle="87 сообщений"
-                                       variant="vk"
+                        <MessengerCard name="Скоро..."
+                                       placeholder
                         >
-                            <template #icon>
-                                <VkIcon/>
-                            </template>
                         </MessengerCard>
                     </div>
                 </div>
@@ -129,6 +124,7 @@ import VkIcon from '@/Components/particles/icons/Messengers/VkIcon.vue';
 }
 
 .mockup__grid-item {
+    display: grid;
     min-width: 175px;
     width: min-content;
 

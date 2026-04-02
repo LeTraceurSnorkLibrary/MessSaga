@@ -2,7 +2,6 @@
 import SectionTitle from '../Welcome/SectionTitle.vue';
 import TelegramIcon from '@/Components/particles/icons/Messengers/TelegramIcon.vue';
 import WhatsAppIcon from '@/Components/particles/icons/Messengers/WhatsAppIcon.vue';
-import VkIcon from '@/Components/particles/icons/Messengers/VkIcon.vue';
 import SupportedMessengerCard from '@/Components/base/SupportedMessengerCard.vue';
 </script>
 <template>
@@ -25,13 +24,6 @@ import SupportedMessengerCard from '@/Components/base/SupportedMessengerCard.vue
                 >
                     <template #icon>
                         <WhatsAppIcon/>
-                    </template>
-                </SupportedMessengerCard>
-                <SupportedMessengerCard name="ВКонтакте"
-                                        variant="vk"
-                >
-                    <template #icon>
-                        <VkIcon/>
                     </template>
                 </SupportedMessengerCard>
                 <SupportedMessengerCard name="Скоро..."
@@ -59,11 +51,7 @@ import SupportedMessengerCard from '@/Components/base/SupportedMessengerCard.vue
     gap: 1.5rem;
 
     @media (min-width: 768px) {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    @media (min-width: 1024px) {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 </style>
