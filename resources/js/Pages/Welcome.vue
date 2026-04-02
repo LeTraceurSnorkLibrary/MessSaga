@@ -23,10 +23,12 @@ defineProps({
     canLogin: Boolean,
     canRegister: Boolean,
     copyrightYear: String,
+    serviceName: String,
+    serviceTagline: String
 });
 </script>
 <template>
-    <Head title="MessSaga — Ваш личный архив воспоминаний"/>
+    <Head :title="`${serviceName} — ${serviceTagline}`"/>
 
     <div class="welcome-page">
         <WelcomeHeader :can-login="canLogin" :can-register="canRegister"/>
