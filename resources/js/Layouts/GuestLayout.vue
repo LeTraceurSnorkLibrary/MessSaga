@@ -80,16 +80,6 @@ import {Link} from '@inertiajs/vue3';
     margin-top: 1rem;
 }
 
-.guest-layout__card :deep(.form-actions a) {
-    font-size: 0.875rem;
-    color: var(--gray-600);
-    text-decoration: underline;
-}
-
-.guest-layout__card :deep(.form-actions a:hover) {
-    color: var(--gray-900);
-}
-
 .guest-layout__card :deep(.form-remember__label) {
     display: flex;
     align-items: center;

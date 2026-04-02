@@ -2,7 +2,8 @@
 import UIButton from '@/Components/UIButton.vue';
 import UIInput from '@/Components/base/UIInput.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import {Head, Link, useForm} from '@inertiajs/vue3';
+import {Head, useForm} from '@inertiajs/vue3';
+import UILink from "@/Components/UILink.vue";
 
 const form = useForm({
     name: '',
@@ -27,10 +28,10 @@ const submit = () => {
                 id="name"
                 v-model="form.name"
                 :error="form.errors.name"
-                label="Name"
                 autocomplete="name"
                 autofocus
-                required
+                label="Имя/логин"
+                placeholder="Можно не заполнять"
                 type="text"
             />
 
@@ -38,8 +39,8 @@ const submit = () => {
                 id="email"
                 v-model="form.email"
                 :error="form.errors.email"
-                label="Email"
                 autocomplete="username"
+                label="E-mail"
                 required
                 type="email"
             />
@@ -48,8 +49,8 @@ const submit = () => {
                 id="password"
                 v-model="form.password"
                 :error="form.errors.password"
-                label="Password"
                 autocomplete="new-password"
+                label="Пароль"
                 required
                 type="password"
             />
@@ -58,27 +59,36 @@ const submit = () => {
                 id="password_confirmation"
                 v-model="form.password_confirmation"
                 :error="form.errors.password_confirmation"
-                label="Confirm Password"
                 autocomplete="new-password"
+                label="Пароль заново"
                 required
                 type="password"
             />
 
             <div class="form-actions">
-                <Link
-                    :href="route('login')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Already registered?
-                </Link>
                 <UIButton
-                    type="submit"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
+                    type="submit"
                 >
-                    Register
+                    Зарегистрироваться
                 </UIButton>
+                <UILink :href="route('login')"
+                        theme="muted"
+                        variant="underlined"
+                >
+                    Есть аккаунт?
+                </UILink>
             </div>
         </form>
     </GuestLayout>
 </template>
+<style lang="scss" scoped>
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+</style>
