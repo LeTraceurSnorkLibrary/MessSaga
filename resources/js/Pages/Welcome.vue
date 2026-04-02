@@ -46,6 +46,33 @@ defineProps({
                 />
                 <div class="welcome-page__why-grid">
                     <AdvantageCard
+                        description="MessSaga бесплатна. Без рекламы, без назойливых подписок."
+                        title="Бесплатно"
+                        variant="green"
+                    >
+                        <template #icon>
+                            <DollarIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
+                        description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
+                        title="Навсегда"
+                        variant="rose"
+                    >
+                        <template #icon>
+                            <ClockIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
+                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
+                        title="С медиафайлами"
+                        variant="amber"
+                    >
+                        <template #icon>
+                            <ImgIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
                         description="Все сообщения шифруются перед сохранением. Только вы имеете доступ к своим данным."
                         title="Полная безопасность"
                         variant="purple"
@@ -61,33 +88,6 @@ defineProps({
                     >
                         <template #icon>
                             <UploadIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
-                        title="С медиафайлами"
-                        variant="amber"
-                    >
-                        <template #icon>
-                            <ImgIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="MessSaga абсолютно бесплатен. Без рекламы, без платных подписок."
-                        title="Бесплатно"
-                        variant="green"
-                    >
-                        <template #icon>
-                            <DollarIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
-                        title="Навсегда"
-                        variant="rose"
-                    >
-                        <template #icon>
-                            <ClockIcon/>
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
