@@ -1,9 +1,10 @@
 <script setup>
 import UIButton from '@/Components/UIButton.vue';
+import UILink from '@/Components/UILink.vue';
 import UIInput from '@/Components/base/UIInput.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import {Head, Link, useForm} from '@inertiajs/vue3';
+import {Head, useForm} from '@inertiajs/vue3';
 
 defineProps({
     canResetPassword: {
@@ -54,7 +55,19 @@ const submit = () => {
                 label="Пароль"
                 required
                 type="password"
-            />
+            >
+                <template #label>
+                    Пароль
+                    <UILink
+                        v-if="canResetPassword"
+                        :href="route('password.request')"
+                        theme="muted"
+                        variant="underlined"
+                    >
+                        <sub>(я не помню)</sub>
+                    </UILink>
+                </template>
+            </UIInput>
 
             <div class="form-remember">
                 <label class="form-remember__label">
@@ -64,19 +77,6 @@ const submit = () => {
             </div>
 
             <div class="form-actions">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Забыли пароль?
-                </Link>
-                <Link
-                    :href="route('register')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Зарегистрироваться
-                </Link>
                 <UIButton
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
@@ -85,6 +85,13 @@ const submit = () => {
                 >
                     Войти
                 </UIButton>
+                <UILink
+                    :href="route('register')"
+                    theme="muted"
+                    variant="underlined"
+                >
+                    Зарегистрироваться
+                </UILink>
             </div>
         </form>
     </GuestLayout>
@@ -92,7 +99,7 @@ const submit = () => {
 <style lang="scss" scoped>
 .form-actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
     justify-content: flex-end;
     gap: 0.75rem;

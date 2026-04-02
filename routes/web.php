@@ -11,9 +11,11 @@ use LeTraceurSnork\CopyrightYearRange\CopyrightHelper;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        'canLogin'      => Route::has('login'),
-        'canRegister'   => Route::has('register'),
-        'copyrightYear' => CopyrightHelper::getCopyrightString(config('messaga.start_year')),
+        'canLogin'       => Route::has('login'),
+        'canRegister'    => Route::has('register'),
+        'copyrightYear'  => CopyrightHelper::getCopyrightString(config('messaga.start_year')),
+        'serviceName'    => config('messaga.name'),
+        'serviceTagline' => config('messaga.tagline'),
     ]);
 });
 

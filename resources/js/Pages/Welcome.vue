@@ -23,10 +23,12 @@ defineProps({
     canLogin: Boolean,
     canRegister: Boolean,
     copyrightYear: String,
+    serviceName: String,
+    serviceTagline: String
 });
 </script>
 <template>
-    <Head title="MessSaga — Ваш личный архив воспоминаний"/>
+    <Head :title="`${serviceName} — ${serviceTagline}`"/>
 
     <div class="welcome-page">
         <WelcomeHeader :can-login="canLogin" :can-register="canRegister"/>
@@ -46,6 +48,33 @@ defineProps({
                 />
                 <div class="welcome-page__why-grid">
                     <AdvantageCard
+                        description="MessSaga бесплатна. Без рекламы, без назойливых подписок."
+                        title="Бесплатно"
+                        variant="green"
+                    >
+                        <template #icon>
+                            <DollarIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
+                        description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
+                        title="Навсегда"
+                        variant="rose"
+                    >
+                        <template #icon>
+                            <ClockIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
+                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
+                        title="С медиафайлами"
+                        variant="amber"
+                    >
+                        <template #icon>
+                            <ImgIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
                         description="Все сообщения шифруются перед сохранением. Только вы имеете доступ к своим данным."
                         title="Полная безопасность"
                         variant="purple"
@@ -64,24 +93,6 @@ defineProps({
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
-                        description="MessSaga абсолютно бесплатен. Без рекламы, без платных подписок."
-                        title="Бесплатно"
-                        variant="green"
-                    >
-                        <template #icon>
-                            <DollarIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="Ваши переписки не исчезнут, даже если аккаунт в мессенджере будет удалён."
-                        title="Навсегда"
-                        variant="rose"
-                    >
-                        <template #icon>
-                            <ClockIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
                         description="Найдите любое сообщение за секунды. Поиск по тексту, дате, контактам и мессенджерам."
                         in-progress
                         title="Умный поиск"
@@ -89,16 +100,6 @@ defineProps({
                     >
                         <template #icon>
                             <MagnifyingGlassIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
-                        in-progress
-                        title="С медиафайлами"
-                        variant="amber"
-                    >
-                        <template #icon>
-                            <ImgIcon/>
                         </template>
                     </AdvantageCard>
                 </div>

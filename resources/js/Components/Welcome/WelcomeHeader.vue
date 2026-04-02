@@ -1,20 +1,29 @@
 <script setup>
-import {Link} from '@inertiajs/vue3';
+import {computed} from 'vue';
+import {Link, usePage} from '@inertiajs/vue3';
 import WelcomeLogo from './WelcomeLogo.vue';
+import WelcomeUserProfileLink from './WelcomeUserProfileLink.vue';
 import LoginIcon from "@/Components/particles/icons/LoginIcon.vue";
 
 defineProps({
     canLogin: {type: Boolean, default: false},
     canRegister: {type: Boolean, default: false},
 });
+
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user ?? null);
 </script>
 <template>
     <header class="welcome-header">
         <nav class="welcome-header__nav">
             <WelcomeLogo to="/"/>
             <div class="welcome-header__links">
+                <WelcomeUserProfileLink
+                    v-if="authUser"
+                    :name="authUser.name"
+                />
                 <Link
-                    v-if="canLogin"
+                    v-else-if="canLogin"
                     :href="route('login')"
                     aria-label="Войти"
                     class="welcome-header__link"
