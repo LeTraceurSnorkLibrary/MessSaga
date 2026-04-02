@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\MediaAttachment;
+use App\Observers\MediaAttachmentObserver;
 use App\Services\Import\Archives\RarImportArchiveExtractor;
 use App\Services\Import\Archives\ZipImportArchiveExtractor;
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
@@ -72,6 +74,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        MediaAttachment::observe(MediaAttachmentObserver::class);
+
         Vite::prefetch(concurrency: 3);
 
         Validator::extend('phone', function ($attribute, $value, $parameters, $validator) {

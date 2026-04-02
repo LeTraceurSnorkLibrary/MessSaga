@@ -30,6 +30,25 @@ class Conversation extends Model
         'participants' => 'array',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Conversation $conversation): void {
+            MediaAttachment::query()
+                ->where('conversation_id', $conversation->id)
+                ->eachById(function (MediaAttachment $attachment): void {
+                    $attachment->delete();
+                });
+        });
+    }
+
+    /**
+     * @return HasMany<MediaAttachment, $this>
+     */
+    public function mediaAttachments(): HasMany
+    {
+        return $this->hasMany(MediaAttachment::class);
+    }
+
     /**
      * @return BelongsTo
      */
