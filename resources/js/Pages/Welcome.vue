@@ -64,6 +64,15 @@ defineProps({
                         </template>
                     </AdvantageCard>
                     <AdvantageCard
+                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
+                        title="С медиафайлами"
+                        variant="amber"
+                    >
+                        <template #icon>
+                            <ImgIcon/>
+                        </template>
+                    </AdvantageCard>
+                    <AdvantageCard
                         description="MessSaga абсолютно бесплатен. Без рекламы, без платных подписок."
                         title="Бесплатно"
                         variant="green"
@@ -89,16 +98,6 @@ defineProps({
                     >
                         <template #icon>
                             <MagnifyingGlassIcon/>
-                        </template>
-                    </AdvantageCard>
-                    <AdvantageCard
-                        description="Фото, видео, голосовые сообщения — всё сохраняется вместе с перепиской."
-                        in-progress
-                        title="С медиафайлами"
-                        variant="amber"
-                    >
-                        <template #icon>
-                            <ImgIcon/>
                         </template>
                     </AdvantageCard>
                 </div>
