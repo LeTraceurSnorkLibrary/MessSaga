@@ -137,7 +137,10 @@ async function onMediaFileSelected(event) {
                         {{ message.media?.export_path || message.media?.original_filename }}
                     </span>
                 </div>
-                <div v-if="message.text" class="message-thread__text">{{ message.text }}</div>
+                <div v-if="message.text"
+                     class="message-thread__text"
+                     v-html="message.text"
+                ></div>
             </div>
             <div v-if="!messages.length" class="message-thread__empty">Сообщений пока нет.</div>
         </div>

@@ -71,7 +71,7 @@ class TelegramParser extends AbstractParser implements ParserInterface
             // Путь к медиа в экспорте (для сопоставления при импорте архива и догрузке)
             $messageData['attachment_export_path'] = $this->getTelegramAttachmentExportPath($msg);
 
-            $messages[] = $messageData;
+            $messages[] = $this->prepareMessageText($messageData);
         }
 
         return new ConversationImportDTO($conversationData, $messages);
@@ -110,5 +110,4 @@ class TelegramParser extends AbstractParser implements ParserInterface
 
         return null;
     }
-
 }
