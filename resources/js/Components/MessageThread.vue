@@ -1,5 +1,6 @@
 <script setup>
 import {useDate} from '@/composables/useDate';
+import linkifyHtml from 'linkify-html';
 import {computed, ref} from 'vue';
 
 const props = defineProps({
@@ -30,6 +31,16 @@ function showAsVideo(message) {
 
 function triggerMediaUpload() {
     if (mediaUploadInput.value) mediaUploadInput.value.click();
+}
+
+/**
+ * Оборачивает ссылки в тег <a>
+ *
+ * @param text
+ * @returns {string}
+ */
+function messageDisplayHtml(text) {
+    return linkifyHtml(text);
 }
 
 async function onMediaFileSelected(event) {
@@ -139,7 +150,7 @@ async function onMediaFileSelected(event) {
                 </div>
                 <div v-if="message.text"
                      class="message-thread__text"
-                     v-html="message.text"
+                     v-html="messageDisplayHtml(message.text)"
                 ></div>
             </div>
             <div v-if="!messages.length" class="message-thread__empty">Сообщений пока нет.</div>

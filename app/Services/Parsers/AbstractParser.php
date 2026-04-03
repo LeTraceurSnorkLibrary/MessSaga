@@ -51,7 +51,7 @@ abstract class AbstractParser implements ParserInterface
     abstract public function parse(string $path): ConversationImportDTO;
 
     /**
-     * Подготавливает текст сообщения для записи в БД с помощью {@see MessagePreparer}
+     * Экранирует текст сообщения для записи в БД.
      *
      * @param array<string, mixed> $message
      *
