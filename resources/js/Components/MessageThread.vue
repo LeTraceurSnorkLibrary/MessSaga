@@ -40,7 +40,10 @@ function triggerMediaUpload() {
  * @returns {string}
  */
 function messageDisplayHtml(text) {
-    return linkifyHtml(text);
+    return linkifyHtml(text, {
+        rel: 'nofollow noopener noreferrer',
+        target: '_blank'
+    });
 }
 
 async function onMediaFileSelected(event) {
