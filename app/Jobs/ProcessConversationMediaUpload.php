@@ -55,7 +55,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
     ): void {
         $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
         $importsTmpDisk     = Storage::disk($importsTmpDiskName);
-        $extractedDir = null;
+        $extractedDir       = null;
 
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
         if (!$conversation || $conversation->messengerAccount->user_id !== $this->userId) {

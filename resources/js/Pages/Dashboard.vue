@@ -301,6 +301,7 @@ loadConversations();
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    min-width: 0;
 }
 
 .dashboard-page__tabs {
@@ -311,18 +312,21 @@ loadConversations();
     display: grid;
     grid-template-columns: 1fr;
     gap: 1rem;
+    min-width: 0;
 
     @media (min-width: 768px) {
-        grid-template-columns: 1fr 2fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     }
 }
 
 .dashboard-page__sidebar {
     min-height: 0;
+    min-width: 0;
 }
 
 .dashboard-page__thread {
     min-height: 24rem;
+    min-width: 0;
 }
 
 .import-mode-selector {

@@ -1,5 +1,6 @@
 <script setup>
 import {useDate} from '@/composables/useDate';
+import linkifyHtml from 'linkify-html';
 import {computed, ref} from 'vue';
 
 const props = defineProps({
@@ -30,6 +31,19 @@ function showAsVideo(message) {
 
 function triggerMediaUpload() {
     if (mediaUploadInput.value) mediaUploadInput.value.click();
+}
+
+/**
+ * Оборачивает ссылки в тег <a>
+ *
+ * @param text
+ * @returns {string}
+ */
+function messageDisplayHtml(text) {
+    return linkifyHtml(text, {
+        rel: 'nofollow noopener noreferrer',
+        target: '_blank'
+    });
 }
 
 async function onMediaFileSelected(event) {
@@ -137,7 +151,10 @@ async function onMediaFileSelected(event) {
                         {{ message.media?.export_path || message.media?.original_filename }}
                     </span>
                 </div>
-                <div v-if="message.text" class="message-thread__text">{{ message.text }}</div>
+                <div v-if="message.text"
+                     class="message-thread__text"
+                     v-html="messageDisplayHtml(message.text)"
+                ></div>
             </div>
             <div v-if="!messages.length" class="message-thread__empty">Сообщений пока нет.</div>
         </div>
@@ -152,6 +169,7 @@ async function onMediaFileSelected(event) {
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-width: 0;
 }
 
 .message-thread__head {
@@ -163,10 +181,14 @@ async function onMediaFileSelected(event) {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
     color: var(--gray-600);
+    min-width: 0;
 }
 
 .message-thread__title {
     font-weight: 600;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .message-thread__head-actions {
@@ -227,11 +249,13 @@ async function onMediaFileSelected(event) {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    min-width: 0;
 }
 
 .message-thread__message {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .message-thread__meta {
@@ -251,6 +275,13 @@ async function onMediaFileSelected(event) {
     font-size: 0.875rem;
     color: var(--gray-800);
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.message-thread__text :deep(a) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .message-thread__attachment {

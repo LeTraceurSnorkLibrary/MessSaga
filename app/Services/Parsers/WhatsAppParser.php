@@ -7,6 +7,7 @@ namespace App\Services\Parsers;
 use App\DTO\ConversationImportDTO;
 use App\Factories\Models\Messages\WhatsAppMessageBuilder;
 use App\Models\WhatsAppMessage;
+use App\Services\Import\Preparations\MessagePreparer;
 use App\Services\Parsers\WhatsApp\LineTypeEnum;
 use App\Services\Parsers\WhatsApp\WhatsAppContentParser;
 use InvalidArgumentException;
@@ -20,13 +21,16 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
     public const PARSER_CORRESPONDING_MESSAGE_MODEL = WhatsAppMessage::class;
 
     /**
+     * @param MessagePreparer        $messagePreparer
      * @param WhatsAppContentParser  $contentParser
      * @param WhatsAppMessageBuilder $messageBuilder
      */
     public function __construct(
+        MessagePreparer                         $messagePreparer,
         private readonly WhatsAppContentParser  $contentParser,
         private readonly WhatsAppMessageBuilder $messageBuilder,
     ) {
+        parent::__construct($messagePreparer);
     }
 
     /**
@@ -63,7 +67,7 @@ class WhatsAppParser extends AbstractParser implements ParserInterface
         $groups = $this->groupLinesByType($lines);
 
         return array_map(
-            fn(array $group) => $this->processGroup($group),
+            fn(array $group) => $this->prepareMessageText($this->processGroup($group)),
             $groups
         );
     }

@@ -7,6 +7,7 @@ namespace App\Services\Parsers;
 use App\DTO\ConversationImportDTO;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Services\Import\Preparations\MessagePreparer;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 abstract class AbstractParser implements ParserInterface
@@ -19,6 +20,14 @@ abstract class AbstractParser implements ParserInterface
      * @see Message
      */
     public const PARSER_CORRESPONDING_MESSAGE_MODEL = Message::class;
+
+    /**
+     * @param MessagePreparer $messagePreparer
+     */
+    public function __construct(
+        protected readonly MessagePreparer $messagePreparer
+    ) {
+    }
 
     /**
      * @inheritDoc
@@ -40,4 +49,21 @@ abstract class AbstractParser implements ParserInterface
      * @inheritDoc
      */
     abstract public function parse(string $path): ConversationImportDTO;
+
+    /**
+     * Экранирует текст сообщения для записи в БД.
+     *
+     * @param array<string, mixed> $message
+     *
+     * @return array<string, mixed>
+     */
+    protected function prepareMessageText(array $message): array
+    {
+        $text = $message['text'] ?? null;
+        if (is_string($text)) {
+            $message['text'] = $this->messagePreparer->prepare($text);
+        }
+
+        return $message;
+    }
 }
