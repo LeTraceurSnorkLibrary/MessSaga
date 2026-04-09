@@ -110,7 +110,7 @@ class ImportedMediaResolverService
         $exactPath = $this->tryResolveByExportPath($root, $attachmentExportPath);
         if ($exactPath !== null) {
             return [
-                'source' => $exactPath,
+                'source'   => $exactPath,
                 'basename' => FilenameSanitizer::sanitize(basename(str_replace('\\', '/', $attachmentExportPath))),
             ];
         }
@@ -123,7 +123,7 @@ class ImportedMediaResolverService
             $found = $this->findUniqueFileByBasename($root, $sanitizedCandidate);
             if ($found !== null) {
                 return [
-                    'source' => $found,
+                    'source'   => $found,
                     'basename' => $sanitizedCandidate,
                 ];
             }
@@ -131,8 +131,8 @@ class ImportedMediaResolverService
 
         Log::debug('Import media file not found', [
             'export_path' => $attachmentExportPath,
-            'basename' => basename(str_replace('\\', '/', $attachmentExportPath)),
-            'root' => $mediaRootPath,
+            'basename'    => basename(str_replace('\\', '/', $attachmentExportPath)),
+            'root'        => $mediaRootPath,
         ]);
 
         return null;
@@ -156,7 +156,7 @@ class ImportedMediaResolverService
         }
 
         $relativePath = ltrim($relativePath, '/');
-        $parts = explode('/', $relativePath);
+        $parts        = explode('/', $relativePath);
         if (in_array('..', $parts, true)) {
             return null;
         }
@@ -167,7 +167,7 @@ class ImportedMediaResolverService
         }
 
         $candidateReal = realpath($candidate);
-        $rootReal = realpath($root);
+        $rootReal      = realpath($root);
         if ($candidateReal === false || $rootReal === false) {
             return null;
         }
@@ -217,7 +217,7 @@ class ImportedMediaResolverService
     private function extractCandidateBasenames(string $attachmentExportPath): array
     {
         $normalized = str_replace('\\', '/', $attachmentExportPath);
-        $basename = basename($normalized);
+        $basename   = basename($normalized);
         $candidates = [$basename];
 
         if (!str_contains($normalized, '/')) {
@@ -254,7 +254,7 @@ class ImportedMediaResolverService
             return null;
         }
 
-        $index = $this->getBasenameIndex($dir);
+        $index   = $this->getBasenameIndex($dir);
         $matches = $index[$target] ?? [];
 
         if (count($matches) === 1) {
@@ -263,8 +263,8 @@ class ImportedMediaResolverService
         if (count($matches) > 1) {
             Log::warning('Import media file match is ambiguous', [
                 'basename' => $basename,
-                'root' => $dir,
-                'count' => count($matches),
+                'root'     => $dir,
+                'count'    => count($matches),
             ]);
         }
 
