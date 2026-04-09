@@ -1,9 +1,9 @@
 <script setup>
 defineProps({
-    conversations: { type: Array, default: () => [] },
-    loading: { type: Boolean, default: false },
-    selectionMode: { type: Boolean, default: false },
-    selectedId: { type: Number, default: null },
+    conversations: {type: Array, default: () => []},
+    loading: {type: Boolean, default: false},
+    selectionMode: {type: Boolean, default: false},
+    selectedId: {type: Number, default: null},
 });
 
 const emit = defineEmits(['select']);
@@ -50,6 +50,7 @@ const handleItemClick = (conversation) => {
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: var(--gray-0);
+    min-width: 0;
 }
 
 .conv-list__head {
@@ -97,6 +98,7 @@ const handleItemClick = (conversation) => {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
+    min-width: 0;
 }
 
 .conv-list__radio {
@@ -124,18 +126,25 @@ const handleItemClick = (conversation) => {
 
 .conv-list__content {
     flex: 1;
+    min-width: 0;
 }
 
 .conv-list__title {
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--gray-800);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .conv-list__preview {
     margin-top: 0.25rem;
     font-size: 0.75rem;
     color: var(--gray-500);
+    white-space: nowrap;
+    overflow: clip;
+    text-overflow: ellipsis;
+    word-break: break-word;
 }
 
 .conv-list__empty {
