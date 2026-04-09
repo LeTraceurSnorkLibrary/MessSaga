@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('role')->default('user')->index();
             $table->rememberToken();
             $table->string('encryption_salt', 64)->nullable(); // соль для E2E-шифрования сообщений
             $table->timestamps();
