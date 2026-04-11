@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
+    /**
+     * @inheritdoc
+     */
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
@@ -37,6 +40,9 @@ class UserResource extends Resource
         return UsersTable::configure($table);
     }
 
+    /**
+     * @inheritdoc
+     */
     public static function getPages(): array
     {
         return [
@@ -44,6 +50,9 @@ class UserResource extends Resource
         ];
     }
 
+    /**
+     * @inheritdoc
+     */
     public static function getEloquentQuery(): Builder
     {
         return UserMessageCountAggregates::withTotalMessagesCount(

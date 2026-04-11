@@ -9,6 +9,13 @@ use Filament\Tables\Table;
 
 class UsersTable
 {
+    /**
+     * Конфигурирует таблицу "Список пользователей" для Filament-админки
+     *
+     * @param Table $table
+     *
+     * @return Table
+     */
     public static function configure(Table $table): Table
     {
         return $table
