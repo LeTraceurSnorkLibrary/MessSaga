@@ -4,8 +4,12 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import HomeIcon from "@/Components/particles/icons/HomeIcon.vue";
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import {Link} from '@inertiajs/vue3';
-import {onMounted, onUnmounted, ref} from 'vue';
+import {Link, usePage} from '@inertiajs/vue3';
+import {computed, onMounted, onUnmounted, ref} from 'vue';
+import AdminPanelIcon from '@/Components/particles/icons/AdminPanelIcon.vue';
+
+const page = usePage();
+const adminPanelUrl = computed(() => page.props.filament?.adminPanelUrl ?? null);
 
 const showingNavigationDropdown = ref(false);
 
@@ -22,9 +26,14 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
             <nav class="auth-layout__nav">
                 <div class="auth-layout__nav-inner">
                     <div class="auth-layout__logo">
-                        <Link class="auth-layout__logo-link" href="/">
-                            <HomeIcon class="auth-layout__logo-svg"/>
-                        </Link>
+                        <div class="auth-layout__logo-cluster">
+                            <Link class="auth-layout__logo-link"
+                                  href="/"
+                                  title="На главную"
+                            >
+                                <HomeIcon class="auth-layout__logo-svg"/>
+                            </Link>
+                        </div>
                     </div>
 
                     <div class="auth-layout__menu">
@@ -35,6 +44,15 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
                     </div>
 
                     <div class="auth-layout__user">
+                        <a
+                            v-if="adminPanelUrl"
+                            :href="adminPanelUrl"
+                            aria-label="Админ-панель"
+                            class="auth-layout__admin-link"
+                            title="Админ-панель"
+                        >
+                            <AdminPanelIcon/>
+                        </a>
                         <Dropdown align="right" width="48">
                             <template #trigger>
                                 <span class="auth-layout__trigger-wrap">
@@ -84,6 +102,14 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
                     <div class="auth-layout__mobile-links">
                         <ResponsiveNavLink :active="route().current('dashboard')" :href="route('dashboard')">
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="adminPanelUrl"
+                            :active="false"
+                            :href="adminPanelUrl"
+                            external
+                        >
+                            Админ-панель
                         </ResponsiveNavLink>
                     </div>
                     <div class="auth-layout__mobile-user">
@@ -152,6 +178,12 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
     flex-shrink: 0;
 }
 
+.auth-layout__logo-cluster {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .auth-layout__logo-link {
     display: block;
 }
@@ -159,6 +191,20 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 .auth-layout__logo-svg {
     height: 2.25rem;
     width: auto;
+}
+
+.auth-layout__admin-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    width: 28px;
+    color: var(--gray-500);
+    transition: color .2s ease;
+
+    &:hover {
+        color: var(--orange-600);
+    }
 }
 
 .auth-layout__user {
@@ -205,6 +251,7 @@ onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
 .auth-layout__hamburger {
     display: flex;
     align-items: center;
+    margin-left: auto;
     margin-right: -0.5rem;
 
     @media (min-width: 640px) {

@@ -3,7 +3,7 @@
 use Filament\Support\Icons\Heroicon;
 
 ?>
-<div class="fi-topbar-home-link flex shrink-0 items-center pe-1">
+<div class="fi-topbar-app-links flex shrink-0 items-center gap-1 pe-1">
     <x-filament::icon-button
         color="gray"
         :icon="Heroicon::OutlinedHome"
