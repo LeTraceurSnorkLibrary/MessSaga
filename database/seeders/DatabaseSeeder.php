@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Enums\UserRoleEnum;
@@ -16,10 +18,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name'  => 'Test User',
-            'email' => 'test@example.com',
-            'role'  => UserRoleEnum::ADMIN->value,
-        ]);
+        if (!app()->isProduction()) {
+            User::factory()->create([
+                'name'  => 'Test User',
+                'email' => 'test@example.com',
+                'role'  => UserRoleEnum::ADMIN->value,
+            ]);
+        }
     }
 }
