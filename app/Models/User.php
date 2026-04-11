@@ -57,18 +57,6 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * @param string $role
-     *
-     * @return $this
-     */
-    public function assignRole(string $role): static
-    {
-        $this->role = $role;
-
-        return $this;
-    }
-
-    /**
      * @param Panel $panel
      *
      * @return bool
