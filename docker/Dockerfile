@@ -28,6 +28,7 @@ WORKDIR /app
 
 COPY --from=composer_deps /app/vendor ./vendor
 COPY package.json package-lock.json ./
+
 RUN npm ci --no-audit --no-fund
 
 COPY resources ./resources
@@ -59,6 +60,7 @@ COPY --from=composer_deps /app/vendor ./vendor
 COPY --from=frontend_build /app/public/build ./public/build
 
 RUN rm -f bootstrap/cache/*.php \
+    && php artisan filament:assets --ansi \
     && touch database/database.sqlite \
     && chown -R www-data:www-data database storage bootstrap/cache \
     && chmod -R ug+rwx database storage bootstrap/cache
