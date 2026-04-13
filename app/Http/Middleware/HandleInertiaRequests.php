@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -31,10 +33,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+            ],
+            'filament' => [
+                'adminPanelUrl' => $user instanceof User && $user->canAccessPanel(Filament::getPanel('admin'))
+                    ? Filament::getPanel('admin')->getUrl()
+                    : null,
             ],
         ];
     }

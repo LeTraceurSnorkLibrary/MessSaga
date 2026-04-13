@@ -10,8 +10,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as InertiaResponse;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -28,14 +30,23 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
+     *
+     * @param LoginRequest $request
+     *
+     * @throws ValidationException
+     * @return InertiaResponse
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request): InertiaResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $intended = $request->session()->get('url.intended');
+        $location = is_string($intended)
+            ? $intended
+            : 'dashboard';
+
+        return Inertia::location($location);
     }
 
     /**

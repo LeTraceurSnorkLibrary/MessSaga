@@ -23,8 +23,12 @@ setup: ## Полная установка с нуля: .env, APP_KEY, БД, за
 	@php artisan migrate
 	@echo "→ Собираем фронтенд..."
 	@$(MAKE) build
+	@composer run post-install-cmd
 	@echo ""
 	@echo "Готово. Запуск: make run  (или make serve + make queue + make dev в отдельных терминалах)"
+
+assets: ## Собрать ассеты
+	composer run post-install-cmd
 
 db-init: ## Инициализировать БД (выполнить миграции). Для MySQL перед этим: make db-mysql-up
 	php artisan migrate

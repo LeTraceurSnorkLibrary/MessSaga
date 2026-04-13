@@ -14,8 +14,10 @@
     ],
     "require": {
         "php": "^8.4",
+        "ext-intl": "*",
         "ext-pdo": "*",
         "ext-zip": "*",
+        "filament/filament": "5.5.0",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.56",
         "laravel/sanctum": "^4.3",

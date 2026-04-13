@@ -12,6 +12,11 @@
 /tests/clover
 /tests/report
 *.cache
+## Public part (compiled assets, etc.)
+/public/assets
+/public/build
+/public/hot
+/public/storage
 
 # Environment
 .env
@@ -25,9 +30,6 @@
 .DS_Store
 .phpactor.json
 /auth.json
-/public/build
-/public/hot
-/public/storage
 Homestead.json
 Homestead.yaml
 Thumbs.db
