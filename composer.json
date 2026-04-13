@@ -14,6 +14,7 @@
     ],
     "require": {
         "php": "^8.4",
+        "ext-intl": "*",
         "ext-pdo": "*",
         "ext-zip": "*",
         "filament/filament": "5.5.0",
