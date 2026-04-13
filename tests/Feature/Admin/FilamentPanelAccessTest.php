@@ -55,4 +55,23 @@ class FilamentPanelAccessTest extends TestCase
 
         $this->actingAs($admin)->get('/manage/users')->assertOk();
     }
+
+    public function test_inertia_login_with_manage_intended_for_non_admin_forces_full_page_manage_navigation(): void
+    {
+        $user = User::factory()->create([
+            'role' => UserRoleEnum::USER->value,
+        ]);
+
+        $response = $this
+            ->withHeader('X-Inertia', 'true')
+            ->withSession(['url.intended' => url('/manage')])
+            ->post('/login', [
+                'email'    => $user->email,
+                'password' => 'password',
+            ]);
+
+        $response
+            ->assertStatus(409)
+            ->assertHeader('X-Inertia-Location', url('/manage'));
+    }
 }
