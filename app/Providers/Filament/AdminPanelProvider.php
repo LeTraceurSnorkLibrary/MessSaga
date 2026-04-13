@@ -54,11 +54,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::TOPBAR_LOGO_BEFORE,
-                fn (): string => view('filament.admin.topbar-app-links')->render(),
+                fn(): string => view('filament.admin.topbar-app-links')->render(),
             )
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
-                fn (): string => view('filament.admin.topbar-user-dashboard-link')->render(),
+                fn(): string => view('filament.admin.topbar-user-dashboard-link')->render(),
             );
     }
 }
