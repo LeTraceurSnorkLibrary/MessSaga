@@ -45,10 +45,25 @@ onUnmounted(() => {
             </svg>
         </button>
         <Teleport to="body">
-            <Transition name="hamburger">
-                <div v-if="open" class="hamburger__portal">
-                    <div aria-hidden="true" class="hamburger__backdrop" @click="close"/>
-                    <div aria-modal="true" class="hamburger__sheet" role="dialog">
+            <div class="hamburger__portal" :style="{ pointerEvents: open ? 'auto' : 'none' }">
+                <Transition enter-active-class="hamburger__backdrop-transition-active"
+                            enter-from-class="hamburger__backdrop-transition-enter-start"
+                            enter-to-class="hamburger__backdrop-transition-enter-end"
+                            leave-active-class="hamburger__backdrop-transition-active"
+                            leave-from-class="hamburger__backdrop-transition-leave-start"
+                            leave-to-class="hamburger__backdrop-transition-leave-end"
+                >
+                    <div v-if="open" aria-hidden="true" class="hamburger__backdrop" @click="close"/>
+                </Transition>
+
+                <Transition enter-active-class="hamburger__sheet-transition-active"
+                            enter-from-class="hamburger__sheet-transition-enter-start"
+                            enter-to-class="hamburger__sheet-transition-enter-end"
+                            leave-active-class="hamburger__sheet-transition-active"
+                            leave-from-class="hamburger__sheet-transition-leave-start"
+                            leave-to-class="hamburger__sheet-transition-leave-end"
+                >
+                    <div v-if="open" aria-modal="true" class="hamburger__sheet" role="dialog">
                         <div class="hamburger__closer">
                             <slot :close="close" name="closer">
                                 <button
@@ -69,8 +84,8 @@ onUnmounted(() => {
                             <slot :close="close"/>
                         </div>
                     </div>
-                </div>
-            </Transition>
+                </Transition>
+            </div>
         </Teleport>
     </div>
 </template>

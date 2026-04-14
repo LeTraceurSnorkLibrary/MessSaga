@@ -1,0 +1,25 @@
+@media (max-width: 1023px) {
+    .fi-topbar-open-sidebar-btn,
+    .fi-topbar-close-sidebar-btn,
+    .fi-topbar-end .fi-topbar-user-dashboard-link,
+    .fi-topbar-end .fi-user-menu {
+        display: none !important;
+    }
+
+    .fi-topbar-start {
+        display: flex !important;
+        margin-inline-end: 0;
+    }
+
+    .fi-sidebar,
+    .fi-sidebar-close-overlay {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .fi-topbar-mobile-hamburger,
+    .fi-sidebar-mobile-hamburger-panel {
+        display: none !important;
+    }
+}

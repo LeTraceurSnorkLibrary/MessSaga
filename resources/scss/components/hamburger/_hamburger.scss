@@ -29,13 +29,13 @@
     position: fixed;
     inset: 0;
     z-index: 200;
-    pointer-events: auto;
 }
 
 .hamburger__backdrop {
     position: absolute;
     inset: 0;
     pointer-events: auto;
+    opacity: 1;
     background: rgb(15 23 42 / 45%);
 }
 
@@ -93,29 +93,31 @@
     overflow-y: auto;
 }
 
-.hamburger-enter-active,
-.hamburger-leave-active {
-    transition: opacity 0.28s ease;
-
-    .hamburger__sheet {
-        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+.hamburger__sheet-transition-active {
+    transform-origin: right center;
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.hamburger-enter-from,
-.hamburger-leave-to {
+.hamburger__sheet-transition-enter-start,
+.hamburger__sheet-transition-leave-end {
+    transform: translateX(100%);
+}
+
+.hamburger__sheet-transition-enter-end,
+.hamburger__sheet-transition-leave-start {
+    transform: translateX(0);
+}
+
+.hamburger__backdrop-transition-active {
+    transition: opacity 220ms ease;
+}
+
+.hamburger__backdrop-transition-enter-start,
+.hamburger__backdrop-transition-leave-end {
     opacity: 0;
-
-    .hamburger__sheet {
-        transform: translateX(100%);
-    }
 }
 
-.hamburger-enter-to,
-.hamburger-leave-from {
+.hamburger__backdrop-transition-enter-end,
+.hamburger__backdrop-transition-leave-start {
     opacity: 1;
-
-    .hamburger__sheet {
-        transform: translateX(0);
-    }
 }

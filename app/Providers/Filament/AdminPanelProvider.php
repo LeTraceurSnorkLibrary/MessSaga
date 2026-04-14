@@ -59,6 +59,14 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn(): string => view('filament.admin.topbar-user-dashboard-link')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn(): string => view('filament.admin.head-assets')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_END,
+                fn(): string => view('filament.admin.topbar-mobile-hamburger')->render(),
             );
     }
 }
