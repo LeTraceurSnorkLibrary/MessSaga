@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Models\Conversation;
 use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
+use App\Models\User;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\ImportedMediaResolverService;
@@ -59,6 +60,11 @@ class ProcessConversationMediaUpload implements ShouldQueue
 
         $conversation = Conversation::with('messengerAccount')->find($this->conversationId);
         if (!$conversation || $conversation->messengerAccount->user_id !== $this->userId) {
+            return;
+        }
+
+        $user = User::find($this->userId);
+        if (!$user || !$user->canUploadMedia()) {
             return;
         }
 

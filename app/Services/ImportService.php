@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\MediaAttachment;
 use App\Models\MessengerAccount;
+use App\Models\User;
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\DTO\PreparedMessageRowResult;
 use App\Services\Import\MessageInsertService;
@@ -22,13 +23,13 @@ use RuntimeException;
 class ImportService
 {
     /**
-     * @param ParserRegistry          $parserRegistry
+     * @param ParserRegistry            $parserRegistry
      * @param MessagePreparationService $messagePreparationService
      * @param MessageInsertService      $messageInsertService
      * @param MediaStorageInterface     $mediaStorage
      */
     public function __construct(
-        protected ParserRegistry          $parserRegistry,
+        protected ParserRegistry            $parserRegistry,
         protected MessagePreparationService $messagePreparationService,
         protected MessageInsertService      $messageInsertService,
         protected MediaStorageInterface     $mediaStorage,
@@ -115,6 +116,9 @@ class ImportService
             return;
         }
 
+        $user           = User::query()->find($userId);
+        $canUploadMedia = $user?->canUploadMedia() ?? false;
+
         $messagesRelation    = $parser->getMessagesRelation($conversation);
         $existingExternalIds = $messagesRelation
             ->whereNotNull('external_id')
@@ -146,11 +150,16 @@ class ImportService
             }
             $existingDedupHashes->put($dedupHash, true);
 
-            $attachmentStoredPath = $this->messagePreparationService->copyAttachmentForMessage(
-                $mediaRootPath,
-                $message,
-                $conversation->id
-            );
+            $attachmentStoredPath = null;
+            if ($canUploadMedia) {
+                $attachmentStoredPath = $this->messagePreparationService->copyAttachmentForMessage(
+                    $mediaRootPath,
+                    $message,
+                    $conversation->id
+                );
+            } else {
+                $message['attachment_export_path'] = null;
+            }
             if ($attachmentStoredPath !== null) {
                 $copiedMediaPaths[$attachmentStoredPath] = true;
             }
