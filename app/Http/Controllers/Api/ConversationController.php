@@ -21,11 +21,11 @@ use Teapot\StatusCode\Http;
 class ConversationController extends Controller
 {
     /**
-     * @param ParserRegistry       $parserRegistry
+     * @param ParserRegistry        $parserRegistry
      * @param MediaStorageInterface $mediaStorage
      */
     public function __construct(
-        private readonly ParserRegistry $parserRegistry,
+        private readonly ParserRegistry        $parserRegistry,
         private readonly MediaStorageInterface $mediaStorage
     ) {
     }
@@ -211,6 +211,7 @@ class ConversationController extends Controller
     public function uploadMedia(Request $request, Conversation $conversation): JsonResponse
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
+        abort_unless($request->user()->canUploadMedia(), Http::PAYMENT_REQUIRED, 'Загрузка медиа недоступна на текущем тарифе.');
 
         $request->validate([
             'file' => 'required|file|mimes:zip|max:262144',

@@ -6,6 +6,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserRoleEnum;
+use App\Tariffs\Contracts\TariffInterface;
+use App\Tariffs\TariffCatalog;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -32,6 +34,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
+        'tariff_code',
         'encryption_salt',
     ];
 
@@ -72,6 +75,22 @@ class User extends Authenticatable implements FilamentUser
     public function messengerAccounts(): HasMany
     {
         return $this->hasMany(MessengerAccount::class);
+    }
+
+    /**
+     * @return TariffInterface
+     */
+    public function tariff(): TariffInterface
+    {
+        return TariffCatalog::forCode($this->tariff_code);
+    }
+
+    /**
+     * @return bool
+     */
+    public function canUploadMedia(): bool
+    {
+        return $this->tariff()->allowsMediaUpload();
     }
 
     /**
