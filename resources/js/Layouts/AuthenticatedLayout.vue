@@ -4,6 +4,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import HamburgerPanel from '@/Components/layout/HamburgerPanel.vue';
 import Hamburger from '@/Components/layout/Hamburger.vue';
+import TariffQuotaProgressBar from '@/Components/layout/TariffQuotaProgressBar.vue';
 import HomeIcon from "@/Components/particles/icons/HomeIcon.vue";
 import {Link, usePage} from '@inertiajs/vue3';
 import {computed} from 'vue';
@@ -11,6 +12,7 @@ import AdminPanelIcon from '@/Components/particles/icons/AdminPanelIcon.vue';
 
 const page = usePage();
 const adminPanelUrl = computed(() => page.props.filament?.adminPanelUrl ?? null);
+const quota = computed(() => page.props.auth?.quota ?? null);
 </script>
 <template>
     <div class="auth-layout">
@@ -33,6 +35,7 @@ const adminPanelUrl = computed(() => page.props.filament?.adminPanelUrl ?? null)
                     </div>
 
                     <div class="auth-layout__user">
+                        <TariffQuotaProgressBar :quota="quota" />
                         <a
                             v-if="adminPanelUrl"
                             :href="adminPanelUrl"
@@ -171,6 +174,7 @@ const adminPanelUrl = computed(() => page.props.filament?.adminPanelUrl ?? null)
 .auth-layout__user {
     display: none;
     margin-left: auto;
+    column-gap: 0.75rem;
 
     @media (min-width: 768px) {
         display: flex;

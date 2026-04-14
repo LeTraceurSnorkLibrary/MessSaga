@@ -34,11 +34,31 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $quota = null;
+        if ($user instanceof User) {
+            $quota = [
+                'tariff' => [
+                    'code' => $user->tariff()->getName(),
+                    'label' => $user->tariff()->getLabel(),
+                ],
+                'storage' => [
+                    'used' => $user->getUsedMediaStorageBytes(),
+                    'limit' => $user->tariff()->getMaxStorageBytes(),
+                    'remaining' => $user->getRemainingMediaStorageBytes(),
+                ],
+                'files' => [
+                    'used' => $user->getUsedMediaFilesCount(),
+                    'limit' => $user->tariff()->getMaxMediaFilesCount(),
+                    'remaining' => $user->getRemainingMediaFilesCount(),
+                ],
+            ];
+        }
 
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $user,
+                'quota' => $quota,
             ],
             'filament' => [
                 'adminPanelUrl' => $user instanceof User && $user->canAccessPanel(Filament::getPanel('admin'))
