@@ -19,11 +19,11 @@ class FreeTariff extends AbstractTariff
     /**
      * @inheritdoc
      */
-    public const int MAX_STORAGE_BYTES = 1;
+    public const int MAX_STORAGE_BYTES = 12 * 1024 * 1024;
 
     /**
      * @inheritdoc
      */
-    public const int MAX_MEDIA_FILES_COUNT = 1;
+    public const int MAX_MEDIA_FILES_COUNT = 100;
 }
 

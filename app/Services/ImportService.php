@@ -116,8 +116,11 @@ class ImportService
             return;
         }
 
-        $user           = User::query()->find($userId);
-        $canUploadMedia = $user?->canUploadMedia() ?? false;
+        $user             = User::query()->find($userId);
+        $tariffAllowsMedia = $user?->tariff()->allowsMediaUpload() ?? false;
+        $canUploadMedia   = $user?->canUploadMedia() ?? false;
+        $usedStorageBytes = $user?->getUsedMediaStorageBytes() ?? 0;
+        $usedMediaFiles   = $user?->getUsedMediaFilesCount() ?? 0;
 
         $messagesRelation    = $parser->getMessagesRelation($conversation);
         $existingExternalIds = $messagesRelation
@@ -134,7 +137,51 @@ class ImportService
         $preparedMessages  = [];
         $copiedMediaPaths  = [];
         $messageModelClass = $parser->getMessageModelClass();
-        foreach ($importedConversation->getMessages() as $message) {
+        $messages          = $importedConversation->getMessages();
+
+        $allowedAttachmentIndexes = [];
+        $attachmentSizeByIndex    = [];
+        if ($canUploadMedia && $user !== null) {
+            $remainingStorageBytes = max(0, $user->tariff()->getMaxStorageBytes() - $usedStorageBytes);
+            $remainingMediaFiles   = max(0, $user->tariff()->getMaxMediaFilesCount() - $usedMediaFiles);
+
+            $attachmentCandidates = [];
+            foreach ($messages as $index => $message) {
+                $attachmentSizeBytes = $this->messagePreparationService->estimateAttachmentSizeBytes(
+                    $mediaRootPath,
+                    $message
+                );
+                if ($attachmentSizeBytes === null || $attachmentSizeBytes < 0) {
+                    continue;
+                }
+
+                $attachmentCandidates[] = [
+                    'index'      => (int)$index,
+                    'size_bytes' => (int)$attachmentSizeBytes,
+                ];
+            }
+
+            usort($attachmentCandidates, static fn(array $a, array $b): int => $a['size_bytes'] <=> $b['size_bytes']);
+
+            foreach ($attachmentCandidates as $candidate) {
+                if ($remainingMediaFiles <= 0 || $remainingStorageBytes <= 0) {
+                    break;
+                }
+
+                $sizeBytes = (int)$candidate['size_bytes'];
+                if ($sizeBytes > $remainingStorageBytes) {
+                    continue;
+                }
+
+                $index = (int)$candidate['index'];
+                $allowedAttachmentIndexes[$index] = true;
+                $attachmentSizeByIndex[$index] = $sizeBytes;
+                $remainingStorageBytes -= $sizeBytes;
+                $remainingMediaFiles--;
+            }
+        }
+
+        foreach ($messages as $messageIndex => $message) {
             $externalId = $this->messagePreparationService->normalizeExternalId($message['external_id'] ?? null);
             $dedupHash  = $this->messagePreparationService->buildDeduplicationHash($message);
 
@@ -151,17 +198,24 @@ class ImportService
             $existingDedupHashes->put($dedupHash, true);
 
             $attachmentStoredPath = null;
-            if ($canUploadMedia) {
+            $attachmentSizeBytes  = null;
+            if ($canUploadMedia && isset($allowedAttachmentIndexes[$messageIndex])) {
                 $attachmentStoredPath = $this->messagePreparationService->copyAttachmentForMessage(
                     $mediaRootPath,
                     $message,
                     $conversation->id
                 );
-            } else {
+                $attachmentSizeBytes = $attachmentSizeByIndex[$messageIndex] ?? null;
+            } elseif (!$tariffAllowsMedia) {
                 $message['attachment_export_path'] = null;
+            }
+            if ($attachmentStoredPath === null) {
+                $attachmentSizeBytes = null;
             }
             if ($attachmentStoredPath !== null) {
                 $copiedMediaPaths[$attachmentStoredPath] = true;
+                $usedStorageBytes += max(0, (int)($attachmentSizeBytes ?? 0));
+                $usedMediaFiles++;
             }
 
             $message['dedup_hash'] = $dedupHash;
@@ -171,6 +225,7 @@ class ImportService
                 $conversation->id,
                 $messageModelClass,
                 $attachmentStoredPath,
+                $attachmentSizeBytes,
             );
         }
 

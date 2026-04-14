@@ -67,6 +67,8 @@ class ProcessConversationMediaUpload implements ShouldQueue
         if (!$user || !$user->canUploadMedia()) {
             return;
         }
+        $remainingStorageBytes = $user->getRemainingMediaStorageBytes();
+        $remainingMediaFiles = $user->getRemainingMediaFilesCount();
 
         try {
             $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->path);
@@ -100,17 +102,49 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 ->whereIn('media_attachment_id', $pending->pluck('id')->all())
                 ->pluck('id', 'media_attachment_id');
 
+            $candidates = [];
             foreach ($pending as $media) {
                 $messageId = $messageIdByAttachmentId->get($media->id);
                 if ($messageId === null) {
                     continue;
                 }
 
+                $sizeBytes = $importedMediaResolverService->estimateAttachmentSizeBytes(
+                    $absoluteExtracted,
+                    (string)$media->export_path
+                );
+                if ($sizeBytes === null || $sizeBytes < 0) {
+                    continue;
+                }
+
+                $candidates[] = [
+                    'media' => $media,
+                    'message_id' => (int)$messageId,
+                    'size_bytes' => (int)$sizeBytes,
+                ];
+            }
+
+            usort($candidates, static fn(array $a, array $b): int => $a['size_bytes'] <=> $b['size_bytes']);
+
+            foreach ($candidates as $candidate) {
+                if ($remainingMediaFiles <= 0 || $remainingStorageBytes <= 0) {
+                    break;
+                }
+
+                $sizeBytes = (int)$candidate['size_bytes'];
+                if ($sizeBytes > $remainingStorageBytes) {
+                    continue;
+                }
+
+                /** @var MediaAttachment $media */
+                $media = $candidate['media'];
+                $messageId = (int)$candidate['message_id'];
+
                 $storedPath = $importedMediaResolverService->copyForMessage(
                     $absoluteExtracted,
                     (string)$media->export_path,
                     $conversation->id,
-                    (int)$messageId
+                    $messageId
                 );
                 if ($storedPath === null) {
                     continue;
@@ -124,7 +158,11 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     'mime_type'         => $mime
                         ?: null,
                     'original_filename' => basename($storedPath),
+                    'size_bytes'        => $sizeBytes,
                 ]);
+
+                $remainingStorageBytes -= $sizeBytes;
+                $remainingMediaFiles--;
             }
         } catch (ArchiveExtractionFailedException $e) {
             Log::warning('Archive extraction failed', [

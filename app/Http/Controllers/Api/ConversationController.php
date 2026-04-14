@@ -211,7 +211,28 @@ class ConversationController extends Controller
     public function uploadMedia(Request $request, Conversation $conversation): JsonResponse
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
-        abort_unless($request->user()->canUploadMedia(), Http::PAYMENT_REQUIRED, 'Загрузка медиа недоступна на текущем тарифе.');
+        $user = $request->user();
+        $reason = $user->getMediaUploadBlockReason();
+        if ($reason !== null) {
+            return response()->json([
+                'status'  => 'rejected',
+                'message' => 'Загрузка медиа недоступна.',
+                'reason'  => $reason,
+                'quota'   => [
+                    'tariff' => $user->tariff()->getName(),
+                    'storage' => [
+                        'used' => $user->getUsedMediaStorageBytes(),
+                        'limit' => $user->tariff()->getMaxStorageBytes(),
+                        'remaining' => $user->getRemainingMediaStorageBytes(),
+                    ],
+                    'files' => [
+                        'used' => $user->getUsedMediaFilesCount(),
+                        'limit' => $user->tariff()->getMaxMediaFilesCount(),
+                        'remaining' => $user->getRemainingMediaFilesCount(),
+                    ],
+                ],
+            ], Http::PAYMENT_REQUIRED);
+        }
 
         $request->validate([
             'file' => 'required|file|mimes:zip|max:262144',
@@ -221,7 +242,7 @@ class ConversationController extends Controller
         $path           = $request->file('file')->store('chat_imports', $importsTmpDisk);
 
         ProcessConversationMediaUpload::dispatch(
-            userId: $request->user()->id,
+            userId: $user->id,
             conversationId: $conversation->id,
             path: $path,
         );
