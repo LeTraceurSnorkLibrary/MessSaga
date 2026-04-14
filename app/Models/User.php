@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -86,11 +87,81 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * @param int|null $incomingFileSizeBytes
+     * @param int      $incomingFilesCount
+     *
      * @return bool
      */
-    public function canUploadMedia(): bool
+    public function canUploadMedia(?int $incomingFileSizeBytes = null, int $incomingFilesCount = 1): bool
     {
-        return $this->tariff()->allowsMediaUpload();
+        return $this->getMediaUploadBlockReason($incomingFileSizeBytes, $incomingFilesCount) === null;
+    }
+
+    public function getUsedMediaStorageBytes(): int
+    {
+        $sum = DB::table('media_attachments')
+            ->join('conversations', 'conversations.id', '=', 'media_attachments.conversation_id')
+            ->join('messenger_accounts', 'messenger_accounts.id', '=', 'conversations.messenger_account_id')
+            ->where('messenger_accounts.user_id', $this->id)
+            ->whereNotNull('media_attachments.stored_path')
+            ->where('media_attachments.stored_path', '!=', '')
+            ->sum('media_attachments.size_bytes');
+
+        return (int)$sum;
+    }
+
+    public function getUsedMediaFilesCount(): int
+    {
+        return (int)DB::table('media_attachments')
+            ->join('conversations', 'conversations.id', '=', 'media_attachments.conversation_id')
+            ->join('messenger_accounts', 'messenger_accounts.id', '=', 'conversations.messenger_account_id')
+            ->where('messenger_accounts.user_id', $this->id)
+            ->whereNotNull('media_attachments.stored_path')
+            ->where('media_attachments.stored_path', '!=', '')
+            ->count();
+    }
+
+    public function getRemainingMediaStorageBytes(): int
+    {
+        $remaining = $this->tariff()->getMaxStorageBytes() - $this->getUsedMediaStorageBytes();
+
+        return max(0, $remaining);
+    }
+
+    public function getRemainingMediaFilesCount(): int
+    {
+        $remaining = $this->tariff()->getMaxMediaFilesCount() - $this->getUsedMediaFilesCount();
+
+        return max(0, $remaining);
+    }
+
+    public function getMediaUploadBlockReason(?int $incomingFileSizeBytes = null, int $incomingFilesCount = 1): ?string
+    {
+        if (!$this->tariff()->allowsMediaUpload()) {
+            return 'tariff_media_disabled';
+        }
+
+        if ($incomingFilesCount < 1) {
+            $incomingFilesCount = 1;
+        }
+
+        if ($this->getRemainingMediaFilesCount() < $incomingFilesCount) {
+            return 'quota_files_exceeded';
+        }
+
+        if ($incomingFileSizeBytes === null) {
+            return $this->getRemainingMediaStorageBytes() > 0
+                ? null
+                : 'quota_storage_exceeded';
+        }
+
+        if ($incomingFileSizeBytes < 0) {
+            return 'quota_storage_exceeded';
+        }
+
+        return $this->getRemainingMediaStorageBytes() >= $incomingFileSizeBytes
+            ? null
+            : 'quota_storage_exceeded';
     }
 
     /**

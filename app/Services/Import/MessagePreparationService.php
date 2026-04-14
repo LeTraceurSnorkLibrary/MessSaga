@@ -97,6 +97,26 @@ class MessagePreparationService
     }
 
     /**
+     * @param string|null          $mediaRootPath
+     * @param array<string, mixed> $message
+     *
+     * @return int|null
+     */
+    public function estimateAttachmentSizeBytes(
+        ?string $mediaRootPath,
+        array $message
+    ): ?int {
+        if ($mediaRootPath === null || empty($message['attachment_export_path'])) {
+            return null;
+        }
+
+        return $this->importedMediaResolverService->estimateAttachmentSizeBytes(
+            $mediaRootPath,
+            (string)$message['attachment_export_path']
+        );
+    }
+
+    /**
      * @param array<string, mixed>  $message
      * @param int                   $conversationId
      * @param class-string<Message> $messageModelClass
@@ -108,7 +128,8 @@ class MessagePreparationService
         array   $message,
         int     $conversationId,
         string  $messageModelClass,
-        ?string $attachmentStoredPath = null
+        ?string $attachmentStoredPath = null,
+        ?int $attachmentSizeBytes = null
     ): PreparedMessageRowResult {
         $exportRaw        = $message['attachment_export_path'] ?? null;
         $exportNormalized = $this->normalizeExportPath($exportRaw);
@@ -156,6 +177,9 @@ class MessagePreparationService
                     : ($attachmentStoredPath
                         ? basename($attachmentStoredPath)
                         : null),
+                'size_bytes'        => $attachmentStoredPath !== null
+                    ? max(0, (int)($attachmentSizeBytes ?? 0))
+                    : 0,
             ];
         }
 
