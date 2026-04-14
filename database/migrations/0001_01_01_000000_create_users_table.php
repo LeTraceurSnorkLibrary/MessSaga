@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Enums\TariffCodeEnum;
 use App\Enums\UserRoleEnum;
+use App\Tariffs\FreeTariff;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -20,6 +22,7 @@ return new class extends Migration {
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('role')->default(UserRoleEnum::USER->value)->index();
+            $table->string('tariff_code')->default(FreeTariff::TARIFF_NAME)->index();
             $table->rememberToken();
             $table->string('encryption_salt', 64)->nullable(); // соль для E2E-шифрования сообщений
             $table->timestamps();

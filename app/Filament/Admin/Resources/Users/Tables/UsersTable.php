@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Resources\Users\Tables;
 
 use App\Enums\UserRoleEnum;
+use App\Tariffs\TariffCatalog;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -62,6 +64,11 @@ class UsersTable
                     ->sortable(),
                 TextColumn::make('messages_count')
                     ->label('Сообщения')
+                    ->sortable(),
+                SelectColumn::make('tariff_code')
+                    ->label('Тариф')
+                    ->options(TariffCatalog::options())
+                    ->selectablePlaceholder(false)
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Создан')
