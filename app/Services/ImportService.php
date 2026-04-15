@@ -117,7 +117,6 @@ class ImportService
         }
 
         $user             = User::query()->find($userId);
-        $tariffAllowsMedia = $user?->tariff()->allowsMediaUpload() ?? false;
         $canUploadMedia   = $user?->canUploadMedia() ?? false;
         $usedStorageBytes = $user?->getUsedMediaStorageBytes() ?? 0;
         $usedMediaFiles   = $user?->getUsedMediaFilesCount() ?? 0;
@@ -173,10 +172,10 @@ class ImportService
                     continue;
                 }
 
-                $index = (int)$candidate['index'];
+                $index                            = (int)$candidate['index'];
                 $allowedAttachmentIndexes[$index] = true;
-                $attachmentSizeByIndex[$index] = $sizeBytes;
-                $remainingStorageBytes -= $sizeBytes;
+                $attachmentSizeByIndex[$index]    = $sizeBytes;
+                $remainingStorageBytes            -= $sizeBytes;
                 $remainingMediaFiles--;
             }
         }
@@ -205,16 +204,14 @@ class ImportService
                     $message,
                     $conversation->id
                 );
-                $attachmentSizeBytes = $attachmentSizeByIndex[$messageIndex] ?? null;
-            } elseif (!$tariffAllowsMedia) {
-                $message['attachment_export_path'] = null;
+                $attachmentSizeBytes  = $attachmentSizeByIndex[$messageIndex] ?? null;
             }
             if ($attachmentStoredPath === null) {
                 $attachmentSizeBytes = null;
             }
             if ($attachmentStoredPath !== null) {
                 $copiedMediaPaths[$attachmentStoredPath] = true;
-                $usedStorageBytes += max(0, (int)($attachmentSizeBytes ?? 0));
+                $usedStorageBytes                        += max(0, (int)($attachmentSizeBytes ?? 0));
                 $usedMediaFiles++;
             }
 
