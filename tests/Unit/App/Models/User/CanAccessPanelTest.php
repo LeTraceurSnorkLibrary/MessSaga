@@ -18,17 +18,39 @@ final class CanAccessPanelTest extends TestCase
     /**
      * @throws Exception
      */
-    public function test_allows_access_only_for_admin_role(): void
+    public function test_allow_access_for_admin_role(): void
     {
         $panel = $this->createStub(Panel::class);
 
         $admin       = new User();
         $admin->role = UserRoleEnum::ADMIN->value;
 
+        $this->assertTrue($admin->canAccessPanel($panel));
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function test_allow_access_for_manager_role(): void
+    {
+        $panel = $this->createStub(Panel::class);
+
         $manager       = new User();
         $manager->role = UserRoleEnum::MANAGER->value;
 
-        $this->assertTrue($admin->canAccessPanel($panel));
-        $this->assertFalse($manager->canAccessPanel($panel));
+        $this->assertTrue($manager->canAccessPanel($panel));
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function test_disallow_access_for_user_role(): void
+    {
+        $panel = $this->createStub(Panel::class);
+
+        $user       = new User();
+        $user->role = UserRoleEnum::USER->value;
+
+        $this->assertFalse($user->canAccessPanel($panel));
     }
 }
