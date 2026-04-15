@@ -49,10 +49,9 @@ final class TariffCatalogTest extends TestCase
 
     public function test_allows_media_upload_depends_on_positive_limits(): void
     {
-        $this->assertFalse((new FreeTariff())->allowsMediaUpload());
-        $this->assertTrue((new Tariff10())->allowsMediaUpload());
-        $this->assertTrue((new Tariff50())->allowsMediaUpload());
-        $this->assertTrue((new Tariff200())->allowsMediaUpload());
+        $this->assertFalse(new FreeTariff()->allowsMediaUpload());
+        $this->assertTrue(new Tariff10()->allowsMediaUpload());
+        $this->assertTrue(new Tariff50()->allowsMediaUpload());
+        $this->assertTrue(new Tariff200()->allowsMediaUpload());
     }
 }
-
