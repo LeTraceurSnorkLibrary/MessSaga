@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -84,73 +83,6 @@ class User extends Authenticatable implements FilamentUser
     public function tariff(): TariffInterface
     {
         return TariffCatalog::forCode($this->tariff_code);
-    }
-
-    /**
-     * @return bool
-     */
-    public function canUploadMedia(): bool
-    {
-        return $this->getMediaUploadBlockReason() === null;
-    }
-
-    public function getUsedMediaStorageBytes(): int
-    {
-        $sum = DB::table('media_attachments')
-            ->join('conversations', 'conversations.id', '=', 'media_attachments.conversation_id')
-            ->join('messenger_accounts', 'messenger_accounts.id', '=', 'conversations.messenger_account_id')
-            ->where('messenger_accounts.user_id', $this->id)
-            ->whereNotNull('media_attachments.stored_path')
-            ->where('media_attachments.stored_path', '!=', '')
-            ->sum('media_attachments.size_bytes');
-
-        return (int)$sum;
-    }
-
-    public function getUsedMediaFilesCount(): int
-    {
-        return (int)DB::table('media_attachments')
-            ->join('conversations', 'conversations.id', '=', 'media_attachments.conversation_id')
-            ->join('messenger_accounts', 'messenger_accounts.id', '=', 'conversations.messenger_account_id')
-            ->where('messenger_accounts.user_id', $this->id)
-            ->whereNotNull('media_attachments.stored_path')
-            ->where('media_attachments.stored_path', '!=', '')
-            ->count();
-    }
-
-    public function getRemainingMediaStorageBytes(): int
-    {
-        $remaining = $this->tariff()->getMaxStorageBytes() - $this->getUsedMediaStorageBytes();
-
-        return max(0, $remaining);
-    }
-
-    public function getRemainingMediaFilesCount(): int
-    {
-        $remaining = $this->tariff()->getMaxMediaFilesCount() - $this->getUsedMediaFilesCount();
-
-        return max(0, $remaining);
-    }
-
-    public function getMediaUploadBlockReason(): ?string
-    {
-        if (!$this->tariff()->allowsMediaUpload()) {
-            return 'tariff_media_disabled';
-        }
-
-        if ($this->getRemainingMediaFilesCount() <= 0) {
-            return 'quota_files_exceeded';
-        }
-
-        if ($this->getRemainingMediaStorageBytes() <= 0) {
-            return 'quota_storage_exceeded';
-        }
-
-        if ($this->getRemainingMediaFilesCount() <= 0) {
-            return 'quota_files_exceeded';
-        }
-
-        return null;
     }
 
     /**

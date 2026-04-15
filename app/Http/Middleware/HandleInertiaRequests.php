@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Services\Quota\UserMediaQuotaService;
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -36,22 +37,9 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $quota = null;
         if ($user instanceof User) {
-            $quota = [
-                'tariff' => [
-                    'code' => $user->tariff()->getName(),
-                    'label' => $user->tariff()->getLabel(),
-                ],
-                'storage' => [
-                    'used' => $user->getUsedMediaStorageBytes(),
-                    'limit' => $user->tariff()->getMaxStorageBytes(),
-                    'remaining' => $user->getRemainingMediaStorageBytes(),
-                ],
-                'files' => [
-                    'used' => $user->getUsedMediaFilesCount(),
-                    'limit' => $user->tariff()->getMaxMediaFilesCount(),
-                    'remaining' => $user->getRemainingMediaFilesCount(),
-                ],
-            ];
+            $quota = app(UserMediaQuotaService::class)
+                ->snapshot($user)
+                ->toArray();
         }
 
         return [

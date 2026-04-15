@@ -13,6 +13,7 @@ use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\ImportedMediaResolverService;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
+use App\Services\Quota\UserMediaQuotaService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -45,6 +46,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
      * @param ImportedMediaResolverService  $importedMediaResolverService
      * @param MediaStorageInterface         $mediaStorage
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
+     * @param UserMediaQuotaService         $userMediaQuotaService
      *
      * @return void
      */
@@ -52,7 +54,8 @@ class ProcessConversationMediaUpload implements ShouldQueue
         ParserRegistry                $parserRegistry,
         ImportedMediaResolverService  $importedMediaResolverService,
         MediaStorageInterface         $mediaStorage,
-        ImportArchiveExtractorFactory $archiveExtractorsFactory
+        ImportArchiveExtractorFactory $archiveExtractorsFactory,
+        UserMediaQuotaService         $userMediaQuotaService
     ): void {
         $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
         $importsTmpDisk     = Storage::disk($importsTmpDiskName);
@@ -64,11 +67,15 @@ class ProcessConversationMediaUpload implements ShouldQueue
         }
 
         $user = User::find($this->userId);
-        if (!$user || !$user->canUploadMedia()) {
+        if (!$user) {
             return;
         }
-        $remainingStorageBytes = $user->getRemainingMediaStorageBytes();
-        $remainingMediaFiles = $user->getRemainingMediaFilesCount();
+        $quota = $userMediaQuotaService->snapshot($user);
+        if (!$quota->canUploadMedia()) {
+            return;
+        }
+        $remainingStorageBytes = $quota->getRemainingStorageBytes();
+        $remainingMediaFiles   = $quota->getRemainingFilesCount();
 
         try {
             $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->path);
@@ -118,9 +125,9 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 }
 
                 $candidates[] = [
-                    'media' => $media,
+                    'media'      => $media,
                     'message_id' => (int)$messageId,
-                    'size_bytes' => (int)$sizeBytes,
+                    'size_bytes' => $sizeBytes,
                 ];
             }
 
@@ -136,8 +143,10 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     continue;
                 }
 
-                /** @var MediaAttachment $media */
-                $media = $candidate['media'];
+                /**
+                 * @var MediaAttachment $media
+                 */
+                $media     = $candidate['media'];
                 $messageId = (int)$candidate['message_id'];
 
                 $storedPath = $importedMediaResolverService->copyForMessage(

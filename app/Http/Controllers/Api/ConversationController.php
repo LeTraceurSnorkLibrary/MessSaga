@@ -10,6 +10,7 @@ use App\Models\Conversation;
 use App\Models\MediaAttachment;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
+use App\Services\Quota\UserMediaQuotaService;
 use App\Support\FilenameSanitizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -23,10 +24,12 @@ class ConversationController extends Controller
     /**
      * @param ParserRegistry        $parserRegistry
      * @param MediaStorageInterface $mediaStorage
+     * @param UserMediaQuotaService $userMediaQuotaService
      */
     public function __construct(
         private readonly ParserRegistry        $parserRegistry,
-        private readonly MediaStorageInterface $mediaStorage
+        private readonly MediaStorageInterface $mediaStorage,
+        private readonly UserMediaQuotaService $userMediaQuotaService,
     ) {
     }
 
@@ -211,26 +214,15 @@ class ConversationController extends Controller
     public function uploadMedia(Request $request, Conversation $conversation): JsonResponse
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
-        $user = $request->user();
-        $reason = $user->getMediaUploadBlockReason();
+        $user   = $request->user();
+        $quota  = $this->userMediaQuotaService->snapshot($user);
+        $reason = $quota->getMediaUploadBlockReason();
         if ($reason !== null) {
             return response()->json([
                 'status'  => 'rejected',
                 'message' => 'Загрузка медиа недоступна.',
                 'reason'  => $reason,
-                'quota'   => [
-                    'tariff' => $user->tariff()->getName(),
-                    'storage' => [
-                        'used' => $user->getUsedMediaStorageBytes(),
-                        'limit' => $user->tariff()->getMaxStorageBytes(),
-                        'remaining' => $user->getRemainingMediaStorageBytes(),
-                    ],
-                    'files' => [
-                        'used' => $user->getUsedMediaFilesCount(),
-                        'limit' => $user->tariff()->getMaxMediaFilesCount(),
-                        'remaining' => $user->getRemainingMediaFilesCount(),
-                    ],
-                ],
+                'quota'   => $quota->toArray(),
             ], Http::PAYMENT_REQUIRED);
         }
 
