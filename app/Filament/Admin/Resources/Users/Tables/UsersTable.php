@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Resources\Users\Tables;
 
-use App\Enums\UserRoleEnum;
-use App\Tariffs\TariffCatalog;
-use Filament\Tables\Columns\SelectColumn;
+use App\Filament\Admin\Resources\Users\Pages\ListUsers;
+use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 
 class UsersTable
 {
@@ -27,48 +27,26 @@ class UsersTable
                 TextColumn::make('id')
                     ->label('ID')
                     ->sortable(),
-                TextColumn::make('name')
+                ViewColumn::make('name')
                     ->label('Имя')
+                    ->view('filament.admin.users.columns.editable-text-cell')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('email')
+                ViewColumn::make('email')
                     ->label('Email')
+                    ->view('filament.admin.users.columns.editable-text-cell')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('role')
+                ViewColumn::make('role')
                     ->label('Роль')
-                    ->formatStateUsing(fn(?string $state): string => '')
-                    ->badge(
-                        fn(Model $record): bool => ($record->role ?? null) !== UserRoleEnum::USER->value
-                    )
-                    ->icon(fn(?string $state): ?string => match ($state) {
-                        UserRoleEnum::ADMIN->value   => 'heroicon-o-at-symbol',
-                        UserRoleEnum::MANAGER->value => 'heroicon-o-user-circle',
-                        default                      => null,
-                    })
-                    ->color(fn(?string $state): ?string => match ($state) {
-                        UserRoleEnum::ADMIN->value   => 'success',
-                        UserRoleEnum::MANAGER->value => 'danger',
-                        default                      => null,
-                    })
-                    ->extraAttributes(fn(Model $record): array => [
-                        'title' => match ($record->role ?? null) {
-                            UserRoleEnum::ADMIN->value   => 'Администратор',
-                            UserRoleEnum::MANAGER->value => 'Менеджер',
-                            UserRoleEnum::USER->value    => 'Пользователь',
-                            default                      => is_string($record->role)
-                                ? $record->role
-                                : '',
-                        },
-                    ])
+                    ->view('filament.admin.users.columns.role-badge-editor')
                     ->sortable(),
                 TextColumn::make('messages_count')
                     ->label('Сообщения')
                     ->sortable(),
-                SelectColumn::make('tariff_code')
-                    ->label('Тариф')
-                    ->options(TariffCatalog::options())
-                    ->selectablePlaceholder(false)
+                ViewColumn::make('tariff_code')
+                    ->label('Действующий тариф')
+                    ->view('filament.admin.users.columns.editable-tariff-cell')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Создан')
@@ -79,6 +57,27 @@ class UsersTable
                 //
             ])
             ->recordActions([
+                Action::make('toggleEdit')
+                    ->label('')
+                    ->icon(fn(ListUsers $livewire, User $record): string => $livewire->isEditingRecord($record)
+                        ? 'heroicon-o-check'
+                        : 'heroicon-o-pencil-square')
+                    ->iconButton()
+                    ->tooltip(fn(ListUsers $livewire, User $record): string => $livewire->isEditingRecord($record)
+                        ? 'Сохранить'
+                        : 'Редактировать')
+                    ->color(fn(ListUsers $livewire, User $record): string => $livewire->isEditingRecord($record)
+                        ? 'success'
+                        : 'gray')
+                    ->action(function (ListUsers $livewire, User $record): void {
+                        if ($livewire->isEditingRecord($record)) {
+                            $livewire->saveEditingRecord($record);
+
+                            return;
+                        }
+
+                        $livewire->startEditingRecord($record);
+                    }),
             ])
             ->toolbarActions([
             ]);
