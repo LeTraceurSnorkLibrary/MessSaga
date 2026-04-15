@@ -14,6 +14,7 @@ use App\Services\Import\MessagePreparationService;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
+use App\Services\Quota\UserMediaQuotaService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,12 +28,14 @@ class ImportService
      * @param MessagePreparationService $messagePreparationService
      * @param MessageInsertService      $messageInsertService
      * @param MediaStorageInterface     $mediaStorage
+     * @param UserMediaQuotaService     $userMediaQuotaService
      */
     public function __construct(
         protected ParserRegistry            $parserRegistry,
         protected MessagePreparationService $messagePreparationService,
         protected MessageInsertService      $messageInsertService,
         protected MediaStorageInterface     $mediaStorage,
+        protected UserMediaQuotaService     $userMediaQuotaService,
     ) {
     }
 
@@ -117,9 +120,12 @@ class ImportService
         }
 
         $user             = User::query()->find($userId);
-        $canUploadMedia   = $user?->canUploadMedia() ?? false;
-        $usedStorageBytes = $user?->getUsedMediaStorageBytes() ?? 0;
-        $usedMediaFiles   = $user?->getUsedMediaFilesCount() ?? 0;
+        $quotaSnapshot    = isset($user)
+            ? $this->userMediaQuotaService->snapshot($user)
+            : null;
+        $canUploadMedia   = $quotaSnapshot?->canUploadMedia() ?? false;
+        $usedStorageBytes = $quotaSnapshot?->getStorageUsedBytes() ?? 0;
+        $usedMediaFiles   = $quotaSnapshot?->getFilesUsedCount() ?? 0;
 
         $messagesRelation    = $parser->getMessagesRelation($conversation);
         $existingExternalIds = $messagesRelation
@@ -141,8 +147,8 @@ class ImportService
         $allowedAttachmentIndexes = [];
         $attachmentSizeByIndex    = [];
         if ($canUploadMedia && $user !== null) {
-            $remainingStorageBytes = max(0, $user->tariff()->getMaxStorageBytes() - $usedStorageBytes);
-            $remainingMediaFiles   = max(0, $user->tariff()->getMaxMediaFilesCount() - $usedMediaFiles);
+            $remainingStorageBytes = max(0, ($quotaSnapshot?->getStorageLimitBytes() ?? 0) - $usedStorageBytes);
+            $remainingMediaFiles   = max(0, ($quotaSnapshot?->getFilesLimitCount() ?? 0) - $usedMediaFiles);
 
             $attachmentCandidates = [];
             foreach ($messages as $index => $message) {
@@ -156,7 +162,7 @@ class ImportService
 
                 $attachmentCandidates[] = [
                     'index'      => (int)$index,
-                    'size_bytes' => (int)$attachmentSizeBytes,
+                    'size_bytes' => $attachmentSizeBytes,
                 ];
             }
 
