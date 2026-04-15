@@ -55,4 +55,3 @@ class TariffCatalog
         return $options;
     }
 }
-

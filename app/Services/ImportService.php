@@ -124,8 +124,6 @@ class ImportService
             ? $this->userMediaQuotaService->snapshot($user)
             : null;
         $canUploadMedia   = $quotaSnapshot?->canUploadMedia() ?? false;
-        $usedStorageBytes = $quotaSnapshot?->getStorageUsedBytes() ?? 0;
-        $usedMediaFiles   = $quotaSnapshot?->getFilesUsedCount() ?? 0;
 
         $messagesRelation    = $parser->getMessagesRelation($conversation);
         $existingExternalIds = $messagesRelation
@@ -147,8 +145,8 @@ class ImportService
         $allowedAttachmentIndexes = [];
         $attachmentSizeByIndex    = [];
         if ($canUploadMedia && $user !== null) {
-            $remainingStorageBytes = max(0, ($quotaSnapshot?->getStorageLimitBytes() ?? 0) - $usedStorageBytes);
-            $remainingMediaFiles   = max(0, ($quotaSnapshot?->getFilesLimitCount() ?? 0) - $usedMediaFiles);
+            $remainingStorageBytes = max(0, ($quotaSnapshot?->getStorageLimitBytes() ?? 0) - ($quotaSnapshot?->getStorageUsedBytes() ?? 0));
+            $remainingMediaFiles   = max(0, ($quotaSnapshot?->getFilesLimitCount() ?? 0) - ($quotaSnapshot?->getFilesUsedCount() ?? 0));
 
             $attachmentCandidates = [];
             foreach ($messages as $index => $message) {
@@ -181,7 +179,7 @@ class ImportService
                 $index                            = (int)$candidate['index'];
                 $allowedAttachmentIndexes[$index] = true;
                 $attachmentSizeByIndex[$index]    = $sizeBytes;
-                $remainingStorageBytes            -= $sizeBytes;
+                $remainingStorageBytes -= $sizeBytes;
                 $remainingMediaFiles--;
             }
         }
@@ -217,8 +215,6 @@ class ImportService
             }
             if ($attachmentStoredPath !== null) {
                 $copiedMediaPaths[$attachmentStoredPath] = true;
-                $usedStorageBytes                        += max(0, (int)($attachmentSizeBytes ?? 0));
-                $usedMediaFiles++;
             }
 
             $message['dedup_hash'] = $dedupHash;
