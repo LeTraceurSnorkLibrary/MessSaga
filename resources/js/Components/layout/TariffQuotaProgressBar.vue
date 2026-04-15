@@ -38,7 +38,7 @@ const descriptionText = computed(() => {
         return `Загрузка медиа доступна, но место почти кончилось!`;
     }
 
-    if (maxUsagePercent.value >= 0) {
+    if (maxUsagePercent.value >= 70) {
         return `Загрузка медиа доступна, но место кончается`;
     }
 
