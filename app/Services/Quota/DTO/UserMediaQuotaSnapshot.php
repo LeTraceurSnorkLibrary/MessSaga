@@ -119,4 +119,3 @@ final readonly class UserMediaQuotaSnapshot
         ];
     }
 }
-

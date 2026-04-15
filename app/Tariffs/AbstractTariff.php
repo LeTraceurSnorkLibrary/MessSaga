@@ -68,4 +68,3 @@ abstract class AbstractTariff implements TariffInterface
         return $this->getMaxStorageBytes() > 0 && $this->getMaxMediaFilesCount() > 0;
     }
 }
-

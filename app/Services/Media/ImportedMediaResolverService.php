@@ -141,8 +141,8 @@ class ImportedMediaResolverService
         $exactPath = $this->tryResolveByExportPath($root, $attachmentExportPath);
         if ($exactPath !== null) {
             return [
-                'source'   => $exactPath,
-                'basename' => FilenameSanitizer::sanitize(basename(str_replace('\\', '/', $attachmentExportPath))),
+                'source'     => $exactPath,
+                'basename'   => FilenameSanitizer::sanitize(basename(str_replace('\\', '/', $attachmentExportPath))),
                 'size_bytes' => max(0, (int)(@filesize($exactPath) ?: 0)),
             ];
         }
@@ -155,8 +155,8 @@ class ImportedMediaResolverService
             $found = $this->findUniqueFileByBasename($root, $sanitizedCandidate);
             if ($found !== null) {
                 return [
-                    'source'   => $found,
-                    'basename' => $sanitizedCandidate,
+                    'source'     => $found,
+                    'basename'   => $sanitizedCandidate,
                     'size_bytes' => max(0, (int)(@filesize($found) ?: 0)),
                 ];
             }
