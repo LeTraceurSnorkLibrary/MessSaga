@@ -1,7 +1,9 @@
 <script setup>
 import Loader from '@/Components/base/Loader.vue';
+import TariffQuotaProgressBar from '@/Components/layout/TariffQuotaProgressBar.vue';
 import UIButton from '@/Components/UIButton.vue';
 import {useCapitalizeFirstLetter} from '@/composables/useCapitalizeFirstLetter.ts';
+import {usePage} from '@inertiajs/vue3';
 import {computed, ref} from 'vue';
 
 const props = defineProps({
@@ -18,6 +20,8 @@ const message = ref('');
 const fileInputRef = ref(null);
 
 const {capitalizeFirstLetter} = useCapitalizeFirstLetter();
+const page = usePage();
+const quota = computed(() => page.props.auth?.quota ?? null);
 const capitalizedMessenger = computed(() => {
     return capitalizeFirstLetter(props.selectedMessenger);
 });
@@ -72,12 +76,15 @@ const onFileChange = (event) => {
 </script>
 <template>
     <div class="import-wizard">
+        <div class="import-wizard__header">
+            <h3 class="import-wizard__title">Импорт переписки</h3>
+            <p class="import-wizard__description">Выберите вкладку соответствующего мессенджера из списка ниже.
+                Переписка будет загружена в него.</p>
+        </div>
+        <div class="import-wizard__quota">
+            <TariffQuotaProgressBar v-if="quota" :quota="quota"/>
+        </div>
         <div class="import-wizard__inner">
-            <div class="import-wizard__title">Импорт переписки</div>
-            <div class="import-wizard__row">
-                <p class="import-wizard__label">Выберите вкладку соответствующего мессенджера из списка ниже.
-                    Переписка будет загружена в него.</p>
-            </div>
             <input
                 :value="selectedMessenger"
                 type="hidden"
@@ -116,13 +123,35 @@ const onFileChange = (event) => {
 @use '../../scss/typography' as typography;
 
 .import-wizard {
+    display: grid;
+    grid-template:
+    'HEADER QUOTA'
+    'INNER  QUOTA'
+    / 1fr   auto;
+    gap: 1rem;
     padding: 1rem;
     border: 1px dashed var(--gray-300);
     border-radius: var(--radius-lg);
     background: var(--gray-50);
 }
 
+.import-wizard__header {
+    grid-area: HEADER;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.import-wizard__description {
+    @include typography.text--150(0.875rem);
+
+    color: var(--gray-600);
+}
+
 .import-wizard__inner {
+    grid-area: INNER;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -132,6 +161,10 @@ const onFileChange = (event) => {
     @include typography.title(0.875rem, typography.$line-height--150, typography.$font-weight--underbold);
 
     color: var(--gray-700);
+}
+
+.import-wizard__quota {
+    grid-area: QUOTA;
 }
 
 .import-wizard__row {
