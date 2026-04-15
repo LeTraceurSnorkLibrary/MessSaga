@@ -36,7 +36,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user  = $request->user();
         $quota = null;
-        if ($user instanceof User) {
+        if ($user instanceof User && $user->exists) {
             $quota = app(UserMediaQuotaService::class)
                 ->snapshot($user)
                 ->toArray();

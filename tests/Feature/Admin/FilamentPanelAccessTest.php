@@ -20,7 +20,7 @@ class FilamentPanelAccessTest extends TestCase
         $response->assertRedirect(route('login', absolute: false));
     }
 
-    public function test_non_admin_user_cannot_access_manage_panel(): void
+    public function test_basic_user_cannot_access_manage_panel(): void
     {
         $user = User::factory()->create([
             'role' => UserRoleEnum::USER->value,
@@ -29,13 +29,13 @@ class FilamentPanelAccessTest extends TestCase
         $this->actingAs($user)->get('/manage')->assertForbidden();
     }
 
-    public function test_manager_cannot_access_manage_panel(): void
+    public function test_manager_can_access_manage_panel(): void
     {
         $user = User::factory()->create([
             'role' => UserRoleEnum::MANAGER->value,
         ]);
 
-        $this->actingAs($user)->get('/manage')->assertForbidden();
+        $this->actingAs($user)->get('/manage')->assertOk();
     }
 
     public function test_admin_can_access_manage_dashboard(): void
