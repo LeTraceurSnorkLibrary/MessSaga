@@ -25,17 +25,17 @@ final class UserMediaQuotaSnapshotTest extends TestCase
 
         $this->assertSame([
             'tariff' => [
-                'code' => Tariff10::TARIFF_NAME,
+                'code'  => Tariff10::TARIFF_NAME,
                 'label' => 'Тариф 10',
             ],
             'storage' => [
-                'used' => 100,
-                'limit' => 1_000,
+                'used'      => 100,
+                'limit'     => 1_000,
                 'remaining' => 900,
             ],
             'files' => [
-                'used' => 3,
-                'limit' => 10,
+                'used'      => 3,
+                'limit'     => 10,
                 'remaining' => 7,
             ],
         ], $snapshot->toArray());
@@ -88,4 +88,3 @@ final class UserMediaQuotaSnapshotTest extends TestCase
         $this->assertTrue($allowed->canUploadMedia());
     }
 }
-

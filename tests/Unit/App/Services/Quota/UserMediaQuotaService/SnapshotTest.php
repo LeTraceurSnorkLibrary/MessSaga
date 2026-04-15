@@ -19,86 +19,85 @@ final class SnapshotTest extends TestCase
 
     public function test_snapshot_counts_only_stored_media_for_requested_user(): void
     {
-        $user = User::factory()->create([
+        $user        = User::factory()->create([
             'tariff_code' => Tariff10::TARIFF_NAME,
         ]);
         $anotherUser = User::factory()->create();
 
-        $accountId = DB::table('messenger_accounts')->insertGetId([
-            'user_id' => $user->id,
-            'type' => 'telegram',
-            'name' => 'Main',
-            'meta' => json_encode([]),
+        $accountId      = DB::table('messenger_accounts')->insertGetId([
+            'user_id'    => $user->id,
+            'type'       => 'telegram',
+            'name'       => 'Main',
+            'meta'       => json_encode([]),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         $conversationId = DB::table('conversations')->insertGetId([
             'messenger_account_id' => $accountId,
-            'external_id' => 'conv-1',
-            'title' => 'Conversation',
-            'participants' => json_encode([]),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'external_id'          => 'conv-1',
+            'title'                => 'Conversation',
+            'participants'         => json_encode([]),
+            'created_at'           => now(),
+            'updated_at'           => now(),
         ]);
 
         DB::table('media_attachments')->insert([
             [
                 'conversation_id' => $conversationId,
-                'stored_path' => 'media/a.jpg',
-                'export_path' => 'a.jpg',
-                'size_bytes' => 120,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'stored_path'     => 'media/a.jpg',
+                'export_path'     => 'a.jpg',
+                'size_bytes'      => 120,
+                'created_at'      => now(),
+                'updated_at'      => now(),
             ],
             [
                 'conversation_id' => $conversationId,
-                'stored_path' => null,
-                'export_path' => 'missing.jpg',
-                'size_bytes' => 900,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'stored_path'     => null,
+                'export_path'     => 'missing.jpg',
+                'size_bytes'      => 900,
+                'created_at'      => now(),
+                'updated_at'      => now(),
             ],
             [
                 'conversation_id' => $conversationId,
-                'stored_path' => '',
-                'export_path' => 'empty.jpg',
-                'size_bytes' => 700,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'stored_path'     => '',
+                'export_path'     => 'empty.jpg',
+                'size_bytes'      => 700,
+                'created_at'      => now(),
+                'updated_at'      => now(),
             ],
         ]);
 
-        $otherAccountId = DB::table('messenger_accounts')->insertGetId([
-            'user_id' => $anotherUser->id,
-            'type' => 'telegram',
-            'name' => 'Other',
-            'meta' => json_encode([]),
+        $otherAccountId      = DB::table('messenger_accounts')->insertGetId([
+            'user_id'    => $anotherUser->id,
+            'type'       => 'telegram',
+            'name'       => 'Other',
+            'meta'       => json_encode([]),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         $otherConversationId = DB::table('conversations')->insertGetId([
             'messenger_account_id' => $otherAccountId,
-            'external_id' => 'conv-2',
-            'title' => 'Other conversation',
-            'participants' => json_encode([]),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'external_id'          => 'conv-2',
+            'title'                => 'Other conversation',
+            'participants'         => json_encode([]),
+            'created_at'           => now(),
+            'updated_at'           => now(),
         ]);
         DB::table('media_attachments')->insert([
             'conversation_id' => $otherConversationId,
-            'stored_path' => 'media/other.jpg',
-            'export_path' => 'other.jpg',
-            'size_bytes' => 500,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'stored_path'     => 'media/other.jpg',
+            'export_path'     => 'other.jpg',
+            'size_bytes'      => 500,
+            'created_at'      => now(),
+            'updated_at'      => now(),
         ]);
 
         $snapshot = app(UserMediaQuotaService::class)->snapshot($user);
 
         $this->assertSame(120, $snapshot->getStorageUsedBytes());
         $this->assertSame(1, $snapshot->getFilesUsedCount());
-        $this->assertSame((new Tariff10())->getMaxStorageBytes(), $snapshot->getStorageLimitBytes());
-        $this->assertSame((new Tariff10())->getMaxMediaFilesCount(), $snapshot->getFilesLimitCount());
+        $this->assertSame(new Tariff10()->getMaxStorageBytes(), $snapshot->getStorageLimitBytes());
+        $this->assertSame(new Tariff10()->getMaxMediaFilesCount(), $snapshot->getFilesLimitCount());
     }
 }
-
