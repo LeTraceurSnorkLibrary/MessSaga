@@ -28,7 +28,7 @@ final class EditingFlowTest extends TestCase
     public function test_start_and_stop_editing_record_manage_component_state(): void
     {
         $user = User::factory()->create([
-            'role' => UserRoleEnum::USER->value,
+            'role'        => UserRoleEnum::USER->value,
             'tariff_code' => Tariff10::TARIFF_NAME,
         ]);
 
@@ -53,7 +53,7 @@ final class EditingFlowTest extends TestCase
     public function test_set_editing_user_field_value_rejects_invalid_role_and_tariff(): void
     {
         $user = User::factory()->create([
-            'role' => UserRoleEnum::USER->value,
+            'role'        => UserRoleEnum::USER->value,
             'tariff_code' => FreeTariff::TARIFF_NAME,
         ]);
 
@@ -76,7 +76,7 @@ final class EditingFlowTest extends TestCase
     public function test_save_editing_record_persists_buffered_changes_and_resets_state(): void
     {
         $user = User::factory()->create([
-            'role' => UserRoleEnum::USER->value,
+            'role'        => UserRoleEnum::USER->value,
             'tariff_code' => FreeTariff::TARIFF_NAME,
         ]);
 
@@ -84,12 +84,12 @@ final class EditingFlowTest extends TestCase
         $page = Mockery::mock(ListUsers::class)->makePartial();
         $page->shouldReceive('validate')->once()->andReturn([]);
 
-        $page->editingUserId = $user->id;
+        $page->editingUserId   = $user->id;
         $page->editingUserData = [
-            'name' => 'Updated Name',
-            'email' => 'updated@example.com',
+            'name'        => 'Updated Name',
+            'email'       => 'updated@example.com',
             'tariff_code' => Tariff10::TARIFF_NAME,
-            'role' => UserRoleEnum::ADMIN->value,
+            'role'        => UserRoleEnum::ADMIN->value,
         ];
 
         $page->saveEditingRecord($user);
@@ -104,7 +104,7 @@ final class EditingFlowTest extends TestCase
     public function test_save_editing_record_does_nothing_for_non_editing_user(): void
     {
         $user = User::factory()->create([
-            'role' => UserRoleEnum::USER->value,
+            'role'        => UserRoleEnum::USER->value,
             'tariff_code' => FreeTariff::TARIFF_NAME,
         ]);
 
@@ -112,12 +112,12 @@ final class EditingFlowTest extends TestCase
         $page = Mockery::mock(ListUsers::class)->makePartial();
         $page->shouldReceive('validate')->never();
 
-        $page->editingUserId = $user->id + 1;
+        $page->editingUserId   = $user->id + 1;
         $page->editingUserData = [
-            'name' => 'Ignored Name',
-            'email' => 'ignored@example.com',
+            'name'        => 'Ignored Name',
+            'email'       => 'ignored@example.com',
             'tariff_code' => Tariff10::TARIFF_NAME,
-            'role' => UserRoleEnum::ADMIN->value,
+            'role'        => UserRoleEnum::ADMIN->value,
         ];
 
         $page->saveEditingRecord($user);
@@ -128,4 +128,3 @@ final class EditingFlowTest extends TestCase
         $this->assertSame(UserRoleEnum::USER->value, $user->fresh()->role);
     }
 }
-
