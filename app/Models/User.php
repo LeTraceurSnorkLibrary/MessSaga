@@ -60,13 +60,25 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * @param string $role
+     *
+     * @return self
+     */
+    public function assignRole(string $role): self
+    {
+        $this->role = $role;
+
+        return $this;
+    }
+
+    /**
      * @param Panel $panel
      *
      * @return bool
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole(UserRoleEnum::ADMIN->value);
+        return $this->hasRole(UserRoleEnum::ADMIN->value) || $this->hasRole(UserRoleEnum::MANAGER->value);
     }
 
     /**

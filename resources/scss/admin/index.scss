@@ -1,1 +1,5 @@
-@use 'filament-admin-hamburger-overrides';
+@use 'hamburger-overrides';
+@use 'users-table/editable-text-cell';
+@use 'users-table/editable-tariff-cell';
+@use 'users-table/fi-overrides';
+@use 'users-table/role-editor';
