@@ -41,4 +41,3 @@ interface TariffInterface
      */
     public function getMaxMediaFilesCount(): int;
 }
-

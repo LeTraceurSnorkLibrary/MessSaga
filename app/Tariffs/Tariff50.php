@@ -26,4 +26,3 @@ class Tariff50 extends AbstractTariff
      */
     public const int MAX_MEDIA_FILES_COUNT = 5000;
 }
-

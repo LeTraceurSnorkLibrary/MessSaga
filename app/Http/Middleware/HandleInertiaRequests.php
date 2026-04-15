@@ -34,7 +34,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = $request->user();
+        $user  = $request->user();
         $quota = null;
         if ($user instanceof User) {
             $quota = app(UserMediaQuotaService::class)
@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user,
+                'user'  => $user,
                 'quota' => $quota,
             ],
             'filament' => [
