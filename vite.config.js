@@ -7,6 +7,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/js/app.js',
+                'resources/js/filament-admin.js',
                 'resources/scss/filament-admin.scss',
             ],
             refresh: true,
