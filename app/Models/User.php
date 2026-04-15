@@ -87,14 +87,11 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * @param int|null $incomingFileSizeBytes
-     * @param int      $incomingFilesCount
-     *
      * @return bool
      */
-    public function canUploadMedia(?int $incomingFileSizeBytes = null, int $incomingFilesCount = 1): bool
+    public function canUploadMedia(): bool
     {
-        return $this->getMediaUploadBlockReason($incomingFileSizeBytes, $incomingFilesCount) === null;
+        return $this->getMediaUploadBlockReason() === null;
     }
 
     public function getUsedMediaStorageBytes(): int
@@ -135,33 +132,25 @@ class User extends Authenticatable implements FilamentUser
         return max(0, $remaining);
     }
 
-    public function getMediaUploadBlockReason(?int $incomingFileSizeBytes = null, int $incomingFilesCount = 1): ?string
+    public function getMediaUploadBlockReason(): ?string
     {
         if (!$this->tariff()->allowsMediaUpload()) {
             return 'tariff_media_disabled';
         }
 
-        if ($incomingFilesCount < 1) {
-            $incomingFilesCount = 1;
-        }
-
-        if ($this->getRemainingMediaFilesCount() < $incomingFilesCount) {
+        if ($this->getRemainingMediaFilesCount() <= 0) {
             return 'quota_files_exceeded';
         }
 
-        if ($incomingFileSizeBytes === null) {
-            return $this->getRemainingMediaStorageBytes() > 0
-                ? null
-                : 'quota_storage_exceeded';
-        }
-
-        if ($incomingFileSizeBytes < 0) {
+        if ($this->getRemainingMediaStorageBytes() <= 0) {
             return 'quota_storage_exceeded';
         }
 
-        return $this->getRemainingMediaStorageBytes() >= $incomingFileSizeBytes
-            ? null
-            : 'quota_storage_exceeded';
+        if ($this->getRemainingMediaFilesCount() <= 0) {
+            return 'quota_files_exceeded';
+        }
+
+        return null;
     }
 
     /**
