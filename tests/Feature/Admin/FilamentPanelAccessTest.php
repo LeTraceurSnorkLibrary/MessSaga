@@ -29,13 +29,13 @@ class FilamentPanelAccessTest extends TestCase
         $this->actingAs($user)->get('/manage')->assertForbidden();
     }
 
-    public function test_manager_can_access_manage_panel(): void
+    public function test_manager_cannot_access_manage_panel(): void
     {
         $user = User::factory()->create([
             'role' => UserRoleEnum::MANAGER->value,
         ]);
 
-        $this->actingAs($user)->get('/manage')->assertOk();
+        $this->actingAs($user)->get('/manage')->assertForbidden();
     }
 
     public function test_admin_can_access_manage_dashboard(): void

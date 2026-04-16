@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tariffs;
 
+use App\Models\Tariff;
 use App\Tariffs\Contracts\TariffInterface;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Schema;
 
 class TariffCatalog
 {
@@ -13,15 +16,16 @@ class TariffCatalog
      */
     public static function all(): array
     {
-        $tariffs = [
-            new FreeTariff(),
-            new Tariff10(),
-            new Tariff50(),
-            new Tariff200(),
+        $freeTariff = new FreeTariff();
+        $result = [
+            $freeTariff->getName() => $freeTariff,
         ];
 
-        $result = [];
-        foreach ($tariffs as $tariff) {
+        foreach (self::databaseTariffs() as $tariff) {
+            if ($tariff->getName() === $freeTariff->getName()) {
+                continue;
+            }
+
             $result[$tariff->getName()] = $tariff;
         }
 
@@ -53,5 +57,26 @@ class TariffCatalog
         }
 
         return $options;
+    }
+
+    /**
+     * @return list<TariffInterface>
+     */
+    private static function databaseTariffs(): array
+    {
+        if (!Schema::hasTable('tariffs')) {
+            return [];
+        }
+
+        try {
+            return Tariff::query()
+                ->orderBy('price')
+                ->orderBy('id')
+                ->get()
+                ->map(static fn(Tariff $tariff): TariffInterface => new DatabaseTariff($tariff))
+                ->all();
+        } catch (QueryException) {
+            return [];
+        }
     }
 }
