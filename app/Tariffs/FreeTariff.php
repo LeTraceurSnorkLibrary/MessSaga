@@ -7,22 +7,39 @@ namespace App\Tariffs;
 class FreeTariff extends AbstractTariff
 {
     /**
-     * @inheritdoc
+     * Tariff's stringed ID
      */
     public const string TARIFF_NAME = 'tariff_free';
 
     /**
      * @inheritdoc
      */
-    public const string LABEL = 'Бесплатно';
+    public function getName(): string
+    {
+        return static::TARIFF_NAME;
+    }
 
     /**
      * @inheritdoc
      */
-    public const int MAX_STORAGE_BYTES = 0;
+    public function getLabel(): string
+    {
+        return 'Бесплатный';
+    }
 
     /**
      * @inheritdoc
      */
-    public const int MAX_MEDIA_FILES_COUNT = 0;
+    public function getMaxStorageBytes(): int
+    {
+        return 0;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMaxMediaFilesCount(): int
+    {
+        return 0;
+    }
 }

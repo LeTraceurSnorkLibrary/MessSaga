@@ -4,30 +4,36 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Tariffs;
 
+use App\Models\Tariff;
+use App\Tariffs\DatabaseTariff;
 use App\Tariffs\FreeTariff;
-use App\Tariffs\Tariff10;
-use App\Tariffs\Tariff200;
-use App\Tariffs\Tariff50;
 use App\Tariffs\TariffCatalog;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
 #[CoversClass(TariffCatalog::class)]
+#[CoversClass(DatabaseTariff::class)]
 #[CoversClass(FreeTariff::class)]
-#[CoversClass(Tariff10::class)]
-#[CoversClass(Tariff50::class)]
-#[CoversClass(Tariff200::class)]
 final class TariffCatalogTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_all_returns_keyed_tariffs_with_expected_instances(): void
     {
+        Tariff::query()->create([
+            'name' => 'pro',
+            'label' => 'Pro',
+            'price' => 10.00,
+            'max_storage_mb' => 1024,
+            'max_media_files_count' => 100,
+        ]);
+
         $all = TariffCatalog::all();
 
-        $this->assertCount(4, $all);
+        $this->assertCount(2, $all);
         $this->assertInstanceOf(FreeTariff::class, $all[FreeTariff::TARIFF_NAME]);
-        $this->assertInstanceOf(Tariff10::class, $all[Tariff10::TARIFF_NAME]);
-        $this->assertInstanceOf(Tariff50::class, $all[Tariff50::TARIFF_NAME]);
-        $this->assertInstanceOf(Tariff200::class, $all[Tariff200::TARIFF_NAME]);
+        $this->assertInstanceOf(DatabaseTariff::class, $all['pro']);
     }
 
     public function test_for_code_falls_back_to_free_for_invalid_input(): void
@@ -39,19 +45,33 @@ final class TariffCatalogTest extends TestCase
 
     public function test_options_match_catalog_tariff_labels(): void
     {
+        Tariff::query()->create([
+            'name' => 'pro',
+            'label' => 'Pro',
+            'price' => 10.00,
+            'max_storage_mb' => 1024,
+            'max_media_files_count' => 100,
+        ]);
+
         $options = TariffCatalog::options();
 
         $this->assertSame('Бесплатно', $options[FreeTariff::TARIFF_NAME]);
-        $this->assertSame('Тариф 10', $options[Tariff10::TARIFF_NAME]);
-        $this->assertSame('Тариф 50', $options[Tariff50::TARIFF_NAME]);
-        $this->assertSame('Тариф 200', $options[Tariff200::TARIFF_NAME]);
+        $this->assertSame('Pro', $options['pro']);
     }
 
-    public function test_allows_media_upload_depends_on_positive_limits(): void
+    public function test_for_code_returns_database_tariff_when_exists(): void
     {
-        $this->assertFalse(new FreeTariff()->allowsMediaUpload());
-        $this->assertTrue(new Tariff10()->allowsMediaUpload());
-        $this->assertTrue(new Tariff50()->allowsMediaUpload());
-        $this->assertTrue(new Tariff200()->allowsMediaUpload());
+        Tariff::query()->create([
+            'name' => 'pro',
+            'label' => 'Pro',
+            'price' => 10.00,
+            'max_storage_mb' => 1024,
+            'max_media_files_count' => 100,
+        ]);
+
+        $tariff = TariffCatalog::forCode('pro');
+
+        $this->assertSame('pro', $tariff->getName());
+        $this->assertSame('Pro', $tariff->getLabel());
     }
 }
