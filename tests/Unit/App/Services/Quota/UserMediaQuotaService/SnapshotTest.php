@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Services\Quota\UserMediaQuotaService;
 
+use App\Models\Tariff;
 use App\Models\User;
 use App\Services\Quota\UserMediaQuotaService;
-use App\Tariffs\Tariff10;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -19,8 +19,16 @@ final class SnapshotTest extends TestCase
 
     public function test_snapshot_counts_only_stored_media_for_requested_user(): void
     {
+        $tariff = Tariff::query()->create([
+            'name' => 'pro',
+            'label' => 'Pro',
+            'price' => 10.00,
+            'max_storage_mb' => 1024,
+            'max_media_files_count' => 100,
+        ]);
+
         $user        = User::factory()->create([
-            'tariff_code' => Tariff10::TARIFF_NAME,
+            'tariff_code' => $tariff->name,
         ]);
         $anotherUser = User::factory()->create();
 
@@ -97,7 +105,7 @@ final class SnapshotTest extends TestCase
 
         $this->assertSame(120, $snapshot->getStorageUsedBytes());
         $this->assertSame(1, $snapshot->getFilesUsedCount());
-        $this->assertSame(new Tariff10()->getMaxStorageBytes(), $snapshot->getStorageLimitBytes());
-        $this->assertSame(new Tariff10()->getMaxMediaFilesCount(), $snapshot->getFilesLimitCount());
+        $this->assertSame(1024 * 1024 * 1024, $snapshot->getStorageLimitBytes());
+        $this->assertSame(100, $snapshot->getFilesLimitCount());
     }
 }

@@ -31,14 +31,14 @@ final class CanAccessPanelTest extends TestCase
     /**
      * @throws Exception
      */
-    public function test_allow_access_for_manager_role(): void
+    public function test_disallow_access_for_manager_role(): void
     {
         $panel = $this->createStub(Panel::class);
 
         $manager       = new User();
         $manager->role = UserRoleEnum::MANAGER->value;
 
-        $this->assertTrue($manager->canAccessPanel($panel));
+        $this->assertFalse($manager->canAccessPanel($panel));
     }
 
     /**
