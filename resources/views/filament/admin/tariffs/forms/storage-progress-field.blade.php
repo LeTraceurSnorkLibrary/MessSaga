@@ -1,20 +1,26 @@
 <?php
 /**
- * @var ViewField $field
+ * @var ViewField         $field
+ * @var Closure(): mixed  $getState     Returns current field state value from Filament form data.
+ * @var Closure(): string $getStatePath Returns Livewire/Filament dot-path for `wire:model`.
  */
 
 use Filament\Forms\Components\ViewField;
 
-$statePath = $getStatePath();
+[$value, $statePath] = [
+    $getState() ?? 0,
+    $getStatePath()
+];
 ?>
 <x-forms.progress-input
-    :value="$getState() ?? 0"
+    :value="$value"
     label="Доступное место"
-    hint="Шаг: 100 МБ"
+    hint="Шаг: 128 Мб (1/8 Гб)"
     min="0"
-    max="102400"
-    step="100"
-    suffix=" МБ"
+    max="51200"
+    step="128"
+    data-progress-bar-measure-type="mbytes"
+    suffix=" Мб"
     :state-path="$statePath"
 />
 
