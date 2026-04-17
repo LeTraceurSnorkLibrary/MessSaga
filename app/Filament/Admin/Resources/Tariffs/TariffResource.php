@@ -99,4 +99,3 @@ class TariffResource extends Resource
         ];
     }
 }
-

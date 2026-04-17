@@ -17,7 +17,7 @@ class TariffCatalog
     public static function all(): array
     {
         $freeTariff = new FreeTariff();
-        $result = [
+        $result     = [
             $freeTariff->getName() => $freeTariff,
         ];
 
