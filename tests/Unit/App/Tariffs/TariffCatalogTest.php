@@ -22,10 +22,10 @@ final class TariffCatalogTest extends TestCase
     public function test_all_returns_keyed_tariffs_with_expected_instances(): void
     {
         Tariff::query()->create([
-            'name' => 'pro',
-            'label' => 'Pro',
-            'price' => 10.00,
-            'max_storage_mb' => 1024,
+            'name'                  => 'pro',
+            'label'                 => 'Pro',
+            'price'                 => 10.00,
+            'max_storage_mb'        => 1024,
             'max_media_files_count' => 100,
         ]);
 
@@ -46,10 +46,10 @@ final class TariffCatalogTest extends TestCase
     public function test_options_match_catalog_tariff_labels(): void
     {
         Tariff::query()->create([
-            'name' => 'pro',
-            'label' => 'Pro',
-            'price' => 10.00,
-            'max_storage_mb' => 1024,
+            'name'                  => 'pro',
+            'label'                 => 'Pro',
+            'price'                 => 10.00,
+            'max_storage_mb'        => 1024,
             'max_media_files_count' => 100,
         ]);
 
@@ -62,10 +62,10 @@ final class TariffCatalogTest extends TestCase
     public function test_for_code_returns_database_tariff_when_exists(): void
     {
         Tariff::query()->create([
-            'name' => 'pro',
-            'label' => 'Pro',
-            'price' => 10.00,
-            'max_storage_mb' => 1024,
+            'name'                  => 'pro',
+            'label'                 => 'Pro',
+            'price'                 => 10.00,
+            'max_storage_mb'        => 1024,
             'max_media_files_count' => 100,
         ]);
 

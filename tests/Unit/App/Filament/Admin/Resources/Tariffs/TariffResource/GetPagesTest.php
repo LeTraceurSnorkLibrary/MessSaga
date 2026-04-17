@@ -30,4 +30,3 @@ final class GetPagesTest extends TestCase
         $this->assertSame(EditTariff::class, $pages['edit']->getPage());
     }
 }
-

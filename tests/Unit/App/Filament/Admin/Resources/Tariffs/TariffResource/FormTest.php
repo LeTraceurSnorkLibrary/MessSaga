@@ -27,4 +27,3 @@ final class FormTest extends TestCase
         $this->assertSame($schema, TariffResource::form($schema));
     }
 }
-

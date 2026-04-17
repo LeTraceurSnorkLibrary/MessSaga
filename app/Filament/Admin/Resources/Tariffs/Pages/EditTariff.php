@@ -22,4 +22,3 @@ class EditTariff extends EditRecord
         ];
     }
 }
-

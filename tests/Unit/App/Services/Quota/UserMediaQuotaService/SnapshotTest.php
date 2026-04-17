@@ -20,10 +20,10 @@ final class SnapshotTest extends TestCase
     public function test_snapshot_counts_only_stored_media_for_requested_user(): void
     {
         $tariff = Tariff::query()->create([
-            'name' => 'pro',
-            'label' => 'Pro',
-            'price' => 10.00,
-            'max_storage_mb' => 1024,
+            'name'                  => 'pro',
+            'label'                 => 'Pro',
+            'price'                 => 10.00,
+            'max_storage_mb'        => 1024,
             'max_media_files_count' => 100,
         ]);
 

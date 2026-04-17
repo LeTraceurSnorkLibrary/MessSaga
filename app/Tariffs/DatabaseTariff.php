@@ -57,4 +57,3 @@ final readonly class DatabaseTariff implements TariffInterface
         return max(0, (int)$this->tariff->max_media_files_count);
     }
 }
-

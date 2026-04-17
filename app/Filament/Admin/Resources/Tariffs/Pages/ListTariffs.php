@@ -19,4 +19,3 @@ class ListTariffs extends ListRecords
         ];
     }
 }
-
