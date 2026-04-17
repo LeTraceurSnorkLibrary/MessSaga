@@ -11,4 +11,3 @@ class CreateTariff extends CreateRecord
 {
     protected static string $resource = TariffResource::class;
 }
-

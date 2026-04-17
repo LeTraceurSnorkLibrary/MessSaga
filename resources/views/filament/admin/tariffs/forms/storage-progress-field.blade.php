@@ -9,7 +9,7 @@ use Filament\Forms\Components\ViewField;
 
 [$value, $statePath] = [
     $getState() ?? 0,
-    $getStatePath()
+    $getStatePath(),
 ];
 ?>
 <x-forms.progress-input

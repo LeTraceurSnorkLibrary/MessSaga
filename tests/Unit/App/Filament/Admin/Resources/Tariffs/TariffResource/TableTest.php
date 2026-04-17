@@ -20,4 +20,3 @@ final class TableTest extends TestCase
         $this->assertSame($table, TariffResource::table($table));
     }
 }
-

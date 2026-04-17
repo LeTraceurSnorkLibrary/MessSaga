@@ -15,10 +15,10 @@ final class DatabaseTariffTest extends TestCase
     public function test_it_maps_eloquent_tariff_to_tariff_interface_contract(): void
     {
         $model = new Tariff([
-            'name' => 'pro',
-            'label' => 'Pro',
-            'price' => 15.99,
-            'max_storage_mb' => 200,
+            'name'                  => 'pro',
+            'label'                 => 'Pro',
+            'price'                 => 15.99,
+            'max_storage_mb'        => 200,
             'max_media_files_count' => 50,
         ]);
 
@@ -34,10 +34,10 @@ final class DatabaseTariffTest extends TestCase
     public function test_it_disables_upload_when_any_limit_is_zero(): void
     {
         $model = new Tariff([
-            'name' => 'limited',
-            'label' => 'Limited',
-            'price' => 1.00,
-            'max_storage_mb' => 0,
+            'name'                  => 'limited',
+            'label'                 => 'Limited',
+            'price'                 => 1.00,
+            'max_storage_mb'        => 0,
             'max_media_files_count' => 10,
         ]);
 
@@ -46,4 +46,3 @@ final class DatabaseTariffTest extends TestCase
         $this->assertFalse($tariff->allowsMediaUpload());
     }
 }
-

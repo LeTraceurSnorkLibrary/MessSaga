@@ -89,8 +89,7 @@ final class UserMediaQuotaSnapshotTest extends TestCase
 
     private function fakeTariff(string $name, string $label): TariffInterface
     {
-        return new class($name, $label) implements TariffInterface
-        {
+        return new class ($name, $label) implements TariffInterface {
             public function __construct(
                 private readonly string $name,
                 private readonly string $label,
