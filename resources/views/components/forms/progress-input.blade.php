@@ -7,52 +7,50 @@
     'step' => 1,
     'suffix' => '',
     'value' => 0,
+    'dataProgressBarMeasureType' => null,
 ])
+<?php
+/**
+ * @var string|null $dataProgressBarMeasureType
+ */
 
+$measureType = is_string($dataProgressBarMeasureType)
+    ? $dataProgressBarMeasureType
+    : '';
+?>
 <div
-    x-data="{
-        value: Number(@js($value ?? 0)),
-        min: Number(@js($min)),
-        max: Number(@js($max)),
-        step: Number(@js($step)),
-        normalize() {
-            if (Number.isNaN(this.value)) this.value = this.min;
-            this.value = Math.max(this.min, Math.min(this.max, this.value));
-        },
-    }"
-    x-init="normalize()"
     class="progress-input"
+    data-progress-input
+    data-progress-input-converter="{{ $measureType }}"
 >
-    <div class="progress-input__head">
-        <span class="progress-input__label">{{ $label }}</span>
-        <span class="progress-input__value">
-            <span x-text="value"></span>{{ $suffix }}
-        </span>
-    </div>
-    @if($hint !== '')
-        <p class="progress-input__hint">{{ $hint }}</p>
-    @endif
     <div class="progress-input__controls">
+        <span class="progress-input__label">{{ $label }}</span>
+        @if($measureType !== '')
+            <p class="progress-input__converted" data-progress-input-converted wire:ignore></p>
+        @endif
         <input
             type="range"
             min="{{ $min }}"
             max="{{ $max }}"
             step="{{ $step }}"
-            x-model.number="value"
-            @change="normalize()"
+            value="{{ $value }}"
             wire:model.live="{{ $statePath }}"
             class="progress-input__range"
+            data-progress-input-range
         />
         <input
             type="number"
             min="{{ $min }}"
             max="{{ $max }}"
             step="{{ $step }}"
-            x-model.number="value"
-            @change="normalize()"
+            value="{{ $value }}"
             wire:model.live="{{ $statePath }}"
             class="progress-input__number"
+            data-progress-input-number
         />
+        @if($hint !== '')
+            <p class="progress-input__hint">{{ $hint }}</p>
+        @endif
     </div>
 </div>
 
