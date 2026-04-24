@@ -35,6 +35,8 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'role',
         'tariff_code',
+        'media_quota_grace_until',
+        'media_cleanup_strategy',
         'encryption_salt',
     ];
 
@@ -121,8 +123,9 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'email_verified_at'       => 'datetime',
+            'media_quota_grace_until' => 'datetime',
+            'password'                => 'hashed',
         ];
     }
 }
