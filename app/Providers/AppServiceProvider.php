@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\MediaAttachment;
+use App\Models\User;
 use App\Observers\MediaAttachmentObserver;
+use App\Observers\UserObserver;
 use App\Services\Import\Archives\RarImportArchiveExtractor;
 use App\Services\Import\Archives\ZipImportArchiveExtractor;
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
@@ -75,6 +77,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         MediaAttachment::observe(MediaAttachmentObserver::class);
+        User::observe(UserObserver::class);
 
         Vite::prefetch(concurrency: 3);
 
