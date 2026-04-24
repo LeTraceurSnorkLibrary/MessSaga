@@ -37,7 +37,9 @@ final readonly class LaravelMediaStorage implements MediaStorageInterface
      */
     public function exists(string $path): bool
     {
-        return $this->disk->exists($path);
+        $normalized = ltrim($path, '/');
+
+        return $this->disk->exists($path) || ($normalized !== $path && $this->disk->exists($normalized));
     }
 
     /**
@@ -45,7 +47,13 @@ final readonly class LaravelMediaStorage implements MediaStorageInterface
      */
     public function delete(string $path): bool
     {
-        return $this->disk->delete($path);
+        $normalized = ltrim($path, '/');
+
+        if ($this->disk->delete($path)) {
+            return true;
+        }
+
+        return $normalized !== $path && $this->disk->delete($normalized);
     }
 
     /**

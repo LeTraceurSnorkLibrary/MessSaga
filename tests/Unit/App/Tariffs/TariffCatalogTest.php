@@ -55,7 +55,7 @@ final class TariffCatalogTest extends TestCase
 
         $options = TariffCatalog::options();
 
-        $this->assertSame('Бесплатно', $options[FreeTariff::TARIFF_NAME]);
+        $this->assertSame('Бесплатный', $options[FreeTariff::TARIFF_NAME]);
         $this->assertSame('Pro', $options['pro']);
     }
 
