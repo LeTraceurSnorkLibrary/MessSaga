@@ -6,6 +6,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserRoleEnum;
+use App\Tariffs\Contracts\TariffInterface;
+use App\Tariffs\TariffCatalog;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -32,6 +34,9 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
+        'tariff_code',
+        'media_quota_grace_until',
+        'media_cleanup_strategy',
         'encryption_salt',
     ];
 
@@ -57,6 +62,18 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * @param string $role
+     *
+     * @return self
+     */
+    public function assignRole(string $role): self
+    {
+        $this->role = $role;
+
+        return $this;
+    }
+
+    /**
      * @param Panel $panel
      *
      * @return bool
@@ -72,6 +89,14 @@ class User extends Authenticatable implements FilamentUser
     public function messengerAccounts(): HasMany
     {
         return $this->hasMany(MessengerAccount::class);
+    }
+
+    /**
+     * @return TariffInterface
+     */
+    public function tariff(): TariffInterface
+    {
+        return TariffCatalog::forCode($this->tariff_code);
     }
 
     /**
@@ -98,8 +123,9 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'email_verified_at'       => 'datetime',
+            'media_quota_grace_until' => 'datetime',
+            'password'                => 'hashed',
         ];
     }
 }

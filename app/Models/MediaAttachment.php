@@ -20,6 +20,7 @@ class MediaAttachment extends Model
         'media_type',
         'mime_type',
         'original_filename',
+        'size_bytes',
     ];
 
     /**
@@ -51,6 +52,7 @@ class MediaAttachment extends Model
             'media_type'        => $this->media_type,
             'mime_type'         => $this->mime_type,
             'original_filename' => $this->original_filename,
+            'size_bytes'        => (int)($this->size_bytes ?? 0),
             'is_loaded'         => $hasFile,
             'is_image'          => $this->media_type === SupportedMediaTypesEnum::IMAGE->value,
         ];

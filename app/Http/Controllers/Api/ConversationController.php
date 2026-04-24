@@ -10,6 +10,7 @@ use App\Models\Conversation;
 use App\Models\MediaAttachment;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
+use App\Services\Quota\UserMediaQuotaService;
 use App\Support\FilenameSanitizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -21,12 +22,14 @@ use Teapot\StatusCode\Http;
 class ConversationController extends Controller
 {
     /**
-     * @param ParserRegistry       $parserRegistry
+     * @param ParserRegistry        $parserRegistry
      * @param MediaStorageInterface $mediaStorage
+     * @param UserMediaQuotaService $userMediaQuotaService
      */
     public function __construct(
-        private readonly ParserRegistry $parserRegistry,
-        private readonly MediaStorageInterface $mediaStorage
+        private readonly ParserRegistry        $parserRegistry,
+        private readonly MediaStorageInterface $mediaStorage,
+        private readonly UserMediaQuotaService $userMediaQuotaService,
     ) {
     }
 
@@ -211,6 +214,17 @@ class ConversationController extends Controller
     public function uploadMedia(Request $request, Conversation $conversation): JsonResponse
     {
         abort_unless($conversation->messengerAccount->user_id === $request->user()->id, Http::FORBIDDEN);
+        $user   = $request->user();
+        $quota  = $this->userMediaQuotaService->snapshot($user);
+        $reason = $quota->getMediaUploadBlockReason();
+        if ($reason !== null) {
+            return response()->json([
+                'status'  => 'rejected',
+                'message' => 'Загрузка медиа недоступна.',
+                'reason'  => $reason,
+                'quota'   => $quota->toArray(),
+            ], Http::PAYMENT_REQUIRED);
+        }
 
         $request->validate([
             'file' => 'required|file|mimes:zip|max:262144',
@@ -220,7 +234,7 @@ class ConversationController extends Controller
         $path           = $request->file('file')->store('chat_imports', $importsTmpDisk);
 
         ProcessConversationMediaUpload::dispatch(
-            userId: $request->user()->id,
+            userId: $user->id,
             conversationId: $conversation->id,
             path: $path,
         );

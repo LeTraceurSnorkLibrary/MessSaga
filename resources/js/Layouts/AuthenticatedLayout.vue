@@ -171,6 +171,7 @@ const adminPanelUrl = computed(() => page.props.filament?.adminPanelUrl ?? null)
 .auth-layout__user {
     display: none;
     margin-left: auto;
+    column-gap: 0.75rem;
 
     @media (min-width: 768px) {
         display: flex;
