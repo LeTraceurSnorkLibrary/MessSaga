@@ -26,6 +26,7 @@ setup: ## Полная установка с нуля: .env, APP_KEY, БД, за
 	@php artisan migrate
 	@echo "→ Собираем фронтенд..."
 	@$(MAKE) build
+	@php artisan filament:assets --ansi
 	@echo ""
 	@echo "Готово. Запуск: make run  (или make serve + make queue + make dev в отдельных терминалах)"
 

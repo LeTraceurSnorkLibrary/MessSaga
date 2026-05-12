@@ -65,6 +65,7 @@
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
             "@php artisan migrate --force",
+            "@php artisan filament:assets --ansi",
             "npm install",
             "npm run build"
         ],
