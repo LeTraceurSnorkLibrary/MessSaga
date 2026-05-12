@@ -10,25 +10,24 @@ PORT ?= 8000
 # --- Первый запуск (после клонирования) ---
 
 setup: ## Полная установка с нуля: .env, APP_KEY, БД, зависимости, миграции, сборка
-	@echo "→ Копируем .env из .env.example (если нет .env)..."
-	@test -f .env || cp .env.example .env
-	@echo "→ Генерируем APP_KEY..."
-	@php artisan key:generate
-	@$(MAKE) db-sqlite-create
 	@echo "→ Устанавливаем PHP-зависимости..."
 	@composer install
 	@echo "→ Устанавливаем Node-зависимости..."
 	@npm install --legacy-peer-deps
+	@echo "→ Копируем .env из .env.example (если нет .env)..."
+	@test -f .env || cp .env.example .env
+	@echo "→ Генерируем APP_KEY..."
+	@php artisan key:generate
+	@echo "→ Собираем образ приложения..."
+	@$(MAKE) docker-build
+	@echo "→ Создаём SQLite БД..."
+	@$(MAKE) db-sqlite-create
 	@echo "→ Выполняем миграции..."
 	@php artisan migrate
 	@echo "→ Собираем фронтенд..."
 	@$(MAKE) build
-	@composer run post-install-cmd
 	@echo ""
 	@echo "Готово. Запуск: make run  (или make serve + make queue + make dev в отдельных терминалах)"
-
-assets: ## Собрать ассеты
-	composer run post-install-cmd
 
 db-init: ## Инициализировать БД (выполнить миграции). Для MySQL перед этим: make db-mysql-up
 	php artisan migrate

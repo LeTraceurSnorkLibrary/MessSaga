@@ -35,6 +35,14 @@ make setup
 
 После этого проект готов к запуску.
 
+### 2. Решение проблем с лимитом inotify watchers
+
+Если Vite выдаёт ошибку типа `npx concurrently`, можно её быстро починить командой:
+```bash
+echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
 ---
 
 ## Docker (production-образ и деплой)
