@@ -12,8 +12,18 @@ const props = withDefaults(defineProps<{
 const gaugeRadius = 50;
 const gaugeCircumference = Math.PI * gaugeRadius;
 
-const normalizedPercent = computed(() => Math.max(0, Math.min(100, Math.round(props.percent))));
-const gaugeOffset = computed(() => gaugeCircumference * (1 - normalizedPercent.value / 100));
+const normalizedPercent = computed(() => {
+    return Math.max(0, Math.min(100, Math.round(props.percent)));
+});
+const isPercentOverflow = computed(() => props.percent > 100);
+const percentLabel = computed(() => {
+    return isPercentOverflow.value
+        ? '>100%'
+        : `${normalizedPercent.value}%`;
+});
+const gaugeOffset = computed(() => {
+    return gaugeCircumference * (1 - normalizedPercent.value / 100);
+});
 </script>
 <template>
     <div :style="{ '--speedometer-gauge-color': color }" class="speedometer-gauge">
@@ -29,7 +39,7 @@ const gaugeOffset = computed(() => gaugeCircumference * (1 - normalizedPercent.v
                 d="M 10 60 A 50 50 0 0 1 110 60"
             />
         </svg>
-        <span class="speedometer-gauge__percent">{{ normalizedPercent }}%</span>
+        <span class="speedometer-gauge__percent">{{ percentLabel }}</span>
         <span class="speedometer-gauge__text">{{ text }}</span>
     </div>
 </template>
