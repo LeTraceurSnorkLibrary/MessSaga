@@ -20,7 +20,7 @@ class FilamentPanelAccessTest extends TestCase
         $response->assertRedirect(route('login', absolute: false));
     }
 
-    public function test_non_admin_user_cannot_access_manage_panel(): void
+    public function test_basic_user_cannot_access_manage_panel(): void
     {
         $user = User::factory()->create([
             'role' => UserRoleEnum::USER->value,
