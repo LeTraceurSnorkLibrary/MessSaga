@@ -9,10 +9,13 @@ use App\Tariffs\Contracts\TariffInterface;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Единая точка доступа ко всем тарифам: хардкодный «Бесплатный» + записи из таблицы tariffs.
+ */
 class TariffCatalog
 {
     /**
-     * @return array<string, TariffInterface>
+     * @return array<string, TariffInterface> карта code => тариф
      */
     public static function all(): array
     {
@@ -33,6 +36,8 @@ class TariffCatalog
     }
 
     /**
+     * Возвращает тариф по коду; неизвестный или пустой код — {@see FreeTariff}.
+     *
      * @param string|null $code
      *
      * @return TariffInterface

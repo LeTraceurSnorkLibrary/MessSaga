@@ -6,6 +6,13 @@ namespace App\Services\Quota\DTO;
 
 use App\Tariffs\Contracts\TariffInterface;
 
+/**
+ * Неизменяемый снимок медиа-квоты пользователя на момент запроса.
+ *
+ * Используется для API, Inertia и проверки возможности загрузки. Льготный период
+ * ({@see User::$media_quota_grace_until}) здесь не учитывается: при превышении лимита
+ * загрузка блокируется сразу, даже если удаление старых файлов ещё отложено.
+ */
 final readonly class UserMediaQuotaSnapshot
 {
     /**
@@ -73,6 +80,8 @@ final readonly class UserMediaQuotaSnapshot
     }
 
     /**
+     * Можно ли загрузить ещё одно медиа в рамках лимитов тарифа.
+     *
      * @return bool
      */
     public function canUploadMedia(): bool
@@ -81,6 +90,8 @@ final readonly class UserMediaQuotaSnapshot
     }
 
     /**
+     * Причина блокировки загрузки или null, если загрузка разрешена.
+     *
      * @return string|null
      */
     public function getMediaUploadBlockReason(): ?string

@@ -10,6 +10,13 @@ use App\Services\Quota\ExpiredMediaQuotaEnforcerService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
+/**
+ * Плановая очистка медиа у пользователей с истёкшим льготным периодом после downgrade тарифа.
+ *
+ * Запускается по расписанию ({@see routes/console.php}, hourly). Для каждого пользователя
+ * с {@see User::$media_quota_grace_until} <= now() вызывает {@see ExpiredMediaQuotaEnforcerService},
+ * который удаляет файлы из S3 и обнуляет записи вложений до соблюдения квоты.
+ */
 class EnforceExpiredMediaQuotaCommand extends Command
 {
     /**

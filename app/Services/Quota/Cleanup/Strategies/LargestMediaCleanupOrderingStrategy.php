@@ -8,6 +8,9 @@ use App\Models\MediaAttachment;
 use App\Services\Quota\Cleanup\Contracts\MediaCleanupOrderingStrategyInterface;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Удаляет сначала самые крупные файлы (по size_bytes, затем id).
+ */
 final class LargestMediaCleanupOrderingStrategy implements MediaCleanupOrderingStrategyInterface
 {
     public function code(): string

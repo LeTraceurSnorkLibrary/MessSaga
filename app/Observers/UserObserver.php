@@ -7,6 +7,9 @@ namespace App\Observers;
 use App\Models\User;
 use App\Services\Quota\TariffChangeGracePeriodService;
 
+/**
+ * Реагирует на изменения пользователя, связанные с тарифами и квотами.
+ */
 class UserObserver
 {
     /**
@@ -18,6 +21,8 @@ class UserObserver
     }
 
     /**
+     * При смене tariff_code пересчитывает льготный период для downgrade с превышением квоты.
+     *
      * @param User $user
      *
      * @return void

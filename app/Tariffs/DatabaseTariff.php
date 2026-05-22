@@ -7,6 +7,9 @@ namespace App\Tariffs;
 use App\Models\Tariff;
 use App\Tariffs\Contracts\TariffInterface;
 
+/**
+ * Адаптер Eloquent-модели {@see Tariff} к контракту {@see TariffInterface}.
+ */
 final readonly class DatabaseTariff implements TariffInterface
 {
     /**

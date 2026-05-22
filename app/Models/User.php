@@ -15,7 +15,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string|null $tariff_code              код тарифа ({@see TariffCatalog})
+ * @property Carbon|null $media_quota_grace_until  до этой даты не удалять медиа при превышении квоты после downgrade
+ * @property string|null $media_cleanup_strategy   код стратегии удаления (newest|oldest|largest|smallest)
+ */
 class User extends Authenticatable implements FilamentUser
 {
     /**

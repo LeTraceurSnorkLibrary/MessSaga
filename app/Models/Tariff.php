@@ -7,6 +7,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Тариф из админки: лимиты хранилища и числа медиа-файлов, цена.
+ *
+ * Поле name — строковый код (tariff_code у пользователя), label — отображаемое имя.
+ */
 class Tariff extends Model
 {
     use HasFactory;

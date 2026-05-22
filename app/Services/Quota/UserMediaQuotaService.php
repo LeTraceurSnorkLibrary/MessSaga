@@ -8,9 +8,16 @@ use App\Models\User;
 use App\Services\Quota\DTO\UserMediaQuotaSnapshot;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Считает фактическое использование медиа-квоты пользователя по данным БД.
+ */
 class UserMediaQuotaService
 {
     /**
+     * Собирает снимок квоты: занятое место, число файлов и лимиты текущего тарифа.
+     *
+     * Учитываются только вложения с непустым stored_path (файл реально лежит в хранилище).
+     *
      * @param User $user
      *
      * @return UserMediaQuotaSnapshot

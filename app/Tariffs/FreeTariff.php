@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tariffs;
 
+/**
+ * Тариф по умолчанию: нулевые лимиты, загрузка медиа запрещена.
+ *
+ * Не хранится в БД; всегда доступен через {@see TariffCatalog}.
+ */
 class FreeTariff extends AbstractTariff
 {
     /**

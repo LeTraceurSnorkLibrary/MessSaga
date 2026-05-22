@@ -6,6 +6,9 @@ namespace App\Tariffs;
 
 use App\Tariffs\Contracts\TariffInterface;
 
+/**
+ * Базовая реализация тарифа с общей логикой allowsMediaUpload().
+ */
 abstract class AbstractTariff implements TariffInterface
 {
     /**

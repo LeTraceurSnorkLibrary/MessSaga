@@ -14,10 +14,17 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Принудительно приводит медиа пользователя к лимитам тарифа после истечения льготного периода.
+ *
+ * Удаляет файлы из S3 ({@see MediaStorageInterface::delete()}) и обнуляет метаданные
+ * вложения в БД. Порядок удаления задаётся стратегией из {@see User::$media_cleanup_strategy}
+ * или фабрики {@see MediaCleanupOrderingStrategyFactory}.
+ */
 class ExpiredMediaQuotaEnforcerService
 {
     /**
-     * @var string
+     * @var string Код стратегии очистки по умолчанию, если у пользователя не задана своя
      */
     private string $defaultCleanupStrategyCode = 'newest';
 
@@ -34,10 +41,15 @@ class ExpiredMediaQuotaEnforcerService
     }
 
     /**
-     * @param User                                       $user
-     * @param MediaCleanupOrderingStrategyInterface|null $strategyOverride
+     * Удаляет медиа одного пользователя, если льготный период истёк и квота всё ещё превышена.
      *
-     * @return int
+     * Ничего не делает, пока {@see User::$media_quota_grace_until} в будущем или null,
+     * либо если использование уже укладывается в лимиты тарифа.
+     *
+     * @param User                                       $user             пользователь с истёкшим grace_until
+     * @param MediaCleanupOrderingStrategyInterface|null $strategyOverride принудительная стратегия (CLI --strategy)
+     *
+     * @return int количество успешно удалённых из хранилища вложений
      */
     public function enforceForUser(
         User                                   $user,
@@ -113,6 +125,8 @@ class ExpiredMediaQuotaEnforcerService
     }
 
     /**
+     * Строит запрос вложений пользователя, отсортированный стратегией для поочерёдного удаления.
+     *
      * @return Builder<MediaAttachment>
      */
     private function attachmentsForCleanup(

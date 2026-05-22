@@ -8,6 +8,9 @@ use App\Models\MediaAttachment;
 use App\Services\Quota\Cleanup\Contracts\MediaCleanupOrderingStrategyInterface;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Удаляет сначала самые старые вложения (по created_at, затем id).
+ */
 final class OldestMediaCleanupOrderingStrategy implements MediaCleanupOrderingStrategyInterface
 {
     public function code(): string

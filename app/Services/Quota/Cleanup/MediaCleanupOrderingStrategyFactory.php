@@ -10,6 +10,11 @@ use App\Services\Quota\Cleanup\Strategies\NewestMediaCleanupOrderingStrategy;
 use App\Services\Quota\Cleanup\Strategies\OldestMediaCleanupOrderingStrategy;
 use App\Services\Quota\Cleanup\Strategies\SmallestMediaCleanupOrderingStrategy;
 
+/**
+ * Резолвит код стратегии удаления медиа в реализацию {@see MediaCleanupOrderingStrategyInterface}.
+ *
+ * Поддерживаемые коды: newest, oldest, largest, smallest.
+ */
 final class MediaCleanupOrderingStrategyFactory
 {
     /**
@@ -23,7 +28,7 @@ final class MediaCleanupOrderingStrategyFactory
     private ?array $map = null;
 
     /**
-     * @param string|null $strategyCode
+     * @param string|null $strategyCode код из users.media_cleanup_strategy или CLI --strategy
      *
      * @return MediaCleanupOrderingStrategyInterface
      */
