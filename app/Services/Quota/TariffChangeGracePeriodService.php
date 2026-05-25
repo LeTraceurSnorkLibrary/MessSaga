@@ -24,6 +24,14 @@ class TariffChangeGracePeriodService
     private int $defaultGracePeriodDays = 7;
 
     /**
+     * @param UserMediaQuotaService $userMediaQuotaService
+     */
+    public function __construct(
+        private readonly UserMediaQuotaService $userMediaQuotaService
+    ) {
+    }
+
+    /**
      * Пересчитывает льготный период при смене тарифа пользователя.
      *
      * Льготный период назначается только при downgrade: новый тариф строго меньше
@@ -65,13 +73,5 @@ class TariffChangeGracePeriodService
         $graceDays = max(0, $graceDays);
 
         $user->media_quota_grace_until = CarbonImmutable::now()->addDays($graceDays);
-    }
-
-    /**
-     * @param UserMediaQuotaService $userMediaQuotaService
-     */
-    public function __construct(
-        private readonly UserMediaQuotaService $userMediaQuotaService
-    ) {
     }
 }
