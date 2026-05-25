@@ -9,23 +9,19 @@ const props = defineProps({
 });
 
 const storageUsed = computed(() => Number(props.quota.storage?.used ?? 0));
-const storageLimit = computed(() => Math.max(1, Number(props.quota.storage?.limit ?? 0)));
+const storageLimit = computed(() => Math.max(0, Number(props.quota.storage?.limit ?? 0)));
 const filesUsed = computed(() => Number(props.quota.files?.used ?? 0));
-const filesLimit = computed(() => Math.max(1, Number(props.quota.files?.limit ?? 0)));
+const filesLimit = computed(() => Math.max(0, Number(props.quota.files?.limit ?? 0)));
 
 const storagePercent = computed(() => {
-    if (storageLimit.value <= 0) {
-        return 0;
-    }
-
-    return Math.round((storageUsed.value / storageLimit.value) * 100);
+    return storageLimit.value < 0
+        ? 0
+        : Math.round((storageUsed.value / Math.max(1, storageLimit.value)) * 100);
 });
 const filesPercent = computed(() => {
-    if (filesLimit.value <= 0) {
-        return 0;
-    }
-
-    return Math.round((filesUsed.value / filesLimit.value) * 100);
+    return filesLimit.value < 0
+        ? 0
+        : Math.round((filesUsed.value / Math.max(1, filesLimit.value)) * 100);
 });
 
 const storageRemaining = computed(() => Math.max(0, storageLimit.value - storageUsed.value));
