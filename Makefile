@@ -28,7 +28,7 @@ setup: ## Полная установка с нуля: .env, APP_KEY, БД, за
 	@$(MAKE) build
 	@php artisan filament:assets --ansi
 	@echo ""
-	@echo "Готово. Запуск: make run  (или make serve + make queue + make dev в отдельных терминалах)"
+	@echo "Готово. Запуск: make run  (или make serve + make queue + php artisan schedule:work + make dev)"
 
 db-init: ## Инициализировать БД (выполнить миграции). Для MySQL перед этим: make db-mysql-up
 	php artisan migrate
@@ -74,7 +74,7 @@ docker-down: ## Остановить deploy-стек Docker
 
 docker-restart: docker-down docker-up ## Перезапустить deploy-стек контейнер
 
-run: ## Всё в одном: сервер + очередь + логи + Vite (одна команда, один терминал)
+run: ## Всё в одном: сервер + очередь + scheduler + Vite (одна команда, один терминал)
 	composer run dev
 
 install: ## Только зависимости и сборка (без .env/миграций; после make setup не нужен)
@@ -115,7 +115,7 @@ help: ## Список целей
 	@echo ""
 	@echo "  Первый запуск (после git clone):"
 	@echo "    make setup   — полная установка (.env, APP_KEY, БД, миграции, сборка)"
-	@echo "    make run     — запустить приложение (сервер + очередь + Vite + логи)"
+	@echo "    make run     — запустить приложение (сервер + очередь + scheduler + Vite)"
 	@echo ""
 	@echo "  Разработка:"
 	@echo "    make serve   — Laravel (порт по умолчанию 8000; PORT=8080 make serve)"
@@ -126,7 +126,7 @@ help: ## Список целей
 	@echo "    make docker-up — поднять deploy-стек Docker"
 	@echo "    make docker-down — остановить deploy-стек Docker"
 	@echo "    make shell   — зайти в консоль контейнера app"
-	@echo "    make run     — всё в одном терминале"
+	@echo "    make run     — всё в одном терминале (включая schedule:work)"
 	@echo ""
 	@echo "  БД:"
 	@echo "    make db-init         — инициализировать БД (миграции)"
