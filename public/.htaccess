@@ -1,4 +1,13 @@
 <IfModule mod_rewrite.c>
+    <IfModule mod_php.c>
+        php_flag display_errors Off
+        php_flag display_startup_errors Off
+    </IfModule>
+    <IfModule php_module>
+        php_flag display_errors Off
+        php_flag display_startup_errors Off
+    </IfModule>
+
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>

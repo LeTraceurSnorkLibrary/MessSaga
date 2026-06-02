@@ -20,6 +20,14 @@ services:
     ports:
       - "${SERVER_PORT:-8080}:80"
     volumes:
+      - ./app:/var/www/html/app
+      - ./bootstrap/app.php:/var/www/html/bootstrap/app.php
+      - ./bootstrap/providers.php:/var/www/html/bootstrap/providers.php
+      - ./config:/var/www/html/config
+      - ./public/index.php:/var/www/html/public/index.php
+      - ./resources:/var/www/html/resources
+      - ./routes:/var/www/html/routes
+      - ./tests:/var/www/html/tests
       - app_storage:/var/www/html/storage
     depends_on:
       mysql:
