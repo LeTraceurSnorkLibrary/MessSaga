@@ -66,7 +66,7 @@ shell: ## Зайти в консоль контейнера
 docker-build: ## Сборка Docker-образа приложения (messsaga-app:latest)
 	docker build -t messsaga-app:latest -f docker/Dockerfile .
 
-docker-up: ## Поднять deploy-стек Docker (app + queue + mysql)
+docker-up: ## Поднять deploy-стек Docker (app + queue + mysql + minio)
 	docker compose up -d
 
 docker-down: ## Остановить deploy-стек Docker
@@ -86,14 +86,15 @@ install: ## Только зависимости и сборка (без .env/м�
 migrate: ## Выполнить миграции (алиас для db-init)
 	php artisan migrate
 
-minio-init: ## Инициализировать Minio начально
-	docker compose --profile dev up -d minio-init
+minio-init: ## Инициализировать Minio начально (создать бакет)
+	docker compose up minio-init
 
 minio-up: ## Поднять локально Minio как S3
-	docker compose --profile dev up -d minio
+	docker compose up -d minio
+	$(MAKE) minio-init
 
 minio-down: ## Выключить локальный S3 в виде Minio
-	docker compose --profile dev down minio minio-init
+	docker compose stop minio minio-init
 
 fresh: ## Сброс БД и повторный прогон миграций
 	php artisan migrate:fresh

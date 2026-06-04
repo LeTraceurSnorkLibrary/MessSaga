@@ -234,10 +234,12 @@ AWS_URL=http://127.0.0.1:9000/messsaga-media
 AWS_USE_PATH_STYLE_ENDPOINT=true
 ```
 
-2. Поднимите MinIO в dev-профиле compose:
+При запуске через Docker Compose (`make docker-up`) для контейнеров `app` и `queue` endpoint подменяется на `http://minio:9000` — внутри сети compose `127.0.0.1` указывает на сам контейнер, а не на MinIO.
+
+2. Поднимите MinIO (входит в `make docker-up`, либо отдельно):
 
 ```bash
-docker compose --profile dev up -d minio minio-init
+make minio-up
 ```
 
 После этого приложение продолжит отдавать вложения через защищённый API-роут, но сами файлы будут храниться в S3-совместимом бакете.
