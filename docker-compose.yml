@@ -75,6 +75,26 @@ services:
       minio:
         condition: service_started
 
+  scheduler:
+    image: messsaga-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      AWS_ENDPOINT: ${AWS_ENDPOINT_FOR_DOCKER_COMPOSE:-http://minio:9000}
+      AWS_URL: ${AWS_ENDPOINT_FOR_DOCKER_COMPOSE:-http://minio:9000}/${AWS_BUCKET:-messsaga-media}
+    command: php artisan schedule:work
+    volumes:
+      - app_storage:/var/www/html/storage
+      - ./bootstrap/app.php:/var/www/html/bootstrap/app.php
+      - ./app:/var/www/html/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
   mysql:
     image: mysql:9.6
     restart: unless-stopped

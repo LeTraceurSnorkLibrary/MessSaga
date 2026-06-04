@@ -66,7 +66,7 @@ shell: ## Зайти в консоль контейнера
 docker-build: ## Сборка Docker-образа приложения (messsaga-app:latest)
 	docker build -t messsaga-app:latest -f docker/Dockerfile .
 
-docker-up: ## Поднять deploy-стек Docker (app + queue + mysql + minio)
+docker-up: ## Поднять deploy-стек Docker (app + queue + scheduler + mysql + minio)
 	docker compose up -d
 
 docker-down: ## Остановить deploy-стек Docker

@@ -75,7 +75,7 @@ docker run --rm -p 8080:80 --env-file .env messsaga-app:latest
 
 Если БД не в контейнере приложения, укажите в `.env` внешний `DB_HOST`.
 
-### 3. Полный стек через compose (app + queue + mysql)
+### 3. Полный стек через compose (app + queue + scheduler + mysql)
 
 Быстрый запуск через Makefile:
 
@@ -234,7 +234,9 @@ AWS_URL=http://127.0.0.1:9000/messsaga-media
 AWS_USE_PATH_STYLE_ENDPOINT=true
 ```
 
-При запуске через Docker Compose (`make docker-up`) для контейнеров `app` и `queue` endpoint подменяется на `http://minio:9000` — внутри сети compose `127.0.0.1` указывает на сам контейнер, а не на MinIO.
+При запуске через Docker Compose (`make docker-up`) для контейнеров `app`, `queue` и `scheduler` endpoint подменяется на `http://minio:9000` — внутри сети compose `127.0.0.1` указывает на сам контейнер, а не на MinIO.
+
+Контейнер `scheduler` запускает `php artisan schedule:work` (в т.ч. `quota:enforce-media`). Берёт настройки из `.env`, в compose переопределяются только `DB_HOST` и S3-endpoint для сети Docker (`AWS_ENDPOINT_FOR_DOCKER_COMPOSE`, по умолчанию `http://minio:9000`).
 
 2. Поднимите MinIO (входит в `make docker-up`, либо отдельно):
 
@@ -253,13 +255,13 @@ make minio-up
 | Команда          | Описание                                                                 |
 |------------------|--------------------------------------------------------------------------|
 | `make setup`     | Полная установка с нуля (.env, ключ, БД, зависимости, миграции, сборка). |
-| `make run`       | Запуск всего: сервер + очередь + Vite + логи.                            |
+| `make run`       | Запуск всего: сервер + очередь + scheduler + Vite.                       |
 | `make serve`     | Только Laravel-сервер.                                                   |
 | `make queue`     | Воркер очередей (импорт чатов).                                          |
 | `make dev`       | Vite в режиме разработки (hot reload).                                   |
 | `make build`     | Сборка фронтенда для production.                                         |
 | `make docker-build` | Сборка Docker-образа приложения (`messsaga-app:latest`).             |
-| `make docker-up` | Поднять deploy-стек Docker (`app + queue + mysql`).                     |
+| `make docker-up` | Поднять deploy-стек Docker (`app + queue + scheduler + mysql`).         |
 | `make docker-down` | Остановить deploy-стек Docker.                                        |
 | `make db-create` | Создать `database/database.sqlite` при использовании SQLite.             |
 | `make migrate`   | Выполнить миграции.                                                      |
