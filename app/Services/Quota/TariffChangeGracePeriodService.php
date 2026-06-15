@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Quota;
 
 use App\Models\User;
+use App\Tariffs\Contracts\TariffInterface;
 use App\Tariffs\TariffCatalog;
 use Carbon\CarbonImmutable;
 
@@ -27,7 +28,7 @@ class TariffChangeGracePeriodService
      * @param UserMediaQuotaService $userMediaQuotaService
      */
     public function __construct(
-        private readonly UserMediaQuotaService $userMediaQuotaService
+        private readonly UserMediaQuotaService $userMediaQuotaService,
     ) {
     }
 
@@ -35,9 +36,9 @@ class TariffChangeGracePeriodService
      * Пересчитывает льготный период при смене тарифа пользователя.
      *
      * Льготный период назначается только при downgrade: новый тариф строго меньше
-     * по объёму хранилища или по числу файлов, и текущее использование не влезает
-     * в новые лимиты. При апгрейде или если медиа всё ещё укладывается в квоту —
-     * {@see User::$media_quota_grace_until} сбрасывается.
+     * по объёму хранилища или по числу файлов, и текущее использование не влезает в новые лимиты.
+     * При апгрейде grace-период не создаётся, но и не сбрасывается, пока пользователь
+     * остаётся за пределами лимитов нового тарифа.
      *
      * @param User        $user              пользователь с уже установленным новым tariff_code
      * @param string|null $oldTariffCode     код тарифа до изменения
@@ -46,26 +47,68 @@ class TariffChangeGracePeriodService
      * @return void
      */
     public function applyForTariffChange(
-        User $user,
+        User    $user,
         ?string $oldTariffCode,
-        ?int $graceDaysOverride = null
+        ?int    $graceDaysOverride = null,
+    ): void {
+        $this->applyForQuotaDowngrade(
+            user: $user,
+            oldTariff: TariffCatalog::forCode($oldTariffCode),
+            graceDaysOverride: $graceDaysOverride,
+        );
+    }
+
+    /**
+     * Пересчитывает льготный период, когда лимиты текущего тарифа изменились.
+     *
+     * Используется для сценария редактирования самого тарифа в админке.
+     * Пользователь остаётся на том же tariff_code, но новый тариф может стать "хуже" прежнего.
+     *
+     * @param User            $user              пользователь на редактируемом тарифе
+     * @param TariffInterface $oldTariff         снимок тарифа до изменения лимитов
+     * @param int|null        $graceDaysOverride длительность льготного периода в сутках
+     */
+    public function applyForTariffLimitsChange(
+        User            $user,
+        TariffInterface $oldTariff,
+        ?int            $graceDaysOverride = null,
+    ): void {
+        $this->applyForQuotaDowngrade(
+            user: $user,
+            oldTariff: $oldTariff,
+            graceDaysOverride: $graceDaysOverride,
+        );
+    }
+
+    /**
+     * Универсальный расчёт grace-периода относительно предыдущих лимитов.
+     *
+     * @param User            $user
+     * @param TariffInterface $oldTariff
+     * @param int|null        $graceDaysOverride
+     *
+     * @return void
+     */
+    private function applyForQuotaDowngrade(
+        User            $user,
+        TariffInterface $oldTariff,
+        ?int            $graceDaysOverride = null,
     ): void {
         $newTariff = $user->tariff();
-        $oldTariff = TariffCatalog::forCode($oldTariffCode);
-
-        $isDowngrade = $newTariff->getMaxStorageBytes() < $oldTariff->getMaxStorageBytes()
-            || $newTariff->getMaxMediaFilesCount() < $oldTariff->getMaxMediaFilesCount();
-
-        if (!$isDowngrade) {
-            $user->media_quota_grace_until = null;
-
-            return;
-        }
 
         $snapshot = $this->userMediaQuotaService->snapshot($user);
         if ($snapshot->canUploadMedia()) {
             $user->media_quota_grace_until = null;
 
+            return;
+        }
+
+        $isNewStorageBytesLessThanOld = $newTariff->getMaxStorageBytes() < $oldTariff->getMaxStorageBytes();
+
+        $isNewFilesCountLessThanOld = $newTariff->getMaxMediaFilesCount() < $oldTariff->getMaxMediaFilesCount();
+
+        $isDowngrade = $isNewStorageBytesLessThanOld || $isNewFilesCountLessThanOld;
+        if (!$isDowngrade) {
             return;
         }
 

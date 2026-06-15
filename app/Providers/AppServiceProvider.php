@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\MediaAttachment;
+use App\Models\Tariff;
 use App\Models\User;
 use App\Observers\MediaAttachmentObserver;
+use App\Observers\TariffObserver;
 use App\Observers\UserObserver;
 use App\Services\Import\Archives\RarImportArchiveExtractor;
 use App\Services\Import\Archives\ZipImportArchiveExtractor;
@@ -54,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
             return new ZipImportArchiveExtractor(
                 locatorFactory: $app->make(ExportArchiveLocatorFactory::class),
                 importsTmpDisk: $importsTmpDisk,
-                sourceDisk: $sourceDisk
+                sourceDisk: $sourceDisk,
             );
         });
 
@@ -73,10 +75,13 @@ class AppServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap any application services.
+     *
+     * @return void
      */
     public function boot(): void
     {
         MediaAttachment::observe(MediaAttachmentObserver::class);
+        Tariff::observe(TariffObserver::class);
         User::observe(UserObserver::class);
 
         Vite::prefetch(concurrency: 3);
@@ -86,7 +91,7 @@ class AppServiceProvider extends ServiceProvider
                 return new PhoneNumber(
                     (string)$value,
                     $parameters
-                        ?: ['RU']
+                        ?: ['RU'],
                 )->isValid();
             } catch (Exception $e) {
                 return false;
