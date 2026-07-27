@@ -181,7 +181,7 @@ class ImportService
                 $index                            = (int) $candidate['index'];
                 $allowedAttachmentIndexes[$index] = true;
                 $attachmentSizeByIndex[$index]    = $sizeBytes;
-                $remainingStorageBytes            -= $sizeBytes;
+                $remainingStorageBytes -= $sizeBytes;
                 $remainingMediaFiles--;
             }
         }

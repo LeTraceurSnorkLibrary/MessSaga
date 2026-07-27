@@ -71,9 +71,9 @@ class ExpiredMediaQuotaEnforcerService
 
         $strategy = $strategyOverride
                     ?? $this->cleanupOrderingStrategyFactory->make(
-                $user->media_cleanup_strategy
+                        $user->media_cleanup_strategy
                     ?: $this->defaultCleanupStrategyCode,
-            );
+                    );
 
         $remainingStorageBytes = $snapshot->getStorageUsedBytes();
         $remainingFilesCount   = $snapshot->getFilesUsedCount();
