@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Services\Quota\UserQuotaPayloadFactory;
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -33,12 +34,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = $request->user();
+        $user  = $request->user();
+        $quota = null;
+        if ($user instanceof User && $user->exists) {
+            $quota = app(UserQuotaPayloadFactory::class)->make($user);
+        }
 
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user,
+                'user'  => $user,
+                'quota' => $quota,
             ],
             'filament' => [
                 'adminPanelUrl' => $user instanceof User && $user->canAccessPanel(Filament::getPanel('admin'))

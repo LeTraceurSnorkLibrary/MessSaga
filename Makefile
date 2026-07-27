@@ -2,7 +2,7 @@
 # Makefile readme (ru): <http://linux.yaroslavl.ru/docs/prog/gnu_make_3-79_russian_manual.html>
 # Makefile readme (en): <https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents>
 
-.PHONY: serve queue dev build docker-build docker-up docker-down docker-restart install setup db-init db-sqlite-create db-mysql-up db-mysql-down migrate fresh test tinker logs clear help
+.PHONY: serve queue dev build docker-build docker-up docker-dev docker-down docker-restart install setup db-init db-sqlite-create db-mysql-up db-mysql-down migrate fresh test tinker logs clear help
 
 # Порт сервера (можно задать: make serve PORT=8080)
 PORT ?= 8000
@@ -28,7 +28,7 @@ setup: ## Полная установка с нуля: .env, APP_KEY, БД, за
 	@$(MAKE) build
 	@php artisan filament:assets --ansi
 	@echo ""
-	@echo "Готово. Запуск: make run  (или make serve + make queue + make dev в отдельных терминалах)"
+	@echo "Готово. Запуск: make run  (или make serve + make queue + php artisan schedule:work + make dev)"
 
 db-init: ## Инициализировать БД (выполнить миграции). Для MySQL перед этим: make db-mysql-up
 	php artisan migrate
@@ -66,15 +66,21 @@ shell: ## Зайти в консоль контейнера
 docker-build: ## Сборка Docker-образа приложения (messsaga-app:latest)
 	docker build -t messsaga-app:latest -f docker/Dockerfile .
 
-docker-up: ## Поднять deploy-стек Docker (app + queue + mysql)
+docker-up: ## Поднять deploy-стек Docker (app + queue + scheduler + mysql + minio)
 	docker compose up -d
+
+docker-dev: docker-up ## Docker backend + Vite HMR на хосте (не нужен make build при правках фронта)
+	@echo "→ Backend: http://127.0.0.1:$$(grep -E '^SERVER_PORT=' .env 2>/dev/null | cut -d= -f2 || echo 7500)"
+	@echo "→ Vite:    http://127.0.0.1:5173 (файл public/hot подхватит контейнер app)"
+	@echo "→ Остановка Vite (Ctrl+C) не гасит Docker; для остановки стека: make docker-down"
+	npm run dev
 
 docker-down: ## Остановить deploy-стек Docker
 	docker compose down
 
 docker-restart: docker-down docker-up ## Перезапустить deploy-стек контейнер
 
-run: ## Всё в одном: сервер + очередь + логи + Vite (одна команда, один терминал)
+run: ## Всё в одном: сервер + очередь + scheduler + Vite (одна команда, один терминал)
 	composer run dev
 
 install: ## Только зависимости и сборка (без .env/миграций; после make setup не нужен)
@@ -86,14 +92,15 @@ install: ## Только зависимости и сборка (без .env/м�
 migrate: ## Выполнить миграции (алиас для db-init)
 	php artisan migrate
 
-minio-init: ## Инициализировать Minio начально
-	docker compose --profile dev up -d minio-init
+minio-init: ## Инициализировать Minio начально (создать бакет)
+	docker compose up minio-init
 
 minio-up: ## Поднять локально Minio как S3
-	docker compose --profile dev up -d minio
+	docker compose up -d minio
+	$(MAKE) minio-init
 
 minio-down: ## Выключить локальный S3 в виде Minio
-	docker compose --profile dev down minio minio-init
+	docker compose stop minio minio-init
 
 fresh: ## Сброс БД и повторный прогон миграций
 	php artisan migrate:fresh
@@ -115,7 +122,7 @@ help: ## Список целей
 	@echo ""
 	@echo "  Первый запуск (после git clone):"
 	@echo "    make setup   — полная установка (.env, APP_KEY, БД, миграции, сборка)"
-	@echo "    make run     — запустить приложение (сервер + очередь + Vite + логи)"
+	@echo "    make run     — запустить приложение (сервер + очередь + scheduler + Vite)"
 	@echo ""
 	@echo "  Разработка:"
 	@echo "    make serve   — Laravel (порт по умолчанию 8000; PORT=8080 make serve)"
@@ -124,9 +131,10 @@ help: ## Список целей
 	@echo "    make build   — сборка фронтенда для production"
 	@echo "    make docker-build — сборка Docker-образа приложения"
 	@echo "    make docker-up — поднять deploy-стек Docker"
+	@echo "    make docker-dev — Docker + Vite HMR (вместо make docker-up + make build)"
 	@echo "    make docker-down — остановить deploy-стек Docker"
 	@echo "    make shell   — зайти в консоль контейнера app"
-	@echo "    make run     — всё в одном терминале"
+	@echo "    make run     — всё в одном терминале (включая schedule:work)"
 	@echo ""
 	@echo "  БД:"
 	@echo "    make db-init         — инициализировать БД (миграции)"

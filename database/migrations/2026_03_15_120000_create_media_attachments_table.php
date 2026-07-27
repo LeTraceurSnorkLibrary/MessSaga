@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->string('media_type', 32)->nullable();
             $table->string('mime_type', 128)->nullable();
             $table->string('original_filename', 512)->nullable();
+            $table->unsignedBigInteger('size_bytes')->default(0);
             $table->timestamps();
 
             $table->index(['conversation_id', 'stored_path']);

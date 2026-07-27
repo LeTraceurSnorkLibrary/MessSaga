@@ -75,7 +75,7 @@ docker run --rm -p 8080:80 --env-file .env messsaga-app:latest
 
 Если БД не в контейнере приложения, укажите в `.env` внешний `DB_HOST`.
 
-### 3. Полный стек через compose (app + queue + mysql)
+### 3. Полный стек через compose (app + queue + scheduler + mysql)
 
 Быстрый запуск через Makefile:
 
@@ -107,6 +107,20 @@ docker compose exec app php artisan migrate --force
 ```bash
 make docker-down
 ```
+
+**Фронтенд (Vue/Vite) при `make docker-up`:** Apache в контейнере читает ассеты из смонтированной папки `public/`. Старый JS/CSS из образа Docker **не** подхватывается автоматически при правках в `resources/`.
+
+- **Разработка с hot reload:** поднимите стек и Vite на хосте (создаётся `public/hot`, контейнер отдаёт страницы с dev-сервера):
+
+  ```bash
+  make docker-dev
+  ```
+
+  Либо в двух терминалах: `make docker-up`, затем `make dev`.
+
+- **Без Vite:** после изменений фронта выполните `npm run build` (или `make build`) — обновится `public/build/` на хосте, контейнер увидит файлы через volume.
+
+Если в браузере «битые» ассеты после сбоя Vite, удалите `public/hot` и снова `make build` или перезапустите `make dev`.
 
 ### 5. Тюнинг под инстанс
 
@@ -234,10 +248,16 @@ AWS_URL=http://127.0.0.1:9000/messsaga-media
 AWS_USE_PATH_STYLE_ENDPOINT=true
 ```
 
-2. Поднимите MinIO в dev-профиле compose:
+При запуске через Docker Compose (`make docker-up`) для контейнеров `app`, `queue` и `scheduler` endpoint подменяется на `http://minio:9000` — внутри сети compose `127.0.0.1` указывает на сам контейнер, а не на MinIO.
+
+Контейнер `scheduler` запускает `php artisan schedule:work` (в т.ч. `quota:enforce-media`). Берёт настройки из `.env`, в compose переопределяются только `DB_HOST` и S3-endpoint для сети Docker (`AWS_ENDPOINT_FOR_DOCKER_COMPOSE`, по умолчанию `http://minio:9000`).
+
+Команда `php artisan quota:enforce-media` завершается с кодом **1**, если у пользователя не удалось довести квоту до лимита (ошибки удаления из S3 или квота всё ещё превышена после прогона). В логах ищите сообщения `Failed to delete media from storage during quota enforcement` и `Quota enforcement incomplete for user`.
+
+2. Поднимите MinIO (входит в `make docker-up`, либо отдельно):
 
 ```bash
-docker compose --profile dev up -d minio minio-init
+make minio-up
 ```
 
 После этого приложение продолжит отдавать вложения через защищённый API-роут, но сами файлы будут храниться в S3-совместимом бакете.
@@ -251,13 +271,14 @@ docker compose --profile dev up -d minio minio-init
 | Команда          | Описание                                                                 |
 |------------------|--------------------------------------------------------------------------|
 | `make setup`     | Полная установка с нуля (.env, ключ, БД, зависимости, миграции, сборка). |
-| `make run`       | Запуск всего: сервер + очередь + Vite + логи.                            |
+| `make run`       | Запуск всего: сервер + очередь + scheduler + Vite.                       |
 | `make serve`     | Только Laravel-сервер.                                                   |
 | `make queue`     | Воркер очередей (импорт чатов).                                          |
 | `make dev`       | Vite в режиме разработки (hot reload).                                   |
 | `make build`     | Сборка фронтенда для production.                                         |
 | `make docker-build` | Сборка Docker-образа приложения (`messsaga-app:latest`).             |
-| `make docker-up` | Поднять deploy-стек Docker (`app + queue + mysql`).                     |
+| `make docker-up` | Поднять deploy-стек Docker (`app + queue + scheduler + mysql`).         |
+| `make docker-dev` | `docker-up` + Vite HMR на хосте (правки фронта без `make build`).      |
 | `make docker-down` | Остановить deploy-стек Docker.                                        |
 | `make db-create` | Создать `database/database.sqlite` при использовании SQLite.             |
 | `make migrate`   | Выполнить миграции.                                                      |

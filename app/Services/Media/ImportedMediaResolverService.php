@@ -44,7 +44,7 @@ class ImportedMediaResolverService
         string $attachmentExportPath,
         int $conversationId,
     ): ?string {
-        $resolved = $this->resolveSource($mediaRootPath, $attachmentExportPath);
+        $resolved = $this->resolveImportSource($mediaRootPath, $attachmentExportPath);
         if ($resolved === null) {
             return null;
         }
@@ -77,7 +77,7 @@ class ImportedMediaResolverService
         int $conversationId,
         int $messageId
     ): ?string {
-        $resolved = $this->resolveSource($mediaRootPath, $attachmentExportPath);
+        $resolved = $this->resolveImportSource($mediaRootPath, $attachmentExportPath);
         if ($resolved === null) {
             return null;
         }
@@ -91,6 +91,36 @@ class ImportedMediaResolverService
     }
 
     /**
+     * @param string $mediaRootPath
+     * @param string $attachmentExportPath
+     *
+     * @return int|null
+     */
+    public function estimateAttachmentSizeBytes(
+        string $mediaRootPath,
+        string $attachmentExportPath
+    ): ?int {
+        $resolved = $this->resolveImportSource($mediaRootPath, $attachmentExportPath);
+
+        return $resolved['size_bytes'] ?? null;
+    }
+
+    /**
+     * @param string $mediaRootPath
+     * @param string $attachmentExportPath
+     *
+     * @return array{
+     *     source: string,
+     *     basename: string,
+     *     size_bytes: int
+     * }|null
+     */
+    public function resolveImportSource(string $mediaRootPath, string $attachmentExportPath): ?array
+    {
+        return $this->resolveSource($mediaRootPath, $attachmentExportPath);
+    }
+
+    /**
      * Разрешает исходный файл вложения в распакованном экспорте.
      * Сначала пытается найти файл по точному export_path,
      * затем использует fallback по basename для legacy-экспортов.
@@ -100,7 +130,8 @@ class ImportedMediaResolverService
      *
      * @return array{
      *     source: string,
-     *     basename: string
+     *     basename: string,
+     *     size_bytes: int
      * }|null
      */
     private function resolveSource(string $mediaRootPath, string $attachmentExportPath): ?array
@@ -110,8 +141,9 @@ class ImportedMediaResolverService
         $exactPath = $this->tryResolveByExportPath($root, $attachmentExportPath);
         if ($exactPath !== null) {
             return [
-                'source'   => $exactPath,
-                'basename' => FilenameSanitizer::sanitize(basename(str_replace('\\', '/', $attachmentExportPath))),
+                'source'     => $exactPath,
+                'basename'   => FilenameSanitizer::sanitize(basename(str_replace('\\', '/', $attachmentExportPath))),
+                'size_bytes' => max(0, (int)(@filesize($exactPath) ?: 0)),
             ];
         }
 
@@ -123,8 +155,9 @@ class ImportedMediaResolverService
             $found = $this->findUniqueFileByBasename($root, $sanitizedCandidate);
             if ($found !== null) {
                 return [
-                    'source'   => $found,
-                    'basename' => $sanitizedCandidate,
+                    'source'     => $found,
+                    'basename'   => $sanitizedCandidate,
+                    'size_bytes' => max(0, (int)(@filesize($found) ?: 0)),
                 ];
             }
         }

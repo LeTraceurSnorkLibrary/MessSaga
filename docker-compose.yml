@@ -17,8 +17,49 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      AWS_ENDPOINT: ${AWS_ENDPOINT}
+      AWS_URL: ${AWS_URL}
+      AWS_BUCKET: ${AWS_BUCKET}
     ports:
       - "${SERVER_PORT:-8080}:80"
+    volumes:
+      - ./app:/var/www/html/app
+      - ./bootstrap/app.php:/var/www/html/bootstrap/app.php
+      - ./bootstrap/providers.php:/var/www/html/bootstrap/providers.php
+      - ./config:/var/www/html/config
+      - ./database:/var/www/html/database
+      - ./public:/var/www/html/public
+      - ./resources:/var/www/html/resources
+      - ./routes:/var/www/html/routes
+      - ./tests:/var/www/html/tests
+      - app_storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      queue:
+        condition: service_started
+
+  queue:
+    image: messsaga-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      AWS_ENDPOINT: ${AWS_ENDPOINT}
+      AWS_URL: ${AWS_URL}
+      AWS_BUCKET: ${AWS_BUCKET}
+    command: php artisan queue:work --tries=3 --timeout=120 --sleep=1
     volumes:
       - ./app:/var/www/html/app
       - ./bootstrap/app.php:/var/www/html/bootstrap/app.php
@@ -32,27 +73,28 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      minio:
+        condition: service_started
 
-  queue:
+  scheduler:
     image: messsaga-app:latest
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      APP_ENV: production
-      APP_DEBUG: "false"
-      DB_CONNECTION: mysql
       DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-    command: php artisan queue:work --tries=3 --timeout=120 --sleep=1
+      AWS_ENDPOINT: ${AWS_ENDPOINT_FOR_DOCKER_COMPOSE:-http://minio:9000}
+      AWS_URL: ${AWS_ENDPOINT_FOR_DOCKER_COMPOSE:-http://minio:9000}/${AWS_BUCKET:-messsaga-media}
+    command: php artisan schedule:work
     volumes:
       - app_storage:/var/www/html/storage
+      - ./bootstrap/app.php:/var/www/html/bootstrap/app.php
+      - ./app:/var/www/html/app
     depends_on:
       mysql:
         condition: service_healthy
+      minio:
+        condition: service_started
 
   mysql:
     image: mysql:9.6
@@ -79,7 +121,6 @@ services:
   minio:
     image: minio/minio:latest
     restart: unless-stopped
-    profiles: [ "dev" ]
     env_file:
       - .env
     environment:
@@ -92,10 +133,14 @@ services:
       - "9001:9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   minio-init:
     image: minio/mc:latest
-    profiles: [ "dev" ]
     env_file:
       - .env
     depends_on:

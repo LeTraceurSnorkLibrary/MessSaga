@@ -7,11 +7,15 @@ namespace App\Jobs;
 use App\Models\Conversation;
 use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
+use App\Models\User;
+use App\Models\UserNotification;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\ImportedMediaResolverService;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
+use App\Services\Quota\UserMediaQuotaService;
+use App\Services\User\UserNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -35,7 +39,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
     public function __construct(
         public int    $userId,
         public int    $conversationId,
-        public string $path
+        public string $path,
     ) {
     }
 
@@ -44,6 +48,8 @@ class ProcessConversationMediaUpload implements ShouldQueue
      * @param ImportedMediaResolverService  $importedMediaResolverService
      * @param MediaStorageInterface         $mediaStorage
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
+     * @param UserMediaQuotaService         $userMediaQuotaService
+     * @param UserNotificationService       $userNotificationService
      *
      * @return void
      */
@@ -51,9 +57,11 @@ class ProcessConversationMediaUpload implements ShouldQueue
         ParserRegistry                $parserRegistry,
         ImportedMediaResolverService  $importedMediaResolverService,
         MediaStorageInterface         $mediaStorage,
-        ImportArchiveExtractorFactory $archiveExtractorsFactory
+        ImportArchiveExtractorFactory $archiveExtractorsFactory,
+        UserMediaQuotaService         $userMediaQuotaService,
+        UserNotificationService       $userNotificationService,
     ): void {
-        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDiskName = (string) config('filesystems.imports_tmp_disk', 'imports_tmp');
         $importsTmpDisk     = Storage::disk($importsTmpDiskName);
         $extractedDir       = null;
 
@@ -61,6 +69,30 @@ class ProcessConversationMediaUpload implements ShouldQueue
         if (!$conversation || $conversation->messengerAccount->user_id !== $this->userId) {
             return;
         }
+
+        $user = User::find($this->userId);
+        if (!$user) {
+            return;
+        }
+        $quota = $userMediaQuotaService->snapshot($user);
+        if (!$quota->canUploadMedia()) {
+            Log::warning('Media upload job skipped due to quota', [
+                'user_id'         => $this->userId,
+                'conversation_id' => $this->conversationId,
+            ]);
+            $userNotificationService->notify(
+                user: $user,
+                type: UserNotification::TYPE_MEDIA_UPLOAD_SKIPPED_QUOTA,
+                message: 'Догрузка медиа не выполнена: лимит тарифа исчерпан.',
+                payload: [
+                    'conversation_id' => $this->conversationId,
+                ],
+            );
+
+            return;
+        }
+        $remainingStorageBytes = $quota->getRemainingStorageBytes();
+        $remainingMediaFiles   = $quota->getRemainingFilesCount();
 
         try {
             $archiveExtractor = $archiveExtractorsFactory->makeForPath($this->path);
@@ -94,17 +126,51 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 ->whereIn('media_attachment_id', $pending->pluck('id')->all())
                 ->pluck('id', 'media_attachment_id');
 
+            $candidates = [];
             foreach ($pending as $media) {
                 $messageId = $messageIdByAttachmentId->get($media->id);
                 if ($messageId === null) {
                     continue;
                 }
 
+                $sizeBytes = $importedMediaResolverService->estimateAttachmentSizeBytes(
+                    $absoluteExtracted,
+                    (string) $media->export_path,
+                );
+                if ($sizeBytes === null || $sizeBytes < 0) {
+                    continue;
+                }
+
+                $candidates[] = [
+                    'media'      => $media,
+                    'message_id' => (int) $messageId,
+                    'size_bytes' => $sizeBytes,
+                ];
+            }
+
+            usort($candidates, static fn(array $a, array $b): int => $a['size_bytes'] <=> $b['size_bytes']);
+
+            foreach ($candidates as $candidate) {
+                if ($remainingMediaFiles <= 0 || $remainingStorageBytes <= 0) {
+                    break;
+                }
+
+                $sizeBytes = (int) $candidate['size_bytes'];
+                if ($sizeBytes > $remainingStorageBytes) {
+                    continue;
+                }
+
+                /**
+                 * @var MediaAttachment $media
+                 */
+                $media     = $candidate['media'];
+                $messageId = (int) $candidate['message_id'];
+
                 $storedPath = $importedMediaResolverService->copyForMessage(
                     $absoluteExtracted,
-                    (string)$media->export_path,
+                    (string) $media->export_path,
                     $conversation->id,
-                    (int)$messageId
+                    $messageId,
                 );
                 if ($storedPath === null) {
                     continue;
@@ -113,12 +179,19 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 $mime = $mediaStorage->mimeType($storedPath);
                 $media->update([
                     'stored_path'       => $storedPath,
-                    'media_type'        => SupportedMediaTypesEnum::detect($mime
-                        ?: null, $media->export_path)?->value,
+                    'media_type'        => SupportedMediaTypesEnum::detect(
+                        $mime
+                        ?: null,
+                        $media->export_path
+                    )?->value,
                     'mime_type'         => $mime
                         ?: null,
                     'original_filename' => basename($storedPath),
+                    'size_bytes'        => $sizeBytes,
                 ]);
+
+                $remainingStorageBytes -= $sizeBytes;
+                $remainingMediaFiles--;
             }
         } catch (ArchiveExtractionFailedException $e) {
             Log::warning('Archive extraction failed', [

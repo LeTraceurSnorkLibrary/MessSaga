@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\MediaAttachment;
+use App\Models\Tariff;
+use App\Models\User;
 use App\Observers\MediaAttachmentObserver;
+use App\Observers\TariffObserver;
+use App\Observers\UserObserver;
 use App\Services\Import\Archives\RarImportArchiveExtractor;
 use App\Services\Import\Archives\ZipImportArchiveExtractor;
 use App\Services\Import\Export\Factories\ExportArchiveLocatorFactory;
@@ -14,6 +18,8 @@ use App\Services\Import\Export\Locators\Archive\WhatsAppExportArchiveLocator;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\Storage\LaravelMediaStorage;
 use App\Services\Media\Storage\MediaStorageInterface;
+use App\Services\Quota\TariffChangeGracePeriodService;
+use App\Services\Quota\UserMediaQuotaService;
 use App\Services\Parsers\ParserRegistry;
 use App\Services\Parsers\TelegramParser;
 use App\Services\Parsers\WhatsAppParser;
@@ -52,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
             return new ZipImportArchiveExtractor(
                 locatorFactory: $app->make(ExportArchiveLocatorFactory::class),
                 importsTmpDisk: $importsTmpDisk,
-                sourceDisk: $sourceDisk
+                sourceDisk: $sourceDisk,
             );
         });
 
@@ -67,14 +73,25 @@ class AppServiceProvider extends ServiceProvider
 
             return new LaravelMediaStorage(Storage::disk($mediaDisk));
         });
+
+        $this->app->bind(TariffChangeGracePeriodService::class, function ($app): TariffChangeGracePeriodService {
+            return new TariffChangeGracePeriodService(
+                userMediaQuotaService: $app->make(UserMediaQuotaService::class),
+                defaultGracePeriodDays: max(0, (int) config('quota.grace_days', 7)),
+            );
+        });
     }
 
     /**
      * Bootstrap any application services.
+     *
+     * @return void
      */
     public function boot(): void
     {
         MediaAttachment::observe(MediaAttachmentObserver::class);
+        Tariff::observe(TariffObserver::class);
+        User::observe(UserObserver::class);
 
         Vite::prefetch(concurrency: 3);
 
@@ -83,7 +100,7 @@ class AppServiceProvider extends ServiceProvider
                 return new PhoneNumber(
                     (string)$value,
                     $parameters
-                        ?: ['RU']
+                        ?: ['RU'],
                 )->isValid();
             } catch (Exception $e) {
                 return false;
