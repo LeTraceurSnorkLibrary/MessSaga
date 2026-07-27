@@ -11,6 +11,7 @@ use App\Models\MediaAttachment;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use App\Services\Quota\UserMediaQuotaService;
+use App\Services\Quota\UserQuotaPayloadFactory;
 use App\Support\FilenameSanitizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -25,11 +26,13 @@ class ConversationController extends Controller
      * @param ParserRegistry        $parserRegistry
      * @param MediaStorageInterface $mediaStorage
      * @param UserMediaQuotaService $userMediaQuotaService
+     * @param UserQuotaPayloadFactory $quotaPayloadFactory
      */
     public function __construct(
         private readonly ParserRegistry        $parserRegistry,
         private readonly MediaStorageInterface $mediaStorage,
         private readonly UserMediaQuotaService $userMediaQuotaService,
+        private readonly UserQuotaPayloadFactory $quotaPayloadFactory,
     ) {
     }
 
@@ -222,7 +225,7 @@ class ConversationController extends Controller
                 'status'  => 'rejected',
                 'message' => 'Загрузка медиа недоступна.',
                 'reason'  => $reason,
-                'quota'   => $quota->toArray(),
+                'quota'   => $this->quotaPayloadFactory->make($user),
             ], Http::PAYMENT_REQUIRED);
         }
 
