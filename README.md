@@ -108,6 +108,20 @@ docker compose exec app php artisan migrate --force
 make docker-down
 ```
 
+**Фронтенд (Vue/Vite) при `make docker-up`:** Apache в контейнере читает ассеты из смонтированной папки `public/`. Старый JS/CSS из образа Docker **не** подхватывается автоматически при правках в `resources/`.
+
+- **Разработка с hot reload:** поднимите стек и Vite на хосте (создаётся `public/hot`, контейнер отдаёт страницы с dev-сервера):
+
+  ```bash
+  make docker-dev
+  ```
+
+  Либо в двух терминалах: `make docker-up`, затем `make dev`.
+
+- **Без Vite:** после изменений фронта выполните `npm run build` (или `make build`) — обновится `public/build/` на хосте, контейнер увидит файлы через volume.
+
+Если в браузере «битые» ассеты после сбоя Vite, удалите `public/hot` и снова `make build` или перезапустите `make dev`.
+
 ### 5. Тюнинг под инстанс
 
 - Порт снаружи меняется в `docker-compose.yml` (`7500:80` или другой указанный в .env).
@@ -264,6 +278,7 @@ make minio-up
 | `make build`     | Сборка фронтенда для production.                                         |
 | `make docker-build` | Сборка Docker-образа приложения (`messsaga-app:latest`).             |
 | `make docker-up` | Поднять deploy-стек Docker (`app + queue + scheduler + mysql`).         |
+| `make docker-dev` | `docker-up` + Vite HMR на хосте (правки фронта без `make build`).      |
 | `make docker-down` | Остановить deploy-стек Docker.                                        |
 | `make db-create` | Создать `database/database.sqlite` при использовании SQLite.             |
 | `make migrate`   | Выполнить миграции.                                                      |

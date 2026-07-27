@@ -2,7 +2,7 @@
 # Makefile readme (ru): <http://linux.yaroslavl.ru/docs/prog/gnu_make_3-79_russian_manual.html>
 # Makefile readme (en): <https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents>
 
-.PHONY: serve queue dev build docker-build docker-up docker-down docker-restart install setup db-init db-sqlite-create db-mysql-up db-mysql-down migrate fresh test tinker logs clear help
+.PHONY: serve queue dev build docker-build docker-up docker-dev docker-down docker-restart install setup db-init db-sqlite-create db-mysql-up db-mysql-down migrate fresh test tinker logs clear help
 
 # Порт сервера (можно задать: make serve PORT=8080)
 PORT ?= 8000
@@ -69,6 +69,12 @@ docker-build: ## Сборка Docker-образа приложения (messsaga
 docker-up: ## Поднять deploy-стек Docker (app + queue + scheduler + mysql + minio)
 	docker compose up -d
 
+docker-dev: docker-up ## Docker backend + Vite HMR на хосте (не нужен make build при правках фронта)
+	@echo "→ Backend: http://127.0.0.1:$$(grep -E '^SERVER_PORT=' .env 2>/dev/null | cut -d= -f2 || echo 7500)"
+	@echo "→ Vite:    http://127.0.0.1:5173 (файл public/hot подхватит контейнер app)"
+	@echo "→ Остановка Vite (Ctrl+C) не гасит Docker; для остановки стека: make docker-down"
+	npm run dev
+
 docker-down: ## Остановить deploy-стек Docker
 	docker compose down
 
@@ -125,6 +131,7 @@ help: ## Список целей
 	@echo "    make build   — сборка фронтенда для production"
 	@echo "    make docker-build — сборка Docker-образа приложения"
 	@echo "    make docker-up — поднять deploy-стек Docker"
+	@echo "    make docker-dev — Docker + Vite HMR (вместо make docker-up + make build)"
 	@echo "    make docker-down — остановить deploy-стек Docker"
 	@echo "    make shell   — зайти в консоль контейнера app"
 	@echo "    make run     — всё в одном терминале (включая schedule:work)"
