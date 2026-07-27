@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Quota\Cleanup\Contracts\MediaCleanupOrderingStrategyInterface;
 use App\Services\Quota\Cleanup\MediaCleanupOrderingStrategyFactory;
+use App\Services\Quota\DTO\MediaQuotaEnforcementResult;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class ExpiredMediaQuotaEnforcerService
     public function __construct(
         private readonly UserMediaQuotaService               $userMediaQuotaService,
         private readonly MediaStorageInterface               $mediaStorage,
-        private readonly MediaCleanupOrderingStrategyFactory $cleanupOrderingStrategyFactory
+        private readonly MediaCleanupOrderingStrategyFactory $cleanupOrderingStrategyFactory,
     ) {
     }
 
@@ -49,15 +50,15 @@ class ExpiredMediaQuotaEnforcerService
      * @param User                                       $user             пользователь с истёкшим grace_until
      * @param MediaCleanupOrderingStrategyInterface|null $strategyOverride принудительная стратегия (CLI --strategy)
      *
-     * @return int количество успешно удалённых из хранилища вложений
+     * @return MediaQuotaEnforcementResult
      */
     public function enforceForUser(
         User                                   $user,
-        ?MediaCleanupOrderingStrategyInterface $strategyOverride = null
-    ): int {
+        ?MediaCleanupOrderingStrategyInterface $strategyOverride = null,
+    ): MediaQuotaEnforcementResult {
         $graceUntil = $user->media_quota_grace_until;
         if (!$graceUntil instanceof Carbon || $graceUntil->isFuture()) {
-            return 0;
+            return new MediaQuotaEnforcementResult(0, 0, false);
         }
 
         $snapshot = $this->userMediaQuotaService->snapshot($user);
@@ -65,13 +66,13 @@ class ExpiredMediaQuotaEnforcerService
             $user->media_quota_grace_until = null;
             $user->save();
 
-            return 0;
+            return new MediaQuotaEnforcementResult(0, 0, false);
         }
 
         $strategy = $strategyOverride
-            ?? $this->cleanupOrderingStrategyFactory->make(
+                    ?? $this->cleanupOrderingStrategyFactory->make(
                 $user->media_cleanup_strategy
-                    ?: $this->defaultCleanupStrategyCode
+                    ?: $this->defaultCleanupStrategyCode,
             );
 
         $remainingStorageBytes = $snapshot->getStorageUsedBytes();
@@ -79,14 +80,15 @@ class ExpiredMediaQuotaEnforcerService
         $storageLimitBytes     = $snapshot->getStorageLimitBytes();
         $filesLimitCount       = $snapshot->getFilesLimitCount();
 
-        $deletedCount = 0;
-        $attachments  = $this->attachmentsForCleanup($user, $strategy)->get();
+        $deletedCount  = 0;
+        $failedDeletes = 0;
+        $attachments   = $this->attachmentsForCleanup($user, $strategy)->get();
         foreach ($attachments as $attachment) {
             if ($remainingStorageBytes <= $storageLimitBytes && $remainingFilesCount <= $filesLimitCount) {
                 break;
             }
 
-            $storedPath = trim((string)($attachment->stored_path ?? ''));
+            $storedPath = trim((string) ($attachment->stored_path ?? ''));
             if ($storedPath === '') {
                 continue;
             }
@@ -98,10 +100,12 @@ class ExpiredMediaQuotaEnforcerService
                     'stored_path'         => $storedPath,
                 ]);
 
+                $failedDeletes++;
+
                 continue;
             }
 
-            $attachmentSize = max(0, (int)$attachment->size_bytes);
+            $attachmentSize = max(0, (int) $attachment->size_bytes);
             DB::transaction(function () use ($attachment): void {
                 $attachment->stored_path       = null;
                 $attachment->media_type        = null;
@@ -121,7 +125,9 @@ class ExpiredMediaQuotaEnforcerService
             $user->save();
         }
 
-        return $deletedCount;
+        $stillOverQuota = $remainingStorageBytes > $storageLimitBytes || $remainingFilesCount > $filesLimitCount;
+
+        return new MediaQuotaEnforcementResult($deletedCount, $failedDeletes, $stillOverQuota);
     }
 
     /**
@@ -131,7 +137,7 @@ class ExpiredMediaQuotaEnforcerService
      */
     private function attachmentsForCleanup(
         User                                  $user,
-        MediaCleanupOrderingStrategyInterface $strategy
+        MediaCleanupOrderingStrategyInterface $strategy,
     ): Builder {
         $query = MediaAttachment::query()
             ->select('media_attachments.*')

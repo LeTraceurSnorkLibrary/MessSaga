@@ -20,15 +20,12 @@ use Carbon\CarbonImmutable;
 class TariffChangeGracePeriodService
 {
     /**
-     * @var int срок льготного периода по умолчанию (в сутках), если не передан override.
-     */
-    private int $defaultGracePeriodDays = 7;
-
-    /**
      * @param UserMediaQuotaService $userMediaQuotaService
+     * @param int                   $defaultGracePeriodDays длительность льготного периода по умолчанию (сутки)
      */
     public function __construct(
         private readonly UserMediaQuotaService $userMediaQuotaService,
+        private readonly int $defaultGracePeriodDays,
     ) {
     }
 
@@ -115,6 +112,15 @@ class TariffChangeGracePeriodService
         $graceDays = $graceDaysOverride ?? $this->defaultGracePeriodDays;
         $graceDays = max(0, $graceDays);
 
-        $user->media_quota_grace_until = CarbonImmutable::now()->addDays($graceDays);
+        $newGraceUntil = CarbonImmutable::now()->addDays($graceDays);
+        $existingUntil = $user->media_quota_grace_until;
+        if ($existingUntil !== null) {
+            $existing = CarbonImmutable::parse((string) $existingUntil);
+            if ($existing->isFuture() && $existing->greaterThan($newGraceUntil)) {
+                $newGraceUntil = $existing;
+            }
+        }
+
+        $user->media_quota_grace_until = $newGraceUntil;
     }
 }

@@ -155,6 +155,67 @@ final class ApplyForTariffChangeTest extends TestCase
         );
     }
 
+    public function test_extends_grace_on_second_downgrade_instead_of_resetting_to_now_plus_default(): void
+    {
+        Tariff::query()->create([
+            'name'                  => 'pro',
+            'label'                 => 'Pro',
+            'price'                 => 100.00,
+            'max_storage_mb'        => 1024,
+            'max_media_files_count' => 100,
+        ]);
+        Tariff::query()->create([
+            'name'                  => 'mid',
+            'label'                 => 'Mid',
+            'price'                 => 50.00,
+            'max_storage_mb'        => 10,
+            'max_media_files_count' => 10,
+        ]);
+        Tariff::query()->create([
+            'name'                  => 'mini',
+            'label'                 => 'Mini',
+            'price'                 => 10.00,
+            'max_storage_mb'        => 1,
+            'max_media_files_count' => 1,
+        ]);
+
+        $existingGraceUntil = now()->addDays(10)->startOfMinute();
+
+        $user = User::factory()->create([
+            'tariff_code'             => 'mini',
+            'media_quota_grace_until' => $existingGraceUntil,
+        ]);
+
+        $conversationId = $this->seedConversationForUser($user->id);
+        DB::table('media_attachments')->insert([
+            [
+                'conversation_id' => $conversationId,
+                'stored_path'     => 'media/1.jpg',
+                'export_path'     => '1.jpg',
+                'size_bytes'      => 900_000,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ],
+            [
+                'conversation_id' => $conversationId,
+                'stored_path'     => 'media/2.jpg',
+                'export_path'     => '2.jpg',
+                'size_bytes'      => 800_000,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ],
+        ]);
+
+        app(TariffChangeGracePeriodService::class)->applyForTariffChange(
+            user: $user,
+            oldTariffCode: 'mid',
+        );
+
+        $this->assertTrue(
+            Carbon::parse((string) $user->media_quota_grace_until)->equalTo($existingGraceUntil),
+        );
+    }
+
     private function seedConversationForUser(int $userId): int
     {
         $accountId = DB::table('messenger_accounts')->insertGetId([

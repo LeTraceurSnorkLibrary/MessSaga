@@ -27,6 +27,7 @@ services:
       - ./bootstrap/app.php:/var/www/html/bootstrap/app.php
       - ./bootstrap/providers.php:/var/www/html/bootstrap/providers.php
       - ./config:/var/www/html/config
+      - ./database:/var/www/html/database
       - ./public/index.php:/var/www/html/public/index.php
       - ./resources:/var/www/html/resources
       - ./routes:/var/www/html/routes

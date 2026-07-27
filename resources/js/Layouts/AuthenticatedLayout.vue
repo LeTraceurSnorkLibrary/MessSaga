@@ -5,12 +5,17 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import HamburgerPanel from '@/Components/layout/HamburgerPanel.vue';
 import Hamburger from '@/Components/layout/Hamburger.vue';
 import HomeIcon from "@/Components/particles/icons/HomeIcon.vue";
+import {showUnreadUserNotificationsAsToasts} from '@/composables/useUserNotifications.js';
 import {Link, usePage} from '@inertiajs/vue3';
-import {computed} from 'vue';
+import {computed, onMounted} from 'vue';
 import AdminPanelIcon from '@/Components/particles/icons/AdminPanelIcon.vue';
 
 const page = usePage();
 const adminPanelUrl = computed(() => page.props.filament?.adminPanelUrl ?? null);
+
+onMounted(() => {
+    showUnreadUserNotificationsAsToasts().catch(console.error);
+});
 </script>
 <template>
     <div class="auth-layout">

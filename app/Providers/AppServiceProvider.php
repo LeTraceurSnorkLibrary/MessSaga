@@ -18,6 +18,8 @@ use App\Services\Import\Export\Locators\Archive\WhatsAppExportArchiveLocator;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\Storage\LaravelMediaStorage;
 use App\Services\Media\Storage\MediaStorageInterface;
+use App\Services\Quota\TariffChangeGracePeriodService;
+use App\Services\Quota\UserMediaQuotaService;
 use App\Services\Parsers\ParserRegistry;
 use App\Services\Parsers\TelegramParser;
 use App\Services\Parsers\WhatsAppParser;
@@ -70,6 +72,13 @@ class AppServiceProvider extends ServiceProvider
             $mediaDisk = (string)config('filesystems.media_disk', config('filesystems.default'));
 
             return new LaravelMediaStorage(Storage::disk($mediaDisk));
+        });
+
+        $this->app->bind(TariffChangeGracePeriodService::class, function ($app): TariffChangeGracePeriodService {
+            return new TariffChangeGracePeriodService(
+                userMediaQuotaService: $app->make(UserMediaQuotaService::class),
+                defaultGracePeriodDays: max(0, (int) config('quota.grace_days', 7)),
+            );
         });
     }
 

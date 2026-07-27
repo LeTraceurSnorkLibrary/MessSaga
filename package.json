@@ -10,7 +10,8 @@
         "linkify-html": "4.3.2",
         "linkifyjs": "4.3.2",
         "pretty-bytes": "7.1.0",
-        "tippy.js": "6.3.7"
+        "tippy.js": "6.3.7",
+        "vue3-toastify": "^0.2.9"
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.3.15",

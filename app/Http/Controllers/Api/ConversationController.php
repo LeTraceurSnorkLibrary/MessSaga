@@ -23,15 +23,15 @@ use Teapot\StatusCode\Http;
 class ConversationController extends Controller
 {
     /**
-     * @param ParserRegistry        $parserRegistry
-     * @param MediaStorageInterface $mediaStorage
-     * @param UserMediaQuotaService $userMediaQuotaService
+     * @param ParserRegistry          $parserRegistry
+     * @param MediaStorageInterface   $mediaStorage
+     * @param UserMediaQuotaService   $userMediaQuotaService
      * @param UserQuotaPayloadFactory $quotaPayloadFactory
      */
     public function __construct(
-        private readonly ParserRegistry        $parserRegistry,
-        private readonly MediaStorageInterface $mediaStorage,
-        private readonly UserMediaQuotaService $userMediaQuotaService,
+        private readonly ParserRegistry          $parserRegistry,
+        private readonly MediaStorageInterface   $mediaStorage,
+        private readonly UserMediaQuotaService   $userMediaQuotaService,
         private readonly UserQuotaPayloadFactory $quotaPayloadFactory,
     ) {
     }
@@ -127,9 +127,9 @@ class ConversationController extends Controller
         $messagesHash = md5(
             json_encode(
                 $messages,
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             )
-                ?: ''
+                ?: '',
         );
 
         return response()
@@ -202,7 +202,7 @@ class ConversationController extends Controller
             [
                 'Content-Type'        => $mime,
                 'Content-Disposition' => 'inline; filename="' . addslashes($filename) . '"',
-            ]
+            ],
         );
     }
 
@@ -223,7 +223,7 @@ class ConversationController extends Controller
         if ($reason !== null) {
             return response()->json([
                 'status'  => 'rejected',
-                'message' => 'Загрузка медиа недоступна.',
+                'message' => 'Загрузка медиа недоступна. Повысьте тариф, чтобы сохранить файлы.',
                 'reason'  => $reason,
                 'quota'   => $this->quotaPayloadFactory->make($user),
             ], Http::PAYMENT_REQUIRED);
@@ -233,7 +233,7 @@ class ConversationController extends Controller
             'file' => 'required|file|mimes:zip|max:262144',
         ]);
 
-        $importsTmpDisk = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDisk = (string) config('filesystems.imports_tmp_disk', 'imports_tmp');
         $path           = $request->file('file')->store('chat_imports', $importsTmpDisk);
 
         ProcessConversationMediaUpload::dispatch(

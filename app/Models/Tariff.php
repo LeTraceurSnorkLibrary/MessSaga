@@ -17,6 +17,11 @@ class Tariff extends Model
     use HasFactory;
 
     /**
+     * Код тарифа-приёмника при удалении (не сохраняется в БД).
+     */
+    public ?string $reassignmentTargetTariffCode = null;
+
+    /**
      * @var list<string>
      */
     protected $fillable = [

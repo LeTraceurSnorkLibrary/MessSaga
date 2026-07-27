@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\UserNotificationController;
 use App\Http\Controllers\ChatImportController;
 use App\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,13 @@ Route::middleware('auth')->group(function () {
         ->name('api.conversations.media.upload');
     Route::delete('/api/conversations/{conversation}', [ConversationController::class, 'destroy'])
         ->name('api.conversations.destroy');
+
+    Route::get('/api/user/notifications', [UserNotificationController::class, 'index'])
+        ->name('api.user.notifications.index');
+    Route::post('/api/user/notifications/read-all', [UserNotificationController::class, 'markAllRead'])
+        ->name('api.user.notifications.read-all');
+    Route::post('/api/user/notifications/{notification}/read', [UserNotificationController::class, 'markRead'])
+        ->name('api.user.notifications.read');
 });
 
 require __DIR__ . '/auth.php';

@@ -8,6 +8,7 @@ use App\Models\MediaAttachment;
 use App\Models\MessengerAccount;
 use App\Models\User;
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
+use App\Services\Import\DTO\ImportOutcome;
 use App\Services\Import\DTO\PreparedMessageRowResult;
 use App\Services\Import\MessageInsertService;
 use App\Services\Import\MessagePreparationService;
@@ -46,19 +47,18 @@ class ImportService
      * @param ArchiveExtractionResult $extractedExportFile
      *
      * @throws QueryException
-     * @return void
      */
     public function import(
         int                     $userId,
         string                  $messengerType,
         ImportStrategyInterface $strategy,
-        ArchiveExtractionResult $extractedExportFile
-    ): void {
+        ArchiveExtractionResult $extractedExportFile,
+    ): ImportOutcome {
         $exportFilePath = $extractedExportFile->getExportFileAbsolutePath();
         $mediaRootPath  = $extractedExportFile->getMediaRootPath();
 
         if ($exportFilePath === null) {
-            return;
+            return ImportOutcome::empty();
         }
 
         try {
@@ -73,7 +73,7 @@ class ImportService
                 'trace'          => $e->getTraceAsString(),
             ]);
 
-            return;
+            return ImportOutcome::empty();
         }
 
         if (!$importedConversation->hasConversation()) {
@@ -82,14 +82,14 @@ class ImportService
                 'messenger_type' => $messengerType,
             ]);
 
-            return;
+            return ImportOutcome::empty();
         }
 
         $conversation = DB::transaction(function () use (
             $userId,
             $messengerType,
             $importedConversation,
-            $strategy
+            $strategy,
         ) {
             $conversationData = $importedConversation->getConversationData();
 
@@ -106,7 +106,7 @@ class ImportService
 
             return $strategy->resolveConversation(
                 account: $account,
-                conversationData: $conversationData
+                conversationData: $conversationData,
             );
         });
 
@@ -116,25 +116,25 @@ class ImportService
                 'user_id' => $userId,
             ]);
 
-            return;
+            return ImportOutcome::empty();
         }
 
-        $user             = User::query()->find($userId);
-        $quotaSnapshot    = isset($user)
+        $user           = User::query()->find($userId);
+        $quotaSnapshot  = isset($user)
             ? $this->userMediaQuotaService->snapshot($user)
             : null;
-        $canUploadMedia   = $quotaSnapshot?->canUploadMedia() ?? false;
+        $canUploadMedia = $quotaSnapshot?->canUploadMedia() ?? false;
 
         $messagesRelation    = $parser->getMessagesRelation($conversation);
         $existingExternalIds = $messagesRelation
             ->whereNotNull('external_id')
             ->pluck('external_id')
-            ->map(static fn($id): string => (string)$id)
+            ->map(static fn($id): string => (string) $id)
             ->flip();
         $existingDedupHashes = $messagesRelation
             ->whereNotNull('dedup_hash')
             ->pluck('dedup_hash')
-            ->map(static fn($hash): string => (string)$hash)
+            ->map(static fn($hash): string => (string) $hash)
             ->flip();
 
         $preparedMessages  = [];
@@ -144,25 +144,27 @@ class ImportService
 
         $allowedAttachmentIndexes = [];
         $attachmentSizeByIndex    = [];
+        $attachmentCandidates     = [];
+        foreach ($messages as $index => $message) {
+            $attachmentSizeBytes = $this->messagePreparationService->estimateAttachmentSizeBytes(
+                $mediaRootPath,
+                $message,
+            );
+            if ($attachmentSizeBytes === null || $attachmentSizeBytes < 0) {
+                continue;
+            }
+
+            $attachmentCandidates[] = [
+                'index'      => (int) $index,
+                'size_bytes' => $attachmentSizeBytes,
+            ];
+        }
+
+        $hadMediaCandidates = $attachmentCandidates !== [];
+
         if ($canUploadMedia && $user !== null) {
             $remainingStorageBytes = max(0, ($quotaSnapshot?->getStorageLimitBytes() ?? 0) - ($quotaSnapshot?->getStorageUsedBytes() ?? 0));
             $remainingMediaFiles   = max(0, ($quotaSnapshot?->getFilesLimitCount() ?? 0) - ($quotaSnapshot?->getFilesUsedCount() ?? 0));
-
-            $attachmentCandidates = [];
-            foreach ($messages as $index => $message) {
-                $attachmentSizeBytes = $this->messagePreparationService->estimateAttachmentSizeBytes(
-                    $mediaRootPath,
-                    $message
-                );
-                if ($attachmentSizeBytes === null || $attachmentSizeBytes < 0) {
-                    continue;
-                }
-
-                $attachmentCandidates[] = [
-                    'index'      => (int)$index,
-                    'size_bytes' => $attachmentSizeBytes,
-                ];
-            }
 
             usort($attachmentCandidates, static fn(array $a, array $b): int => $a['size_bytes'] <=> $b['size_bytes']);
 
@@ -171,16 +173,29 @@ class ImportService
                     break;
                 }
 
-                $sizeBytes = (int)$candidate['size_bytes'];
+                $sizeBytes = (int) $candidate['size_bytes'];
                 if ($sizeBytes > $remainingStorageBytes) {
                     continue;
                 }
 
-                $index                            = (int)$candidate['index'];
+                $index                            = (int) $candidate['index'];
                 $allowedAttachmentIndexes[$index] = true;
                 $attachmentSizeByIndex[$index]    = $sizeBytes;
-                $remainingStorageBytes -= $sizeBytes;
+                $remainingStorageBytes            -= $sizeBytes;
                 $remainingMediaFiles--;
+            }
+        }
+
+        $mediaSkippedDueToQuota = 0;
+        if ($hadMediaCandidates) {
+            if (!$canUploadMedia) {
+                $mediaSkippedDueToQuota = count($attachmentCandidates);
+            } else {
+                foreach ($attachmentCandidates as $candidate) {
+                    if (!isset($allowedAttachmentIndexes[(int) $candidate['index']])) {
+                        $mediaSkippedDueToQuota++;
+                    }
+                }
             }
         }
 
@@ -206,7 +221,7 @@ class ImportService
                 $attachmentStoredPath = $this->messagePreparationService->copyAttachmentForMessage(
                     $mediaRootPath,
                     $message,
-                    $conversation->id
+                    $conversation->id,
                 );
                 $attachmentSizeBytes  = $attachmentSizeByIndex[$messageIndex] ?? null;
             }
@@ -235,7 +250,7 @@ class ImportService
                 $preparedMessages,
                 $conversation,
                 &$importedCount,
-                &$copiedMediaPaths
+                &$copiedMediaPaths,
             ) {
                 /**
                  * @var PreparedMessageRowResult $prepared
@@ -286,5 +301,11 @@ class ImportService
                 'conversation_id' => $conversation->id,
             ]);
         }
+
+        return new ImportOutcome(
+            messagesImported: $importedCount,
+            mediaSkippedDueToQuota: $mediaSkippedDueToQuota,
+            hadMediaCandidates: $hadMediaCandidates,
+        );
     }
 }

@@ -2,6 +2,8 @@
 import Loader from '@/Components/base/Loader.vue';
 import TariffQuotaProgressBar from '@/Components/layout/TariffQuotaProgressBar.vue';
 import UIButton from '@/Components/UIButton.vue';
+import {useCanUploadMedia} from '@/composables/useCanUploadMedia.js';
+import {pollUserNotifications} from '@/composables/useUserNotifications.js';
 import {useCapitalizeFirstLetter} from '@/composables/useCapitalizeFirstLetter.ts';
 import {usePage} from '@inertiajs/vue3';
 import {computed, ref} from 'vue';
@@ -22,6 +24,7 @@ const fileInputRef = ref(null);
 const {capitalizeFirstLetter} = useCapitalizeFirstLetter();
 const page = usePage();
 const quota = computed(() => page.props.auth?.quota ?? null);
+const canUploadMedia = useCanUploadMedia(quota);
 const capitalizedMessenger = computed(() => {
     return capitalizeFirstLetter(props.selectedMessenger);
 });
@@ -61,6 +64,7 @@ const submit = async () => {
         }
 
         emit('imported');
+        pollUserNotifications().catch(console.error);
     } catch (error) {
         message.value = 'Не удалось запустить импорт. Проверьте файл и попробуйте ещё раз.';
         console.error(error);
@@ -83,6 +87,12 @@ const onFileChange = (event) => {
         </div>
         <div class="import-wizard__quota">
             <TariffQuotaProgressBar v-if="quota" :quota="quota"/>
+            <p
+                v-if="quota && !canUploadMedia"
+                class="import-wizard__quota-hint"
+            >
+                Импорт текста доступен.<br />Медиа из архива могут не сохраниться из‑за лимита тарифа.
+            </p>
         </div>
         <div class="import-wizard__inner">
             <input
@@ -165,6 +175,16 @@ const onFileChange = (event) => {
 
 .import-wizard__quota {
     grid-area: QUOTA;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.import-wizard__quota-hint {
+    @include typography.text--120(0.75rem);
+
+    margin: 0;
+    color: var(--warning-700);
 }
 
 .import-wizard__row {

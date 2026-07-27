@@ -86,6 +86,35 @@ final class QuotaAndDeletionFlowTest extends TestCase
         );
     }
 
+    public function test_moves_users_to_selected_tariff_when_reassignment_target_is_set(): void
+    {
+        Tariff::query()->create([
+            'name'                  => 'starter',
+            'label'                 => 'Starter',
+            'price'                 => 50.00,
+            'max_storage_mb'        => 5,
+            'max_media_files_count' => 5,
+        ]);
+        Tariff::query()->create([
+            'name'                  => 'mini',
+            'label'                 => 'Mini',
+            'price'                 => 10.00,
+            'max_storage_mb'        => 1,
+            'max_media_files_count' => 1,
+        ]);
+
+        $tariff = Tariff::query()->where('name', 'starter')->firstOrFail();
+
+        $user = User::factory()->create([
+            'tariff_code' => 'starter',
+        ]);
+
+        $tariff->reassignmentTargetTariffCode = 'mini';
+        $tariff->delete();
+
+        $this->assertSame('mini', $user->fresh()?->tariff_code);
+    }
+
     private function seedConversationForUser(int $userId): int
     {
         $accountId = DB::table('messenger_accounts')->insertGetId([

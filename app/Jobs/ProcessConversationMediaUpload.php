@@ -8,12 +8,14 @@ use App\Models\Conversation;
 use App\Models\MediaAttachment;
 use App\Models\MediaTypes\SupportedMediaTypesEnum;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Media\ImportedMediaResolverService;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
 use App\Services\Quota\UserMediaQuotaService;
+use App\Services\User\UserNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -37,7 +39,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
     public function __construct(
         public int    $userId,
         public int    $conversationId,
-        public string $path
+        public string $path,
     ) {
     }
 
@@ -47,6 +49,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
      * @param MediaStorageInterface         $mediaStorage
      * @param ImportArchiveExtractorFactory $archiveExtractorsFactory
      * @param UserMediaQuotaService         $userMediaQuotaService
+     * @param UserNotificationService       $userNotificationService
      *
      * @return void
      */
@@ -55,9 +58,10 @@ class ProcessConversationMediaUpload implements ShouldQueue
         ImportedMediaResolverService  $importedMediaResolverService,
         MediaStorageInterface         $mediaStorage,
         ImportArchiveExtractorFactory $archiveExtractorsFactory,
-        UserMediaQuotaService         $userMediaQuotaService
+        UserMediaQuotaService         $userMediaQuotaService,
+        UserNotificationService       $userNotificationService,
     ): void {
-        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDiskName = (string) config('filesystems.imports_tmp_disk', 'imports_tmp');
         $importsTmpDisk     = Storage::disk($importsTmpDiskName);
         $extractedDir       = null;
 
@@ -72,6 +76,19 @@ class ProcessConversationMediaUpload implements ShouldQueue
         }
         $quota = $userMediaQuotaService->snapshot($user);
         if (!$quota->canUploadMedia()) {
+            Log::warning('Media upload job skipped due to quota', [
+                'user_id'         => $this->userId,
+                'conversation_id' => $this->conversationId,
+            ]);
+            $userNotificationService->notify(
+                user: $user,
+                type: UserNotification::TYPE_MEDIA_UPLOAD_SKIPPED_QUOTA,
+                message: 'Догрузка медиа не выполнена: лимит тарифа исчерпан.',
+                payload: [
+                    'conversation_id' => $this->conversationId,
+                ],
+            );
+
             return;
         }
         $remainingStorageBytes = $quota->getRemainingStorageBytes();
@@ -118,7 +135,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
 
                 $sizeBytes = $importedMediaResolverService->estimateAttachmentSizeBytes(
                     $absoluteExtracted,
-                    (string)$media->export_path
+                    (string) $media->export_path,
                 );
                 if ($sizeBytes === null || $sizeBytes < 0) {
                     continue;
@@ -126,7 +143,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
 
                 $candidates[] = [
                     'media'      => $media,
-                    'message_id' => (int)$messageId,
+                    'message_id' => (int) $messageId,
                     'size_bytes' => $sizeBytes,
                 ];
             }
@@ -138,7 +155,7 @@ class ProcessConversationMediaUpload implements ShouldQueue
                     break;
                 }
 
-                $sizeBytes = (int)$candidate['size_bytes'];
+                $sizeBytes = (int) $candidate['size_bytes'];
                 if ($sizeBytes > $remainingStorageBytes) {
                     continue;
                 }
@@ -147,13 +164,13 @@ class ProcessConversationMediaUpload implements ShouldQueue
                  * @var MediaAttachment $media
                  */
                 $media     = $candidate['media'];
-                $messageId = (int)$candidate['message_id'];
+                $messageId = (int) $candidate['message_id'];
 
                 $storedPath = $importedMediaResolverService->copyForMessage(
                     $absoluteExtracted,
-                    (string)$media->export_path,
+                    (string) $media->export_path,
                     $conversation->id,
-                    $messageId
+                    $messageId,
                 );
                 if ($storedPath === null) {
                     continue;
@@ -163,7 +180,8 @@ class ProcessConversationMediaUpload implements ShouldQueue
                 $media->update([
                     'stored_path'       => $storedPath,
                     'media_type'        => SupportedMediaTypesEnum::detect($mime
-                        ?: null, $media->export_path)?->value,
+                        ?: null,
+                        $media->export_path)?->value,
                     'mime_type'         => $mime
                         ?: null,
                     'original_filename' => basename($storedPath),

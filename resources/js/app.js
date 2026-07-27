@@ -5,6 +5,8 @@ import {createInertiaApp} from '@inertiajs/vue3';
 import {resolvePageComponent} from 'laravel-vite-plugin/inertia-helpers';
 import {createApp, h} from 'vue';
 import {ZiggyVue} from '../../vendor/tightenco/ziggy';
+import Vue3Toastify from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 createInertiaApp({
     resolve: (name) =>
@@ -16,6 +18,10 @@ createInertiaApp({
         return createApp({render: () => h(App, props)})
             .use(plugin)
             .use(ZiggyVue)
+            .use(Vue3Toastify, {
+                autoClose: 5000,
+                position: 'top-right',
+            })
             .mount(el);
     },
     progress: {

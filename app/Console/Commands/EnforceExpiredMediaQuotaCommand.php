@@ -9,6 +9,7 @@ use App\Services\Quota\Cleanup\MediaCleanupOrderingStrategyFactory;
 use App\Services\Quota\ExpiredMediaQuotaEnforcerService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Плановая очистка медиа у пользователей с истёкшим льготным периодом после downgrade тарифа.
@@ -39,9 +40,9 @@ class EnforceExpiredMediaQuotaCommand extends Command
      */
     public function handle(
         ExpiredMediaQuotaEnforcerService    $enforcer,
-        MediaCleanupOrderingStrategyFactory $strategyFactory
+        MediaCleanupOrderingStrategyFactory $strategyFactory,
     ): int {
-        $strategy     = $strategyFactory->make((string)$this->option('strategy'));
+        $strategy     = $strategyFactory->make((string) $this->option('strategy'));
         $singleUserId = $this->option('user-id');
 
         $query = User::query()
@@ -49,26 +50,45 @@ class EnforceExpiredMediaQuotaCommand extends Command
             ->where('media_quota_grace_until', '<=', Carbon::now());
 
         if (is_numeric($singleUserId)) {
-            $query->whereKey((int)$singleUserId);
+            $query->whereKey((int) $singleUserId);
         }
 
         $totalDeleted  = 0;
         $affectedUsers = 0;
+        $hadFailure    = false;
 
-        $query->eachById(function (User $user) use ($enforcer, $strategy, &$totalDeleted, &$affectedUsers): void {
-            $deletedForUser = $enforcer->enforceForUser($user, $strategy);
-            if ($deletedForUser > 0) {
+        $query->eachById(function (User $user) use (
+            $enforcer,
+            $strategy,
+            &$totalDeleted,
+            &$affectedUsers,
+            &$hadFailure,
+        ): void {
+            $result = $enforcer->enforceForUser($user, $strategy);
+            if ($result->deletedCount > 0) {
                 $affectedUsers++;
-                $totalDeleted += $deletedForUser;
+                $totalDeleted += $result->deletedCount;
+            }
+
+            if ($result->hasOperationalFailure()) {
+                $hadFailure = true;
+                Log::warning('Quota enforcement incomplete for user', [
+                    'user_id'          => $user->id,
+                    'deleted'          => $result->deletedCount,
+                    'failed_deletes'   => $result->failedDeletes,
+                    'still_over_quota' => $result->stillOverQuota,
+                ]);
             }
         });
 
         $this->info(sprintf(
             'Quota enforcement complete: affected_users=%d, deleted_media=%d',
             $affectedUsers,
-            $totalDeleted
+            $totalDeleted,
         ));
 
-        return self::SUCCESS;
+        return $hadFailure
+            ? self::FAILURE
+            : self::SUCCESS;
     }
 }

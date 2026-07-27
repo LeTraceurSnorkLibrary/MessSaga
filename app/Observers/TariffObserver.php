@@ -47,16 +47,16 @@ final readonly class TariffObserver
         $previous  = $tariff->getPrevious();
         $oldModel  = new Tariff()
             ->fill([
-                'name'                  => (string)($previous['name'] ?? $tariff->name),
-                'label'                 => (string)($previous['label'] ?? $tariff->label),
-                'price'                 => (string)($previous['price'] ?? $tariff->price),
-                'max_storage_mb'        => (int)($previous['max_storage_mb'] ?? $tariff->max_storage_mb),
-                'max_media_files_count' => (int)($previous['max_media_files_count'] ?? $tariff->max_media_files_count),
+                'name'                  => (string) ($previous['name'] ?? $tariff->name),
+                'label'                 => (string) ($previous['label'] ?? $tariff->label),
+                'price'                 => (string) ($previous['price'] ?? $tariff->price),
+                'max_storage_mb'        => (int) ($previous['max_storage_mb'] ?? $tariff->max_storage_mb),
+                'max_media_files_count' => (int) ($previous['max_media_files_count'] ?? $tariff->max_media_files_count),
             ]);
         $oldTariff = new DatabaseTariff($oldModel);
 
         User::query()
-            ->where('tariff_code', (string)$tariff->name)
+            ->where('tariff_code', (string) $tariff->name)
             ->eachById(function (User $user) use ($oldTariff): void {
                 $this->gracePeriodService->applyForTariffLimitsChange(
                     user: $user,
@@ -81,6 +81,9 @@ final readonly class TariffObserver
      */
     public function deleting(Tariff $tariff): void
     {
-        $this->userReassignmentService->reassignUsersFromTariffCode((string)$tariff->name);
+        $this->userReassignmentService->reassignUsersFromTariffCode(
+            (string) $tariff->name,
+            $tariff->reassignmentTargetTariffCode,
+        );
     }
 }

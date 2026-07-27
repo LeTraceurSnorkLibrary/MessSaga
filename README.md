@@ -238,6 +238,8 @@ AWS_USE_PATH_STYLE_ENDPOINT=true
 
 Контейнер `scheduler` запускает `php artisan schedule:work` (в т.ч. `quota:enforce-media`). Берёт настройки из `.env`, в compose переопределяются только `DB_HOST` и S3-endpoint для сети Docker (`AWS_ENDPOINT_FOR_DOCKER_COMPOSE`, по умолчанию `http://minio:9000`).
 
+Команда `php artisan quota:enforce-media` завершается с кодом **1**, если у пользователя не удалось довести квоту до лимита (ошибки удаления из S3 или квота всё ещё превышена после прогона). В логах ищите сообщения `Failed to delete media from storage during quota enforcement` и `Quota enforcement incomplete for user`.
+
 2. Поднимите MinIO (входит в `make docker-up`, либо отдельно):
 
 ```bash

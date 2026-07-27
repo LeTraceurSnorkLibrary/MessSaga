@@ -87,12 +87,83 @@ final class EnforceForUserTest extends TestCase
 
         $deleted = app(ExpiredMediaQuotaEnforcerService::class)->enforceForUser($user);
 
-        $this->assertSame(1, $deleted);
+        $this->assertSame(1, $deleted->deletedCount);
         $this->assertSame(['media/newer.jpg'], $storage->deletedPaths);
         $this->assertNull(DB::table('media_attachments')->where('id', $newerAttachmentId)->value('stored_path'));
         $this->assertSame(0, (int)DB::table('media_attachments')->where('id', $newerAttachmentId)->value('size_bytes'));
         $this->assertSame('media/older.jpg', DB::table('media_attachments')->where('id', $olderAttachmentId)->value('stored_path'));
         $this->assertNull($user->fresh()->media_quota_grace_until);
+    }
+
+    public function test_reports_failed_deletes_and_still_over_quota(): void
+    {
+        Tariff::query()->create([
+            'name'                  => 'mini',
+            'label'                 => 'Mini',
+            'price'                 => 10.00,
+            'max_storage_mb'        => 1,
+            'max_media_files_count' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'tariff_code'             => 'mini',
+            'media_quota_grace_until' => Carbon::now()->subHour(),
+        ]);
+
+        $conversationId = $this->seedConversationForUser($user->id);
+        DB::table('media_attachments')->insert([
+            [
+                'conversation_id' => $conversationId,
+                'stored_path'     => 'media/a.jpg',
+                'export_path'     => 'a.jpg',
+                'size_bytes'      => 500_000,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ],
+            [
+                'conversation_id' => $conversationId,
+                'stored_path'     => 'media/b.jpg',
+                'export_path'     => 'b.jpg',
+                'size_bytes'      => 500_000,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ],
+        ]);
+
+        $storage = new class () implements MediaStorageInterface {
+            public function putStream(string $path, mixed $contents): bool
+            {
+                return true;
+            }
+
+            public function readStream(string $path): mixed
+            {
+                return false;
+            }
+
+            public function exists(string $path): bool
+            {
+                return true;
+            }
+
+            public function delete(string $path): bool
+            {
+                return false;
+            }
+
+            public function mimeType(string $path): ?string
+            {
+                return null;
+            }
+        };
+        $this->app->instance(MediaStorageInterface::class, $storage);
+
+        $result = app(ExpiredMediaQuotaEnforcerService::class)->enforceForUser($user);
+
+        $this->assertSame(0, $result->deletedCount);
+        $this->assertGreaterThan(0, $result->failedDeletes);
+        $this->assertTrue($result->stillOverQuota);
+        $this->assertTrue($result->hasOperationalFailure());
     }
 
     private function seedConversationForUser(int $userId): int

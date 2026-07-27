@@ -1,7 +1,11 @@
 <script setup>
+import {useCanUploadMedia} from '@/composables/useCanUploadMedia.js';
+import {pollUserNotifications} from '@/composables/useUserNotifications.js';
 import {useDate} from '@/composables/useDate';
+import {usePage} from '@inertiajs/vue3';
 import linkifyHtml from 'linkify-html';
 import {computed, ref} from 'vue';
+import {toast} from 'vue3-toastify';
 
 const props = defineProps({
     messages: {type: Array, default: () => []},
@@ -12,6 +16,9 @@ const props = defineProps({
 
 const emit = defineEmits(['delete', 'media-uploaded']);
 const {formatDate} = useDate();
+const page = usePage();
+const quota = computed(() => page.props.auth?.quota ?? null);
+const canUploadMedia = useCanUploadMedia(quota);
 const mediaUploadInput = ref(null);
 const hasPendingMedia = computed(() => {
     return props.messages.some((message) => !!message.is_media_without_file);
@@ -30,7 +37,13 @@ function showAsVideo(message) {
 }
 
 function triggerMediaUpload() {
-    if (mediaUploadInput.value) mediaUploadInput.value.click();
+    if (!canUploadMedia.value) {
+        return;
+    }
+
+    if (mediaUploadInput.value) {
+        mediaUploadInput.value.click();
+    }
 }
 
 /**
@@ -58,6 +71,15 @@ async function onMediaFileSelected(event) {
             headers: {'Content-Type': 'multipart/form-data'},
         });
         emit('media-uploaded');
+        pollUserNotifications().catch(console.error);
+    } catch (error) {
+        const status = error?.response?.status;
+        const message = error?.response?.data?.message;
+        if (status === 402 && message) {
+            toast.error(message);
+        } else {
+            toast.error('Не удалось поставить догрузку медиа в очередь.');
+        }
     } finally {
         event.target.value = '';
     }
@@ -75,11 +97,13 @@ async function onMediaFileSelected(event) {
                         accept=".zip"
                         class="message-thread__file-input"
                         type="file"
+                        :disabled="!canUploadMedia"
                         @change="onMediaFileSelected"
                     />
                     <button
                         class="message-thread__upload-media"
                         type="button"
+                        :disabled="!canUploadMedia"
                         @click="triggerMediaUpload"
                     >
                         Догрузить медиа
@@ -215,9 +239,14 @@ async function onMediaFileSelected(event) {
     padding: 0.25rem 0.5rem;
 }
 
-.message-thread__upload-media:hover {
+.message-thread__upload-media:hover:not(:disabled) {
     background: var(--gray-100);
     color: var(--gray-800);
+}
+
+.message-thread__upload-media:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .message-thread__delete {

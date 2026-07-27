@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Models\User;
+use App\Models\UserNotification;
 use App\Services\Import\Archives\DTO\ArchiveExtractionResult;
 use App\Services\Import\Archives\Exceptions\ArchiveExtractionFailedException;
+use App\Services\Import\DTO\ImportOutcome;
 use App\Services\Import\Factories\ImportArchiveExtractorFactory;
 use App\Services\Import\Strategies\ImportOnlyMediaFilesStrategyInterface;
 use App\Services\Import\Strategies\ImportStrategyInterface;
 use App\Services\ImportService;
+use App\Services\Quota\UserMediaQuotaService;
+use App\Services\User\UserNotificationService;
 use App\Services\Media\ImportedMediaResolverService;
 use App\Services\Media\Storage\MediaStorageInterface;
 use App\Services\Parsers\ParserRegistry;
@@ -39,7 +44,7 @@ class ProcessChatImport implements ShouldQueue
         public int                     $userId,
         public string                  $messengerType,
         public string                  $exportFileStoredPath,
-        public ImportStrategyInterface $strategy
+        public ImportStrategyInterface $strategy,
     ) {
     }
 
@@ -55,9 +60,9 @@ class ProcessChatImport implements ShouldQueue
         ImportArchiveExtractorFactory $archiveExtractorsFactory,
         ParserRegistry                $parserRegistry,
         ImportedMediaResolverService  $importedMediaResolverService,
-        MediaStorageInterface         $mediaStorage
+        MediaStorageInterface         $mediaStorage,
     ): void {
-        $importsTmpDiskName = (string)config('filesystems.imports_tmp_disk', 'imports_tmp');
+        $importsTmpDiskName = (string) config('filesystems.imports_tmp_disk', 'imports_tmp');
         $importsTmpDisk     = Storage::disk($importsTmpDiskName);
         $source             = null;
         $extractedDir       = null;
@@ -82,7 +87,7 @@ class ProcessChatImport implements ShouldQueue
                         archiveExtractorsFactory: $archiveExtractorsFactory,
                         parserRegistry: $parserRegistry,
                         importedMediaResolverService: $importedMediaResolverService,
-                        mediaStorage: $mediaStorage
+                        mediaStorage: $mediaStorage,
                     );
 
                     return;
@@ -91,7 +96,7 @@ class ProcessChatImport implements ShouldQueue
             $extractedExportFile = $source ?? new ArchiveExtractionResult(
                 $importsTmpDisk->path($this->exportFileStoredPath),
                 null,
-                null
+                null,
             );
 
             /**
@@ -104,12 +109,13 @@ class ProcessChatImport implements ShouldQueue
              * папки в постоянное хранилище (Storage).
              * К моменту выхода из import() файлы уже лежат в conversations/{id}/media/.
              */
-            $service->import(
+            $outcome = $service->import(
                 userId: $this->userId,
                 messengerType: $this->messengerType,
                 strategy: $this->strategy,
-                extractedExportFile: $extractedExportFile
+                extractedExportFile: $extractedExportFile,
             );
+            $this->notifyImportQuotaSkipped($outcome);
         } catch (ArchiveExtractionFailedException $e) {
             Log::warning('Archive extraction failed', [
                 'user_id'          => $this->userId,
@@ -160,7 +166,7 @@ class ProcessChatImport implements ShouldQueue
         ImportArchiveExtractorFactory $archiveExtractorsFactory,
         ParserRegistry                $parserRegistry,
         ImportedMediaResolverService  $importedMediaResolverService,
-        MediaStorageInterface         $mediaStorage
+        MediaStorageInterface         $mediaStorage,
     ): void {
         /**
          * This fallback is only for "Import to selected conversation" scenario
@@ -177,14 +183,37 @@ class ProcessChatImport implements ShouldQueue
         $mediaUploadJob = new ProcessConversationMediaUpload(
             userId: $this->userId,
             conversationId: $targetConversationId,
-            path: $this->exportFileStoredPath
+            path: $this->exportFileStoredPath,
         );
 
         $mediaUploadJob->handle(
             parserRegistry: $parserRegistry,
             importedMediaResolverService: $importedMediaResolverService,
             mediaStorage: $mediaStorage,
-            archiveExtractorsFactory: $archiveExtractorsFactory
+            archiveExtractorsFactory: $archiveExtractorsFactory,
+            userMediaQuotaService: app(UserMediaQuotaService::class),
+            userNotificationService: app(UserNotificationService::class),
+        );
+    }
+
+    private function notifyImportQuotaSkipped(ImportOutcome $outcome): void
+    {
+        if (!$outcome->shouldNotifyQuotaMediaSkipped()) {
+            return;
+        }
+
+        $user = User::query()->find($this->userId);
+        if ($user === null) {
+            return;
+        }
+
+        app(UserNotificationService::class)->notify(
+            user: $user,
+            type: UserNotification::TYPE_IMPORT_MEDIA_SKIPPED_QUOTA,
+            message: 'Медиа не загружены из‑за лимита тарифа. Текст переписки сохранён.',
+            payload: [
+                'media_skipped' => $outcome->mediaSkippedDueToQuota,
+            ],
         );
     }
 }
