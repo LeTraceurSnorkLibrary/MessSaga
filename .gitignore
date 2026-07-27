@@ -4,6 +4,8 @@
 /.nova
 /.vscode
 /.zed
+## Agents' rules
+.cursor/rules/**/local/
 
 # Cache, logs, reports, etc.
 *.log
@@ -12,6 +14,7 @@
 /tests/clover
 /tests/report
 *.cache
+
 ## Public part (compiled assets, etc.)
 /public/assets
 /public/build
